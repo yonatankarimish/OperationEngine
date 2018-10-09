@@ -21,9 +21,9 @@ public class OperatingSystem {
     public synchronized OperationResult runCommand(String commandText) throws Exception{
         try {
             Process process = builder.command("/bin/bash", "-c", commandText).start();
-            ExecutorService singleExecutor = Executors.newSingleThreadExecutor();
-            Future<List<String>> processOutput = singleExecutor.submit(new ResultReader(process.getInputStream()));
-            Future<List<String>> processErrors = singleExecutor.submit(new ResultReader(process.getErrorStream()));
+            ExecutorService resultReader = Executors.newFixedThreadPool(2);
+            Future<List<String>> processOutput = resultReader.submit(new ResultReader(process.getInputStream()));
+            Future<List<String>> processErrors = resultReader.submit(new ResultReader(process.getErrorStream()));
 
             int exitCode = process.waitFor();
             List<String> output = processOutput.get();
@@ -49,12 +49,14 @@ public class OperatingSystem {
 
         try {
             Process process = builder.command("/bin/bash").start();
-            ExecutorService singleExecutor = Executors.newSingleThreadExecutor();
-            Future<List<String>> processOutput = singleExecutor.submit(new ResultReader(process.getInputStream()));
-            Future<List<String>> processErrors = singleExecutor.submit(new ResultReader(process.getErrorStream()));
+            ExecutorService resultReader = Executors.newFixedThreadPool(2);
+            Future<List<String>> processOutput = resultReader.submit(new ResultReader(process.getInputStream()));
+            Future<List<String>> processErrors = resultReader.submit(new ResultReader(process.getErrorStream()));
 
             String lastCommand = "[not yet written]";
             try(BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))){
+                //This implementation currently writes the command and then flushes it. If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
+                //Keep your commands short
                 for(String command : scriptCommands){
                     writer.write(command);
                     writer.flush();
