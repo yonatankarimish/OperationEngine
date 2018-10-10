@@ -19,9 +19,10 @@ public class OperatingSystem {
     //Runs a single command, or a series of chained commands
     //Returns an OperationResult with the output and error returned by the operating system
     public synchronized OperationResult runCommand(String commandText) throws Exception{
+        ExecutorService resultReader = null;
         try {
             Process process = builder.command("/bin/bash", "-c", commandText).start();
-            ExecutorService resultReader = Executors.newFixedThreadPool(2);
+            resultReader = Executors.newFixedThreadPool(2);
             Future<List<String>> processOutput = resultReader.submit(new ResultReader(process.getInputStream()));
             Future<List<String>> processErrors = resultReader.submit(new ResultReader(process.getErrorStream()));
 
@@ -38,6 +39,10 @@ public class OperatingSystem {
         }catch (ExecutionException e){
             logger.error("Failed to run command " + commandText + ": Failed during interaction with IO channels. Caused by: ", e);
             throw e;
+        }finally {
+            if(resultReader != null){
+                resultReader.shutdown();
+            }
         }
     }
 
@@ -46,10 +51,11 @@ public class OperatingSystem {
     //Returns an OperationResult with the output and error returned by the operating system for the entire script
     public synchronized OperationResult runScript(List<String> scriptCommands) throws Exception {
         String referenceToScript = "[shell-script], starting with: "+ scriptCommands.get(0);
+        ExecutorService resultReader = null;
 
         try {
             Process process = builder.command("/bin/bash").start();
-            ExecutorService resultReader = Executors.newFixedThreadPool(2);
+            resultReader = Executors.newFixedThreadPool(2);
             Future<List<String>> processOutput = resultReader.submit(new ResultReader(process.getInputStream()));
             Future<List<String>> processErrors = resultReader.submit(new ResultReader(process.getErrorStream()));
 
@@ -79,6 +85,10 @@ public class OperatingSystem {
         }catch (ExecutionException e){
             logger.error("Failed to run command " + referenceToScript + ": Failed during interaction with IO channels. Caused by: ", e);
             throw e;
+        }finally {
+            if(resultReader != null){
+                resultReader.shutdown();
+            }
         }
     }
 
