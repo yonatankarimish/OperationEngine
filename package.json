@@ -1,0 +1,21 @@
+{
+  "name": "SixSenseEngine",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/yonatankarimish/OperatingSystem.git",
+  "author": "Yonatan <yonatan@backbox.co>",
+  "license": "MIT",
+  "scripts": {
+    "clean": "mvn clean",
+    "build-jar": "mvn clean & mvn package -Dmaven.test.skip=true",
+    "upload-jar": "node ./scripts/ssh-upload.js --task=jar",
+    "deploy": "yarn build-jar && yarn upload-jar"
+  },
+  "devDependencies": {
+    "promise": "~8.0.1",
+    "ssh2": "~0.5.5",
+    "ssh2-utils": "~1.0.28",
+    "walk": "~2.3.9",
+    "yargs": "~3.23.0"
+  }
+}

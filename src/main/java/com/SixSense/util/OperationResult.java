@@ -1,4 +1,4 @@
-package util;
+package com.SixSense.util;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
-import util.OperatingSystem;
-import util.OperationResult;
+package com.SixSense;
 
+import com.SixSense.util.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +19,7 @@ public class Main {
             List<String> getAccessRules = new ArrayList<>();
             getAccessRules.add("/sbin/iptables -L INPUT -n --line-numbers |  sed 's/--//g' | sed -r 's/(\\s+)/|/'  | sed 's/  \\+/|/g';");
             getAccessRules.add("/sbin/ip6tables -L INPUT -n --line-numbers |  sed 's/--//g' | sed -r 's/(\\s+)/|/'  | sed 's/  \\+/|/g';");
+            getAccessRules.add("ifconfig;");
             OperationResult accessResult = os.runScript(getAccessRules);
 
             for(String rule : accessResult.getOutput()) {

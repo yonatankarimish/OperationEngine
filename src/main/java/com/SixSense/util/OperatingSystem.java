@@ -1,4 +1,4 @@
-package util;
+package com.SixSense.util;
 
 import org.apache.log4j.Logger;
 
