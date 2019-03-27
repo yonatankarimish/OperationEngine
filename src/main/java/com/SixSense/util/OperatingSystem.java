@@ -91,33 +91,4 @@ public class OperatingSystem {
             }
         }
     }
-
-    //Internal class used for asynchronous clearing of output and error buffers
-    private class ResultReader implements Callable<List<String>> {
-        private InputStream processStream;
-
-        public ResultReader(InputStream processStream) {
-            this.processStream = processStream;
-        }
-
-        @Override
-        public List<String> call() throws ExecutionException{
-            List<String> result = new ArrayList<>();
-            String lastResponse = "[not yet read]";
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(processStream))){
-                do {
-                    lastResponse = reader.readLine();
-                    if(lastResponse != null) {
-                        result.add(lastResponse);
-                    }
-                } while (lastResponse != null);
-
-                return result;
-            } catch (IOException e){
-                logger.error("Failed to process command " + lastResponse + ". Caused by: ", e);
-                throw new ExecutionException(e);
-            }
-        }
-    }
 }

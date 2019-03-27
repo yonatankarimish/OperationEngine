@@ -35,7 +35,7 @@ function uploadJar(){
     let deployCommands = [
         'echo "finished running uploadJar"', //notify the developer's machine CLI that all commands have run successfully.
     ];
-    return sftpTransferFile(appRoot+"/target/OperatingSystem.jar", "/tmp/OperatingSystem.jar").then(() => {
+    return sftpTransferFile(appRoot+"/target/OperatingSystem.jar", "/tmp/SixSense/OperatingSystem.jar").then(() => {
         return executeSsh(deployCommands);
     });
 }
