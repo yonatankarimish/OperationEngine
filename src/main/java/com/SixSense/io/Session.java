@@ -33,8 +33,7 @@ public class Session implements Closeable {
     private int commandOrdinal = 0;
 
     private final BufferedWriter processInput;
-    private final ProcessStreamWrapper processOutput;
-    private final ProcessStreamWrapper processErrors;
+    private final ProcessStreamWrapper processOutputAndErrors;
 
 
     public Session(Process process){
@@ -42,15 +41,14 @@ public class Session implements Closeable {
         this.commandOutput = new ArrayList<>();
 
         this.processInput = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-        this.processOutput = new ProcessStreamWrapper(process.getInputStream(), this, this.commandOutput);
-        this.processErrors = new ProcessStreamWrapper(process.getErrorStream(), this, this.commandOutput);
+        this.processOutputAndErrors = new ProcessStreamWrapper(process.getInputStream(), this, this.commandOutput);
     }
 
     public ExpectedOutcome executeCommand(Command command) throws IOException{
         //In order to determine when our command has finished execution, echo the session identifier before and after the command output
         this.commandOrdinal++;
-        String commandStart = getCommandStartIdentifier(this.commandOrdinal);
-        String commandEnd = getCommandEndIdentifier(this.commandOrdinal);
+        String commandStart = getCommandStartIdentifier();
+        String commandEnd = getCommandEndIdentifier();
 
         //Write our command to the input stream, surrounded by our command identification buffers
         //This implementation currently writes the command and then flushes it.
@@ -62,9 +60,9 @@ public class Session implements Closeable {
         processInput.flush();
 
         //Wait for the process wrappers to finish writing the current command output
-        this.commandLock.lock();
         try {
             Thread.sleep(command.getMinimalSecondsToResponse() * 1000);
+            this.commandLock.lock();
             this.commandOutputFinished.await((long)(command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()), TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.error("Session " + this.sessionShellId.toString() + " interrupted while waiting for command " + this.commandOrdinal + "to return.", e);
@@ -107,48 +105,30 @@ public class Session implements Closeable {
         return commandResult;
     }
 
-    public UUID getSessionShellId() {
-        return sessionShellId;
+    public String getTerminalIdentifier(){
+        return this.sessionShellId.toString()+"-cmd-"+this.commandOrdinal;
     }
 
-    public String generateTerminalIdentifier(int commandOrdinal){
-        return this.sessionShellId.toString()+"-cmd-"+commandOrdinal;
+    public String getCommandStartIdentifier(){
+        return this.getTerminalIdentifier()+"-start";
     }
 
-    public String getCommandStartIdentifier(int commandOrdinal){
-        return this.generateTerminalIdentifier(commandOrdinal)+"-start";
+    public String getCommandEndIdentifier(){
+        return this.getTerminalIdentifier()+"-end";
     }
 
-    public String getCommandEndIdentifier(int commandOrdinal){
-        return this.generateTerminalIdentifier(commandOrdinal)+"-end";
+    public void signalCommandFinished(){
+        this.commandOutputFinished.signalAll();
     }
 
-    public int getCommandOrdinal() {
-        return commandOrdinal;
-    }
-
-    public Lock getCommandLock() {
-        return commandLock;
-    }
-
-    public Condition getCommandOutputClear() {
-        return commandOutputClear;
-    }
-
-    public Condition getCommandOutputFinished() {
-        return commandOutputFinished;
-    }
-
-    public ProcessStreamWrapper getProcessOutput() {
-        return processOutput;
-    }
-
-    public ProcessStreamWrapper getProcessErrors() {
-        return processErrors;
+    public ProcessStreamWrapper getProcessOutputAndErrors() {
+        return processOutputAndErrors;
     }
 
     @Override
     public void close() throws IOException {
-        processInput.close();
+        this.process.destroy();
+        this.processInput.close();
+        logger.info("Session " +  this.sessionShellId.toString() + " has been closed");
     }
 }

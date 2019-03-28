@@ -13,10 +13,10 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.util.concurrent.*;
 
-public class SessionEngine {
+public class SessionEngine implements Closeable{
     private static Logger logger = Logger.getLogger(SessionEngine.class);
-    private ProcessBuilder builder = new ProcessBuilder();
     private static SessionEngine engineInstance;
+    private ProcessBuilder builder = new ProcessBuilder().redirectErrorStream(true); //Creates shell processes, with their error stream merged into their output stream
     private final ExecutorService workerPool = Executors.newCachedThreadPool();
 
     private SessionEngine(){}
@@ -30,6 +30,10 @@ public class SessionEngine {
     }
 
     public ExpectedOutcome executeOperation(Operation engineOperation) {
+        if(this.workerPool.isShutdown()){
+            return ExpectedOutcome.executionError("Session engine has been shut down");
+        }
+
         if(engineOperation == null || engineOperation.getExecutionBlock() == null){
             return ExpectedOutcome.defaultOutcome();
         }
@@ -72,11 +76,13 @@ public class SessionEngine {
 
     private Session createSession() throws IOException{
         Process process = builder.command("/bin/bash").start();
-
         Session session = new Session(process);
-        Future<Boolean> sessionOutput = workerPool.submit(session.getProcessOutput());
-        Future<Boolean> sessionErrors = workerPool.submit(session.getProcessErrors());
-
+        Future<Boolean> sessionOutput = workerPool.submit(session.getProcessOutputAndErrors());
         return session;
+    }
+
+    @Override
+    public void close() {
+        this.workerPool.shutdownNow();
     }
 }

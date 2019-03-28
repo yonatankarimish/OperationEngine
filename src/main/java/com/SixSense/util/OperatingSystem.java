@@ -49,7 +49,7 @@ public class OperatingSystem {
     //Executes an entire script, one command after the other.
     //Commands are independent of each other. i.e. the operation is not atomic or transactional
     //Returns an OperationResult with the output and error returned by the operating system for the entire script
-    public synchronized OperationResult runScript(List<String> scriptCommands) throws Exception {
+    public OperationResult runScript(List<String> scriptCommands) throws Exception {
         String referenceToScript = "[shell-script], starting with: "+ scriptCommands.get(0);
         ExecutorService resultReader = null;
 
@@ -64,8 +64,10 @@ public class OperatingSystem {
                 //This implementation currently writes the command and then flushes it. If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
                 //Keep your commands short
                 for(String command : scriptCommands){
+                    logger.info("Writing command "+command);
                     writer.write(command);
                     writer.flush();
+                    Thread.sleep(3000);
                 }
             }catch (IOException e){
                 logger.error("Failed to write command " + lastCommand + ". Caused by: ", e);
@@ -88,6 +90,36 @@ public class OperatingSystem {
         }finally {
             if(resultReader != null){
                 resultReader.shutdown();
+            }
+        }
+    }
+
+    //class used for asynchronous clearing of output and error buffers
+    private class ResultReader implements Callable<List<String>> {
+        private InputStream processStream;
+
+        public ResultReader(InputStream processStream) {
+            this.processStream = processStream;
+        }
+
+        @Override
+        public List<String> call() throws ExecutionException {
+            List<String> result = new ArrayList<>();
+            String lastResponse = "[not yet read]";
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(processStream))){
+                do {
+                    lastResponse = reader.readLine();
+                    logger.info("Just read " + lastResponse);
+                    if(lastResponse != null) {
+                        result.add(lastResponse);
+                    }
+                } while (lastResponse != null);
+
+                return result;
+            } catch (IOException e){
+                logger.error("Failed to process command " + lastResponse + ". Caused by: ", e);
+                throw new ExecutionException(e);
             }
         }
     }
