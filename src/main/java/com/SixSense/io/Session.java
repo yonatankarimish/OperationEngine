@@ -1,6 +1,7 @@
 package com.SixSense.io;
 
 
+import com.SixSense.data.Outcomes.CommandType;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.Outcomes.ExpectedOutcome;
 import com.SixSense.util.ExpectedOutcomeResolver;
@@ -23,7 +24,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Session implements Closeable {
     private static Logger logger = Logger.getLogger(Session.class);
 
-    private final Process process; //The operating system process to which we write
+    private final Process localProcess; //The operating system process to which we write local commands
+    private final Process remoteProcess; //The operating system process to which we write remote commands (ideally - after a connect block)
     private final List<String> commandOutput; //Line separated response from both the process output stream and the process error stream.
     private Lock commandLock =  new ReentrantLock();
     private final Condition commandOutputFinished = commandLock.newCondition();
@@ -31,20 +33,36 @@ public class Session implements Closeable {
     private final UUID sessionShellId = UUID.randomUUID();
     private int commandOrdinal = 0;
 
-    private final BufferedWriter processInput;
-    private final ProcessStreamWrapper processOutputAndErrors;
+    private final BufferedWriter localProcessInput;
+    private final BufferedWriter remoteProcessInput;
+    private final ProcessStreamWrapper localOutputAndErrors;
+    private final ProcessStreamWrapper remoteOutputAndErrors;
 
 
-    public Session(Process process){
-        this.process = process;
+    public Session(Process localProcess, Process remoteProcess){
+        this.localProcess = localProcess;
+        this.remoteProcess = remoteProcess;
         this.commandOutput = new ArrayList<>();
 
-        this.processInput = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-        this.processOutputAndErrors = new ProcessStreamWrapper(process.getInputStream(), this, this.commandOutput);
+        this.localProcessInput = new BufferedWriter(new OutputStreamWriter(localProcess.getOutputStream()));
+        this.remoteProcessInput = new BufferedWriter(new OutputStreamWriter(remoteProcess.getOutputStream()));
+        this.localOutputAndErrors = new ProcessStreamWrapper(localProcess.getInputStream(), this, this.commandOutput);
+        this.remoteOutputAndErrors = new ProcessStreamWrapper(remoteProcess.getInputStream(), this, this.commandOutput);
         logger.info("Session " +  this.sessionShellId.toString() + " has been created");
     }
 
+
     public ExpectedOutcome executeCommand(Command command) throws IOException{
+        if(command.getCommandType().equals(CommandType.LOCAL)){
+            return executeCommand(command, localProcessInput);
+        }else if(command.getCommandType().equals(CommandType.REMOTE)){
+            return executeCommand(command, remoteProcessInput);
+        }else{
+            return ExpectedOutcome.executionError(MessageLiterals.InvalidCommandParameters);
+        }
+    }
+
+    private ExpectedOutcome executeCommand(Command command, BufferedWriter writeToProcess) throws IOException{
         //In order to determine when our command has finished execution, echo the session identifier before and after the command output
         this.commandOrdinal++;
         String commandEnd = getCommandEndIdentifier();
@@ -56,9 +74,9 @@ public class Session implements Closeable {
         * Keep your commands short*/
         this.commandLock.lock();
         //logger.debug(this.getTerminalIdentifier() + " session acquired lock");
-        processInput.write(command.getCommandText() + MessageLiterals.LineBreak);
-        processInput.write("echo " + commandEnd + MessageLiterals.LineBreak);
-        processInput.flush();
+        writeToProcess.write(command.getCommandText() + MessageLiterals.LineBreak);
+        writeToProcess.write("echo " + commandEnd + MessageLiterals.LineBreak);
+        writeToProcess.flush();
 
         //Wait for the process wrappers to finish writing the current command output
         try {
@@ -118,14 +136,20 @@ public class Session implements Closeable {
         return commandOutputFinished;
     }
 
-    public ProcessStreamWrapper getProcessOutputAndErrors() {
-        return processOutputAndErrors;
+    public ProcessStreamWrapper getLocalOutputAndErrors() {
+        return localOutputAndErrors;
+    }
+
+    public ProcessStreamWrapper getRemoteOutputAndErrors() {
+        return remoteOutputAndErrors;
     }
 
     @Override
     public void close() throws IOException {
-        this.process.destroy();
-        this.processInput.close();
+        this.localProcess.destroy();
+        this.remoteProcess.destroy();
+        this.localProcessInput.close();
+        this.remoteProcessInput.close();
         logger.info("Session " +  this.sessionShellId.toString() + " has been closed");
     }
 }

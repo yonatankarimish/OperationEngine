@@ -73,6 +73,26 @@ public class OperationMocks {
                 .withExecutionBlock(parentBlock);
     }
 
+    public static ICommand sshConnect(String remoteHost, String username, String password){
+        Command command = new Command()
+                .withCommandType(CommandType.REMOTE)
+                .withCommandText("ifconfig | grep 'docker'")
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(10);
+
+        ExpectedOutcome shouldContainDockerInterface = new ExpectedOutcome()
+                .withOutcome(ResultStatus.SUCCESS)
+                .withMessage("The correct interface name was found")
+                .withExpectedOutput("docker")
+                .withBinaryRelation(BinaryRelation.CONTAINS);
+
+        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
+        expectedOutcomes.add(shouldContainDockerInterface);
+        command.setExpectedOutcomes(expectedOutcomes);
+
+        return command;
+    }
+
 
     public static ICommand dockerInterface(){
         Command command = new Command()

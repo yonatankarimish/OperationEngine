@@ -91,9 +91,11 @@ public class SessionEngine implements Closeable{
     }
 
     private Session createSession() throws IOException{
-        Process process = builder.command("/bin/bash").start();
-        Session session = new Session(process);
-        Future<Boolean> sessionOutput = workerPool.submit(session.getProcessOutputAndErrors());
+        Process localProcess = builder.command("/bin/bash").start();
+        Process remoteProcess = builder.command("/bin/bash").start();
+        Session session = new Session(localProcess, remoteProcess);
+        Future<Boolean> sessionLocalOutput = workerPool.submit(session.getLocalOutputAndErrors());
+        Future<Boolean> sessionRemoteOutput = workerPool.submit(session.getRemoteOutputAndErrors());
         return session;
     }
 
