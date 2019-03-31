@@ -55,7 +55,7 @@ public class Session implements Closeable {
         * If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
         * Keep your commands short*/
         this.commandLock.lock();
-        logger.debug(this.getTerminalIdentifier() + " session acquired lock");
+        //logger.debug(this.getTerminalIdentifier() + " session acquired lock");
         processInput.write(command.getCommandText() + MessageLiterals.LineBreak);
         processInput.write("echo " + commandEnd + MessageLiterals.LineBreak);
         processInput.flush();
@@ -63,12 +63,12 @@ public class Session implements Closeable {
         //Wait for the process wrappers to finish writing the current command output
         try {
             Thread.sleep(command.getMinimalSecondsToResponse() * 1000);
-            logger.debug(this.getTerminalIdentifier() + " session started command wait");
+            //logger.debug(this.getTerminalIdentifier() + " session started command wait");
             this.commandOutputFinished.await((long)(command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()), TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.warn("Session " + this.sessionShellId.toString() + " interrupted while waiting for command " + this.commandOrdinal + "to return.", e);
         }
-        logger.debug(this.getTerminalIdentifier() + " session finished command wait");
+        //logger.debug(this.getTerminalIdentifier() + " session finished command wait");
 
         //Clear the command identification buffers from the command output, and create an immutable copy to pass around
         //Then clear the current command output, and signal to the process wrappers that they may proceed to write the next command
@@ -82,7 +82,7 @@ public class Session implements Closeable {
             }
         }finally {
             this.commandLock.unlock();
-            logger.debug(this.getTerminalIdentifier() + " session released lock");
+            //logger.debug(this.getTerminalIdentifier() + " session released lock");
         }
 
         /*Check if the command output matches any of our expected outcomes

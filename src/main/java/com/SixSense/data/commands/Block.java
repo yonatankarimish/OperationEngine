@@ -46,7 +46,7 @@ public class Block extends AbstractCommand implements ICommand {
         Iterator<ICommand> commandIterator = this.getCommandIterator();
 
         //If the last available command has been returned, return null
-        if(hasExhaustedCommands(commandIterator)){
+        if(hasExhaustedCommands(this)){
             return null;
         }
 
@@ -79,22 +79,22 @@ public class Block extends AbstractCommand implements ICommand {
     }
 
     public boolean hasExhaustedCommands(){
-        return hasExhaustedCommands(this.getCommandIterator());
+        return hasExhaustedCommands(this);
     }
 
-    private boolean hasExhaustedCommands(Iterator<ICommand> commandIterator){
-        if(!commandIterator.hasNext()){
+    private boolean hasExhaustedCommands(Block block){
+        if(!block.getCommandIterator().hasNext()){
             boolean childExhaustedCommands = true;
-            if(this.currentCommand instanceof Block){
-                childExhaustedCommands = hasExhaustedCommands(((Block) this.currentCommand).getCommandIterator());
+            if(block.currentCommand instanceof Block){
+                childExhaustedCommands = ((Block)block.currentCommand).hasExhaustedCommands();
             }
 
             if(!childExhaustedCommands){
                 //If the current command is a block command, which has not exhausted it's own child commands, return false
                 return false;
             }else if(internalCounter < repeatCount) {
-                //If this block is a repeating block, which has not yet finished repeating, reset the current loop and return false
-                this.resetNextCommandLoop();
+                //If the passed block is a repeating block, which has not yet finished repeating, reset the current loop and return false
+                block.resetNextCommandLoop();
                 return false;
             }
             return true;

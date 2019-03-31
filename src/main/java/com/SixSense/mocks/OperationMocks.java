@@ -1,12 +1,7 @@
 package com.SixSense.mocks;
 
-import com.SixSense.data.Outcomes.BinaryRelation;
-import com.SixSense.data.Outcomes.CommandType;
-import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.ResultStatus;
-import com.SixSense.data.commands.Command;
-import com.SixSense.data.commands.ICommand;
-import com.SixSense.data.commands.Operation;
+import com.SixSense.data.Outcomes.*;
+import com.SixSense.data.commands.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +43,36 @@ public class OperationMocks {
                 .withOperationName("Network Details - Planned failure")
                 .withExecutionBlock(localBlock);
     }
+
+    public static Operation nestedBlock(){
+        Block parentBlock = new Block();
+        for(int i=1; i<=3; i++){
+            Block commandBlock = new Block();
+            ExpectedOutcome blockOutcome = ExpectedOutcome.defaultOutcome().withMessage("block-"+i+" completed successfully");
+
+            List<ExpectedOutcome> blockOutcomes = new ArrayList<>();
+            blockOutcomes.add(blockOutcome);
+            parentBlock.setExpectedOutcomes(blockOutcomes);
+
+            for(int j=1; j<=3; j++){
+                ICommand blockPart =  blockPartCommand("block-"+i, "command-"+j);
+                commandBlock.addCommands(blockPart);
+            }
+            parentBlock.addCommands(commandBlock);
+        }
+
+
+        ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome().withMessage("Parent block completed successfully");
+        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
+        expectedOutcomes.add(defaultOutcome);
+        parentBlock.setExpectedOutcomes(expectedOutcomes);
+
+        return new Operation()
+                .withVPV("Linux generic centos6")
+                .withOperationName("Block testing - three nested blocks, three commands each")
+                .withExecutionBlock(parentBlock);
+    }
+
 
     public static ICommand dockerInterface(){
         Command command = new Command()
@@ -156,14 +181,43 @@ public class OperationMocks {
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
-        ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
+        ExpectedOutcome shouldNeverResolve = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("Docker interface should not be here")
                 .withExpectedOutput("docker")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainLocalIp);
+        expectedOutcomes.add(shouldNeverResolve);
+        command.setExpectedOutcomes(expectedOutcomes);
+
+        return command;
+    }
+
+    public static ICommand blockPartCommand(String blockID, String commandID){
+        ICommand command = new Command()
+                .withCommandType(CommandType.REMOTE)
+                .withCommandText("echo " + blockID + " " + commandID)
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(10)
+                .withOutcomeAggregation(LogicalCondition.AND)
+                .withAggregatedOutcomeMessage("Command params found in response");
+
+        ExpectedOutcome shouldMatchBlockId = new ExpectedOutcome()
+                .withOutcome(ResultStatus.SUCCESS)
+                .withMessage("Docker interface should not be here")
+                .withExpectedOutput(blockID)
+                .withBinaryRelation(BinaryRelation.CONTAINS);
+
+        ExpectedOutcome shouldMatchCommandId = new ExpectedOutcome()
+                .withOutcome(ResultStatus.SUCCESS)
+                .withMessage("Docker interface should not be here")
+                .withExpectedOutput(commandID)
+                .withBinaryRelation(BinaryRelation.CONTAINS);
+
+        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
+        expectedOutcomes.add(shouldMatchBlockId);
+        expectedOutcomes.add(shouldMatchCommandId);
         command.setExpectedOutcomes(expectedOutcomes);
 
         return command;

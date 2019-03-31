@@ -42,7 +42,7 @@ public class SessionEngine implements Closeable{
             ICommand executionBlock = engineOperation.getExecutionBlock();
             ExpectedOutcome sessionResult = this.executeBlock(session, executionBlock);
             return expectedResult(sessionResult, engineOperation);
-        }catch (IOException e){
+        }catch (Exception e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
             return ExpectedOutcome.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
         }

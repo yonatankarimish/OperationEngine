@@ -28,7 +28,7 @@ public class Main {
 
         SessionEngine sessionEngine = SessionEngine.getInstance();
 
-        Operation simpleLocalBlock = OperationMocks.simpleLocalOperation();
+        /*Operation simpleLocalBlock = OperationMocks.simpleLocalOperation();
         ExpectedOutcome simpleLocalBlockOperationResult = sessionEngine.executeOperation(simpleLocalBlock);
         System.out.println("Operation " + simpleLocalBlock.getFullOperationName() + " Completed with result " + simpleLocalBlockOperationResult.getOutcome());
         System.out.println("Result Message: " + simpleLocalBlockOperationResult.getMessage());
@@ -36,7 +36,12 @@ public class Main {
         Operation simpleFailingBlock = OperationMocks.simpleFailingOperation();
         ExpectedOutcome simpleFailingBlockOperationResult = sessionEngine.executeOperation(simpleFailingBlock);
         System.out.println("Operation " + simpleFailingBlock.getFullOperationName() + " Completed with result " + simpleFailingBlockOperationResult.getOutcome());
-        System.out.println("Result Message: " + simpleFailingBlockOperationResult.getMessage());
+        System.out.println("Result Message: " + simpleFailingBlockOperationResult.getMessage());*/
+
+        Operation blockTesting = OperationMocks.nestedBlock();
+        ExpectedOutcome blockTestingOperationResult = sessionEngine.executeOperation(blockTesting);
+        System.out.println("Operation " + blockTesting.getFullOperationName() + " Completed with result " + blockTestingOperationResult.getOutcome());
+        System.out.println("Result Message: " + blockTestingOperationResult.getMessage());
 
         sessionEngine.close();
 

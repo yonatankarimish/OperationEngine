@@ -39,11 +39,11 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
                     if (lastResponse.equals(this.session.getCommandEndIdentifier())) {
                         try{
                             this.session.getCommandLock().lock();
-                            logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
+                            //logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
                             this.session.getCommandOutputFinished().signalAll();
                         }finally {
                             this.session.getCommandLock().unlock();
-                            logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
+                            //logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
                         }
                     }
                 }
