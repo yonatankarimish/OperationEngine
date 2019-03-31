@@ -77,7 +77,7 @@ public class Session implements Closeable {
         try {
             synchronized (this.commandOutput) {
                 timeoutOccured = !this.commandOutput.remove(commandEnd); //the remove() method returns true if the end buffer existed before it was cleared
-                immutableOutput = Collections.unmodifiableList(this.commandOutput);
+                immutableOutput = new ArrayList<>(Collections.unmodifiableList(this.commandOutput));
                 this.commandOutput.clear();
             }
         }finally {
@@ -85,25 +85,21 @@ public class Session implements Closeable {
             logger.debug(this.getTerminalIdentifier() + " session released lock");
         }
 
-        ExpectedOutcome commandResult;
+        /*Check if the command output matches any of our expected outcomes
+         * If a match is found, return the corresponding result for that expected outcome.
+         * If no expected outcome achieved (or none exist), return CommandResult.SUCCESS to progress to the next command*/
         if(timeoutOccured){
             //If a timeout occured, the command failed to execute and the method will return a failure
-            commandResult = ExpectedOutcome.executionError(MessageLiterals.TimeoutInCommand);
-        }else{
-            /*Check if the command output matches any of our expected outcomes
-            * If a match is found, return the corresponding result for that expected outcome.
-            * If no expected outcome achieved (or none exist), return CommandResult.SUCCESS to progress to the next command*/
-            commandResult = ExpectedOutcome.defaultOutcome();
-            for(ExpectedOutcome possibleOutcome : command.getExpectedOutcomes()){
-                ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.ResolveExpectedOutcome(immutableOutput, possibleOutcome);
-                if(resolvedOutcome.isResolved()){
-                    commandResult = resolvedOutcome;
-                    break;
-                }
+            return ExpectedOutcome.executionError(MessageLiterals.TimeoutInCommand);
+        }else if(command.getExpectedOutcomes().isEmpty()){
+            return ExpectedOutcome.defaultOutcome();
+        }else {
+            ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(immutableOutput, command.getExpectedOutcomes(), command.getOutcomeAggregation());
+            if(resolvedOutcome.weakEquals(ExpectedOutcome.defaultOutcome()) && command.getOutcomeAggregation().isAggregating()){
+                resolvedOutcome.setMessage(command.getAggregatedOutcomeMessage());
             }
+            return resolvedOutcome;
         }
-
-        return commandResult;
     }
 
     String getTerminalIdentifier(){

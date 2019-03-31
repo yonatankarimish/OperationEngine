@@ -1,13 +1,58 @@
 package com.SixSense.util;
 
-import com.SixSense.data.Outcomes.BinaryRelation;
 import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.ResultStatus;
+import com.SixSense.data.Outcomes.LogicalCondition;
 
 import java.util.List;
 
+import static com.SixSense.util.MessageLiterals.CommandDidNotReachOutcome;
+
 public class ExpectedOutcomeResolver {
-    public static ExpectedOutcome ResolveExpectedOutcome(List<String> output, ExpectedOutcome expectedOutcome){
+    public static ExpectedOutcome resolveExpectedOutcome(List<String> commandOutout, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation){
+        switch (outcomeAggregation) {
+            case OR:{
+                for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
+                    ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(commandOutout, possibleOutcome);
+                    if (resolvedOutcome.isResolved()) {
+                        return resolvedOutcome;
+                    }
+                }
+                return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
+            }
+            case NOR:{
+                for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
+                    ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(commandOutout, possibleOutcome);
+                    if (resolvedOutcome.isResolved()) {
+                        return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
+                    }
+                }
+                return ExpectedOutcome.defaultOutcome();
+            }
+            case AND:{
+                for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
+                    ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(commandOutout, possibleOutcome);
+                    if (!resolvedOutcome.isResolved()) {
+                        return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
+                    }
+                }
+                return ExpectedOutcome.defaultOutcome();
+            }
+            case NAND:{
+                for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
+                    ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(commandOutout, possibleOutcome);
+                    if (!resolvedOutcome.isResolved()) {
+                        return resolvedOutcome.withOutcome(resolvedOutcome.getOutcome());
+                    }
+                }
+                return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
+            }
+            default:{
+                return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
+            }
+        }
+    }
+    
+    private static ExpectedOutcome resolveExpectedOutcome(List<String> output, ExpectedOutcome expectedOutcome){
         try{
             switch (expectedOutcome.getBinaryRelation()){
                 case EQUALS: return expectEquals(output, expectedOutcome);
@@ -36,11 +81,11 @@ public class ExpectedOutcomeResolver {
     }
 
     private static ExpectedOutcome expectContains(List<String> output, ExpectedOutcome expectedOutcome){
-        return expectedOutcome.withResolved(output.contains(expectedOutcome.getExpectedOutput()));
+        return expectedOutcome.withResolved(getStringRepresentation(output).contains(expectedOutcome.getExpectedOutput()));
     }
 
     private static ExpectedOutcome expectDoesNotContain(List<String> output, ExpectedOutcome expectedOutcome){
-        return expectedOutcome.withResolved(!output.contains(expectedOutcome.getExpectedOutput()));
+        return expectedOutcome.withResolved(!getStringRepresentation(output).contains(expectedOutcome.getExpectedOutput()));
     }
 
     private static ExpectedOutcome expectContainedBy(List<String> output, ExpectedOutcome expectedOutcome){

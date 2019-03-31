@@ -1,5 +1,7 @@
 package com.SixSense.data.Outcomes;
 
+import java.util.Objects;
+
 public class ExpectedOutcome {
     private boolean resolved; //Did the expected outcome turn out to be true?
     private ResultStatus outcome; //If the expected outcome has been resolved, what should be the outcome of the command?
@@ -105,6 +107,26 @@ public class ExpectedOutcome {
     public ExpectedOutcome withBinaryRelation(BinaryRelation binaryRelation) {
         this.binaryRelation = binaryRelation;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        else if (other == null || getClass() != other.getClass()) {
+            return false;
+        }else {
+            ExpectedOutcome otherOutcome = (ExpectedOutcome) other;
+            return weakEquals(otherOutcome) &&
+                    Objects.equals(message, otherOutcome.message) &&
+                    Objects.equals(expectedOutput, otherOutcome.expectedOutput) &&
+                    binaryRelation == otherOutcome.binaryRelation;
+        }
+    }
+
+    public boolean weakEquals(ExpectedOutcome otherOutcome) {
+        return this.resolved == otherOutcome.resolved && this.outcome == otherOutcome.outcome;
     }
 
     @Override

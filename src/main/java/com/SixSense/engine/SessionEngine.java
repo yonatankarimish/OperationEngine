@@ -40,7 +40,8 @@ public class SessionEngine implements Closeable{
 
         try (Session session = this.createSession()) {
             ICommand executionBlock = engineOperation.getExecutionBlock();
-            return this.executeBlock(session, executionBlock);
+            ExpectedOutcome sessionResult = this.executeBlock(session, executionBlock);
+            return expectedResult(sessionResult, engineOperation);
         }catch (IOException e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
             return ExpectedOutcome.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
@@ -64,7 +65,7 @@ public class SessionEngine implements Closeable{
                 }
             }
 
-            return progressiveResult;
+            return expectedResult(progressiveResult, executionBlock);
         }else{
             return ExpectedOutcome.executionError(MessageLiterals.InvalidExecutionBlock);
         }
@@ -72,6 +73,21 @@ public class SessionEngine implements Closeable{
 
     private ExpectedOutcome executeCommand(Session session, Command currentCommand) throws IOException{
         return session.executeCommand(currentCommand);
+    }
+
+    private ExpectedOutcome expectedResult(ExpectedOutcome achievedResult, ICommand parent){
+        /*If the result of executing the block was expected by the parent (i.e. they are equal in the weak sense), override it with the parent result
+         * Otherwise, return the result as is was returned from the executeBlock() method*/
+        if(parent.getExpectedOutcomes() == null){
+            return achievedResult;
+        }
+
+        for(ExpectedOutcome expectedOutcome : parent.getExpectedOutcomes()){
+            if(expectedOutcome.weakEquals(achievedResult)){
+                return expectedOutcome;
+            }
+        }
+        return achievedResult;
     }
 
     private Session createSession() throws IOException{

@@ -28,14 +28,31 @@ public class OperationMocks {
 
         return new Operation()
                 .withVPV("Linux generic centos6")
-                .withOperationName("Network Details")
+                .withOperationName("Network Details - Simple")
+                .withExecutionBlock(localBlock);
+    }
+
+    public static Operation simpleFailingOperation(){
+        ICommand localBlock =  dockerInterface()
+                .chainCommands(commandWithExpectedOutcomeNotReached());
+
+        ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome()
+                .withMessage("Completed successfully");
+
+        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
+        expectedOutcomes.add(defaultOutcome);
+        localBlock.setExpectedOutcomes(expectedOutcomes);
+
+        return new Operation()
+                .withVPV("Linux generic centos6")
+                .withOperationName("Network Details - Planned failure")
                 .withExecutionBlock(localBlock);
     }
 
     public static ICommand dockerInterface(){
         Command command = new Command()
                 .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig | grep 'docker';")
+                .withCommandText("ifconfig | grep 'docker'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
@@ -55,7 +72,7 @@ public class OperationMocks {
     public static ICommand eth0Interface(){
         Command command = new Command()
                 .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1;")
+                .withCommandText("ifconfig | grep 'eth0'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
@@ -75,7 +92,7 @@ public class OperationMocks {
     public static ICommand localIp(){
         Command command = new Command()
                 .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1;")
+                .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
@@ -124,6 +141,26 @@ public class OperationMocks {
                 .withMessage("The correct IP address is defined for the interface")
                 .withExpectedOutput("1000")
                 .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO);
+
+        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
+        expectedOutcomes.add(shouldContainLocalIp);
+        command.setExpectedOutcomes(expectedOutcomes);
+
+        return command;
+    }
+
+    public static ICommand commandWithExpectedOutcomeNotReached(){
+        Command command = new Command()
+                .withCommandType(CommandType.REMOTE)
+                .withCommandText("ifconfig eth0 | grep 'TX bytes'")
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(10);
+
+        ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
+                .withOutcome(ResultStatus.SUCCESS)
+                .withMessage("Docker interface should not be here")
+                .withExpectedOutput("docker")
+                .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainLocalIp);

@@ -2,26 +2,35 @@ package com.SixSense.data.commands;
 
 import com.SixSense.data.Outcomes.CommandType;
 import com.SixSense.data.Outcomes.ExpectedOutcome;
+import com.SixSense.data.Outcomes.LogicalCondition;
 import com.SixSense.util.BlockUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class Command implements ICommand{
+public class Command extends AbstractCommand implements ICommand{
     private CommandType commandType;
     private String commandText;
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
-    private List<ExpectedOutcome> expectedOutcomes;
 
     public Command() {
+        super();
+        this.commandType = CommandType.REMOTE;
+        this.commandText = "";
+        this.minimalSecondsToResponse = 0;
+        this.secondsToTimeout = 10;
+        this.expectedOutcomes = new ArrayList<>();
+        this.outcomeAggregation = LogicalCondition.OR;
+        this.aggregatedOutcomeMessage = "";
     }
 
-    public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExpectedOutcome> expectedOutcomes) {
+    public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         this.commandType = commandType;
         this.commandText = commandText;
         this.minimalSecondsToResponse = minimalTimeToResponse;
         this.secondsToTimeout = secondsToTimeout;
-        this.expectedOutcomes = expectedOutcomes;
     }
 
     public ICommand chainCommands(ICommand additional){
@@ -81,22 +90,6 @@ public class Command implements ICommand{
     }
 
     @Override
-    public List<ExpectedOutcome> getExpectedOutcomes() {
-        return expectedOutcomes;
-    }
-
-    @Override
-    public void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-    }
-
-    @Override
-    public Command withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-        return this;
-    }
-
-    @Override
     public String toString() {
         return "Command{" +
                 "commandType=" + commandType +
@@ -104,6 +97,8 @@ public class Command implements ICommand{
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
                 ", expectedOutcomes=" + expectedOutcomes +
+                ", outcomeAggregation=" + outcomeAggregation +
+                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
                 '}';
     }
 }

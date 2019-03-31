@@ -27,12 +27,19 @@ public class Main {
         System.out.println("Starting now");
 
         SessionEngine sessionEngine = SessionEngine.getInstance();
+
         Operation simpleLocalBlock = OperationMocks.simpleLocalOperation();
-        ExpectedOutcome operationResult = sessionEngine.executeOperation(simpleLocalBlock);
+        ExpectedOutcome simpleLocalBlockOperationResult = sessionEngine.executeOperation(simpleLocalBlock);
+        System.out.println("Operation " + simpleLocalBlock.getFullOperationName() + " Completed with result " + simpleLocalBlockOperationResult.getOutcome());
+        System.out.println("Result Message: " + simpleLocalBlockOperationResult.getMessage());
+
+        Operation simpleFailingBlock = OperationMocks.simpleFailingOperation();
+        ExpectedOutcome simpleFailingBlockOperationResult = sessionEngine.executeOperation(simpleFailingBlock);
+        System.out.println("Operation " + simpleFailingBlock.getFullOperationName() + " Completed with result " + simpleFailingBlockOperationResult.getOutcome());
+        System.out.println("Result Message: " + simpleFailingBlockOperationResult.getMessage());
 
         sessionEngine.close();
-        System.out.println("Operation " + simpleLocalBlock.getFullOperationName() + " Completed with result " + operationResult.getOutcome());
-        System.out.println("Result Message: " + operationResult.getMessage());
+
 
     }
 }

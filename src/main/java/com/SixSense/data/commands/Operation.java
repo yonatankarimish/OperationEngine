@@ -1,23 +1,33 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.Outcomes.ExpectedOutcome;
+import com.SixSense.data.Outcomes.LogicalCondition;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class Operation implements ICommand {
+public class Operation extends AbstractCommand implements ICommand {
     private String VPV;
     private String operationName;
     private ICommand executionBlock;
     private List<ExpectedOutcome> expectedOutcomes;
+    private LogicalCondition outcomeAggregation;
 
     public Operation() {
+        super();
+        this.VPV = "";
+        this.operationName = "";
+        this.expectedOutcomes = new ArrayList<>();
+        this.outcomeAggregation = LogicalCondition.OR;
     }
 
-    public Operation(String VPV, String operationName, ICommand executionBlock, List<ExpectedOutcome> expectedOutcomes) {
+    public Operation(String VPV, String operationName, ICommand executionBlock, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         this.VPV = VPV;
         this.operationName = operationName;
         this.executionBlock = executionBlock;
         this.expectedOutcomes = expectedOutcomes;
+        this.outcomeAggregation = outcomeAggregation;
     }
 
     public String getVPV() {
@@ -73,15 +83,6 @@ public class Operation implements ICommand {
         throw new UnsupportedOperationException("Not yet supported, but it should be...");
     }
 
-    public void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-    }
-
-    public Operation withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-        return this;
-    }
-
     @Override
     public String toString() {
         return "Operation{" +
@@ -89,6 +90,10 @@ public class Operation implements ICommand {
                 ", operationName='" + operationName + '\'' +
                 ", executionBlock=" + executionBlock +
                 ", expectedOutcomes=" + expectedOutcomes +
+                ", outcomeAggregation=" + outcomeAggregation +
+                ", expectedOutcomes=" + expectedOutcomes +
+                ", outcomeAggregation=" + outcomeAggregation +
+                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
                 '}';
     }
 }

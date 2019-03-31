@@ -1,35 +1,35 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.Outcomes.ExpectedOutcome;
+import com.SixSense.data.Outcomes.LogicalCondition;
 import com.SixSense.util.BlockUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Block implements ICommand {
+public class Block extends AbstractCommand implements ICommand {
     private int repeatCount;
     private int internalCounter;
     private List<ICommand> childBlocks;
-    private List<ExpectedOutcome> expectedOutcomes;
 
     private Iterator<ICommand> commandIterator;
     private ICommand currentCommand;
 
     public Block() {
+        super();
         this.internalCounter = 0;
         this.childBlocks = new ArrayList<>();
-        this.expectedOutcomes = new ArrayList<>();
     }
 
-    public Block(int repeatCount, List<ICommand> childBlocks, List<ExpectedOutcome> expectedOutcomes) {
+    public Block(int repeatCount, List<ICommand> childBlocks, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         if(repeatCount < 0){
             throw new IllegalArgumentException("Cannot construct Block with a negative repeat count");
         } else {
             this.internalCounter = 0;
             this.repeatCount = repeatCount;
             this.childBlocks = childBlocks;
-            this.expectedOutcomes = expectedOutcomes;
         }
     }
 
@@ -158,30 +158,16 @@ public class Block implements ICommand {
     }
 
     @Override
-    public List<ExpectedOutcome> getExpectedOutcomes() {
-        return expectedOutcomes;
-    }
-
-    @Override
-    public void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-    }
-
-    @Override
-    public Block withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
-        return this;
-    }
-
-    @Override
     public String toString() {
         return "Block{" +
                 "repeatCount=" + repeatCount +
                 ", internalCounter=" + internalCounter +
                 ", childBlocks=" + childBlocks +
-                ", expectedOutcomes=" + expectedOutcomes +
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +
+                ", expectedOutcomes=" + expectedOutcomes +
+                ", outcomeAggregation=" + outcomeAggregation +
+                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
                 '}';
     }
 }

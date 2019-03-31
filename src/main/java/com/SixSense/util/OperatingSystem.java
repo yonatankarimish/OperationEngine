@@ -65,7 +65,7 @@ public class OperatingSystem {
                 //Keep your commands short
                 for(String command : scriptCommands){
                     logger.info("Writing command "+command);
-                    writer.write(command);
+                    writer.write(command + MessageLiterals.LineBreak);
                     writer.flush();
                     Thread.sleep(3000);
                 }
