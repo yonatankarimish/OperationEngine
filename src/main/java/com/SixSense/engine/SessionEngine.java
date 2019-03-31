@@ -1,7 +1,7 @@
 package com.SixSense.engine;
 
-import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.ResultStatus;
+import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.ResultStatus;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
@@ -11,7 +11,15 @@ import com.SixSense.util.MessageLiterals;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.*;
+
+import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 public class SessionEngine implements Closeable{
     private static Logger logger = Logger.getLogger(SessionEngine.class);
@@ -19,9 +27,24 @@ public class SessionEngine implements Closeable{
     private ProcessBuilder builder = new ProcessBuilder().redirectErrorStream(true); //Creates shell processes, with their error stream merged into their output stream
     private final ExecutorService workerPool = Executors.newCachedThreadPool();
 
-    private SessionEngine(){}
+    private final Map<String, String> sessionProperties = new HashMap<>();
 
-    public static synchronized SessionEngine getInstance(){
+    private SessionEngine() throws IOException{
+        Path path = Paths.get(SessionPropertiesPath);
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            Properties sessionProperties = new Properties();
+            sessionProperties.load(reader);
+
+            for(String field: sessionProperties.stringPropertyNames()){
+                this.sessionProperties.put(field, sessionProperties.getProperty(field));
+            }
+        } catch (IOException e) {
+            logger.error("Session engine failed to initialize - failed to load session properties. Caused by: ", e);
+            throw e;
+        }
+    }
+
+    public static synchronized SessionEngine getInstance() throws IOException{
         if(engineInstance == null){
             engineInstance = new SessionEngine();
             logger.info("SessionEngine Created");
@@ -40,7 +63,9 @@ public class SessionEngine implements Closeable{
 
         try (Session session = this.createSession()) {
             ICommand executionBlock = engineOperation.getExecutionBlock();
+            session.loadSessionDynamicFields(engineOperation);
             ExpectedOutcome sessionResult = this.executeBlock(session, executionBlock);
+            session.removeSessionDynamicFields(engineOperation);
             return expectedResult(sessionResult, engineOperation);
         }catch (Exception e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
@@ -55,6 +80,7 @@ public class SessionEngine implements Closeable{
             Block parentBlock = (Block)executionBlock;
             ExpectedOutcome progressiveResult = ExpectedOutcome.defaultOutcome();
 
+            session.loadSessionDynamicFields(parentBlock);
             while(!parentBlock.hasExhaustedCommands()){
                 Command nextCommand = parentBlock.getNextCommand();
                 if(nextCommand != null){
@@ -64,6 +90,7 @@ public class SessionEngine implements Closeable{
                     }
                 }
             }
+            session.removeSessionDynamicFields(parentBlock);
 
             return expectedResult(progressiveResult, executionBlock);
         }else{
@@ -72,7 +99,10 @@ public class SessionEngine implements Closeable{
     }
 
     private ExpectedOutcome executeCommand(Session session, Command currentCommand) throws IOException{
-        return session.executeCommand(currentCommand);
+        session.loadSessionDynamicFields(currentCommand);
+        ExpectedOutcome progressiveResult = session.executeCommand(currentCommand);
+        session.removeSessionDynamicFields(currentCommand);
+        return progressiveResult;
     }
 
     private ExpectedOutcome expectedResult(ExpectedOutcome achievedResult, ICommand parent){
@@ -94,6 +124,7 @@ public class SessionEngine implements Closeable{
         Process localProcess = builder.command("/bin/bash").start();
         Process remoteProcess = builder.command("/bin/bash").start();
         Session session = new Session(localProcess, remoteProcess);
+        session.loadSessionVariables(this.sessionProperties);
         Future<Boolean> sessionLocalOutput = workerPool.submit(session.getLocalOutputAndErrors());
         Future<Boolean> sessionRemoteOutput = workerPool.submit(session.getRemoteOutputAndErrors());
         return session;

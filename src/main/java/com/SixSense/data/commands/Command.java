@@ -1,9 +1,9 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.Outcomes.CommandType;
-import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.LogicalCondition;
-import com.SixSense.util.BlockUtils;
+import com.SixSense.data.outcomes.CommandType;
+import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.util.CommandUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ public class Command extends AbstractCommand implements ICommand{
     }
 
     public ICommand chainCommands(ICommand additional){
-        return BlockUtils.chainCommands(this, additional);
+        return CommandUtils.chainCommands(this, additional);
     }
 
     public CommandType getCommandType() {

@@ -1,9 +1,14 @@
 package com.SixSense.io;
 
 
-import com.SixSense.data.Outcomes.CommandType;
+import com.SixSense.data.commands.ICommand;
+import com.SixSense.data.outcomes.CommandType;
 import com.SixSense.data.commands.Command;
-import com.SixSense.data.Outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.ResultStatus;
+import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.util.CommandUtils;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
 import org.apache.log4j.Logger;
@@ -12,10 +17,7 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -37,6 +39,8 @@ public class Session implements Closeable {
     private final BufferedWriter remoteProcessInput;
     private final ProcessStreamWrapper localOutputAndErrors;
     private final ProcessStreamWrapper remoteOutputAndErrors;
+
+    private final Map<String, Deque<VariableRetention>> sessionVariables = new HashMap<>();
 
 
     public Session(Process localProcess, Process remoteProcess){
@@ -74,7 +78,8 @@ public class Session implements Closeable {
         * Keep your commands short*/
         this.commandLock.lock();
         //logger.debug(this.getTerminalIdentifier() + " session acquired lock");
-        writeToProcess.write(command.getCommandText() + MessageLiterals.LineBreak);
+        String evaluatedCommand = CommandUtils.evaluateAgainstDynamicFields(command, this.getCurrentSessionVariables());
+        writeToProcess.write(evaluatedCommand + MessageLiterals.LineBreak);
         writeToProcess.write("echo " + commandEnd + MessageLiterals.LineBreak);
         writeToProcess.flush();
 
@@ -106,18 +111,27 @@ public class Session implements Closeable {
         /*Check if the command output matches any of our expected outcomes
          * If a match is found, return the corresponding result for that expected outcome.
          * If no expected outcome achieved (or none exist), return CommandResult.SUCCESS to progress to the next command*/
+        ExpectedOutcome resolvedOutcome;
         if(timeoutOccured){
             //If a timeout occured, the command failed to execute and the method will return a failure
-            return ExpectedOutcome.executionError(MessageLiterals.TimeoutInCommand);
+            resolvedOutcome = ExpectedOutcome.executionError(MessageLiterals.TimeoutInCommand);
         }else if(command.getExpectedOutcomes().isEmpty()){
-            return ExpectedOutcome.defaultOutcome();
+            resolvedOutcome = ExpectedOutcome.defaultOutcome();
         }else {
-            ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(immutableOutput, command.getExpectedOutcomes(), command.getOutcomeAggregation());
+            resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(immutableOutput, command.getExpectedOutcomes(), command.getOutcomeAggregation());
             if(resolvedOutcome.weakEquals(ExpectedOutcome.defaultOutcome()) && command.getOutcomeAggregation().isAggregating()){
                 resolvedOutcome.setMessage(command.getAggregatedOutcomeMessage());
             }
-            return resolvedOutcome;
         }
+
+        if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
+            if(command.getSaveTo().getResultRetention().equals(ResultRetention.Variable)){
+                this.sessionVariables.putIfAbsent(command.getSaveTo().getName(), new ArrayDeque<>());
+                this.sessionVariables.get(command.getSaveTo().getName()).push(command.getSaveTo());
+            }
+        }
+
+        return resolvedOutcome;
     }
 
     String getTerminalIdentifier(){
@@ -142,6 +156,49 @@ public class Session implements Closeable {
 
     public ProcessStreamWrapper getRemoteOutputAndErrors() {
         return remoteOutputAndErrors;
+    }
+
+    public void loadSessionVariables(Map<String, String> properties){
+        for(String propertyName : properties.keySet()){
+            this.sessionVariables.putIfAbsent(propertyName, new ArrayDeque<>());
+            this.sessionVariables.get(propertyName).push(
+                new VariableRetention()
+                    .withName(properties.get(propertyName))
+                    .withResultRetention(ResultRetention.Variable)
+                    .withOverwriteParent(false)
+            );
+        }
+    }
+
+    public void loadSessionDynamicFields(ICommand context){
+        Map<String, String> contextDynamicFields = context.getDynamicFields();
+        loadSessionVariables(contextDynamicFields);
+    }
+
+    public void removeSessionDynamicFields(ICommand context){
+        Map<String, String> contextDynamicFields = context.getDynamicFields();
+        for(String propertyName : contextDynamicFields.keySet()){
+            Deque<VariableRetention> dynamicFieldStack = this.sessionVariables.get(propertyName);
+            VariableRetention topmostVariable = dynamicFieldStack.pop();
+
+            if(topmostVariable.isOverwriteParent()){
+                if(!dynamicFieldStack.isEmpty()) {
+                    dynamicFieldStack.pop();
+                }
+                dynamicFieldStack.push(topmostVariable);
+            }
+        }
+    }
+
+    private Map<String, String> getCurrentSessionVariables(){
+        Map<String, String> currentSessionFields = new HashMap<>();
+        for(String field : this.sessionVariables.keySet()){
+            VariableRetention currentValue = this.sessionVariables.get(field).peek();
+            if(currentValue != null) {
+                currentSessionFields.put(field, currentValue.getName());
+            }
+        }
+        return currentSessionFields;
     }
 
     @Override

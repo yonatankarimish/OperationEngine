@@ -1,7 +1,7 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.LogicalCondition;
+import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.LogicalCondition;
 
 import java.util.ArrayList;
 import java.util.List;

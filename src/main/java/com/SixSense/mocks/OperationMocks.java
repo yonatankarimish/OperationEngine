@@ -1,10 +1,12 @@
 package com.SixSense.mocks;
 
-import com.SixSense.data.Outcomes.*;
+import com.SixSense.data.outcomes.*;
 import com.SixSense.data.commands.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class OperationMocks {
     public static Operation simpleLocalOperation(){
@@ -47,50 +49,47 @@ public class OperationMocks {
     public static Operation nestedBlock(){
         Block parentBlock = new Block();
         for(int i=1; i<=3; i++){
+            String blockID = "block-"+i;
             Block commandBlock = new Block();
             ExpectedOutcome blockOutcome = ExpectedOutcome.defaultOutcome().withMessage("block-"+i+" completed successfully");
+
+            Map<String, String> dynamicFields = new HashMap<>();
+            dynamicFields.put("\\$var.block.id", blockID);
+            commandBlock.addDynamicFields(dynamicFields);
 
             List<ExpectedOutcome> blockOutcomes = new ArrayList<>();
             blockOutcomes.add(blockOutcome);
             parentBlock.setExpectedOutcomes(blockOutcomes);
 
             for(int j=1; j<=3; j++){
-                ICommand blockPart =  blockPartCommand("block-"+i, "command-"+j);
+                String commandID = "command-"+j;
+                ICommand blockPart =  blockPartCommand(blockID, commandID);
                 commandBlock.addCommands(blockPart);
             }
             parentBlock.addCommands(commandBlock);
         }
 
+        Map<String, String> operationDynamicFields = new HashMap<>();
+        operationDynamicFields.put("\\$var.operation.name", "Three nested blocks");
+        operationDynamicFields.put("\\$var.operation.vendor", "Linux");
+        operationDynamicFields.put("\\$var.operation.product", "CentOS");
+        operationDynamicFields.put("\\$var.operation.version", "6");
 
         ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome().withMessage("Parent block completed successfully");
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(defaultOutcome);
         parentBlock.setExpectedOutcomes(expectedOutcomes);
 
-        return new Operation()
+        Operation operation =  new Operation()
                 .withVPV("Linux generic centos6")
                 .withOperationName("Block testing - three nested blocks, three commands each")
                 .withExecutionBlock(parentBlock);
+        operation.addDynamicFields(operationDynamicFields);
+        return operation;
     }
 
     public static ICommand sshConnect(String remoteHost, String username, String password){
-        Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig | grep 'docker'")
-                .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainDockerInterface = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct interface name was found")
-                .withExpectedOutput("docker")
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainDockerInterface);
-        command.setExpectedOutcomes(expectedOutcomes);
-
-        return command;
+        return null;
     }
 
 
@@ -217,21 +216,26 @@ public class OperationMocks {
     public static ICommand blockPartCommand(String blockID, String commandID){
         ICommand command = new Command()
                 .withCommandType(CommandType.REMOTE)
-                .withCommandText("echo " + blockID + " " + commandID)
+                .withCommandText("echo $var.block.id $var.command.id")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
                 .withOutcomeAggregation(LogicalCondition.AND)
                 .withAggregatedOutcomeMessage("Command params found in response");
 
+        Map<String, String> dynamicFields = new HashMap<>();
+        dynamicFields.put("\\$var.block.id", blockID);
+        dynamicFields.put("\\$var.command.id", commandID);
+        command.addDynamicFields(dynamicFields);
+
         ExpectedOutcome shouldMatchBlockId = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("Docker interface should not be here")
+                .withMessage("Block ID has benn matched")
                 .withExpectedOutput(blockID)
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         ExpectedOutcome shouldMatchCommandId = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("Docker interface should not be here")
+                .withMessage("Command ID has benn matched")
                 .withExpectedOutput(commandID)
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 

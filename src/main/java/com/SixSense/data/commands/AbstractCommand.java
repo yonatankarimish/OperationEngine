@@ -1,26 +1,33 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.Outcomes.ExpectedOutcome;
-import com.SixSense.data.Outcomes.LogicalCondition;
+import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.data.retention.VariableRetention;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractCommand implements ICommand{
     protected List<ExpectedOutcome> expectedOutcomes;
     protected LogicalCondition outcomeAggregation;
     protected String aggregatedOutcomeMessage;
 
+    protected Map<String, String> dynamicFields;
+    protected VariableRetention saveTo;
+
     public AbstractCommand(){
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
         this.aggregatedOutcomeMessage = "";
+        this.dynamicFields = new HashMap<>();
+        this.saveTo = new VariableRetention();
     }
 
     public AbstractCommand(List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
         this.expectedOutcomes = expectedOutcomes;
         this.outcomeAggregation = outcomeAggregation;
         this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
+        this.dynamicFields = new HashMap<>();
+        this.saveTo = new VariableRetention();
     }
 
     @Override
@@ -44,10 +51,12 @@ public abstract class AbstractCommand implements ICommand{
         return outcomeAggregation;
     }
 
+    @Override
     public void setOutcomeAggregation(LogicalCondition outcomeAggregation) {
         this.outcomeAggregation = outcomeAggregation;
     }
 
+    @Override
     public AbstractCommand withOutcomeAggregation(LogicalCondition outcomeAggregation) {
         this.outcomeAggregation = outcomeAggregation;
         return this;
@@ -58,12 +67,41 @@ public abstract class AbstractCommand implements ICommand{
         return aggregatedOutcomeMessage;
     }
 
+    @Override
     public void setAggregatedOutcomeMessage(String aggregatedOutcomeMessage) {
         this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
     }
 
+    @Override
     public AbstractCommand withAggregatedOutcomeMessage(String aggregatedOutcomeMessage) {
         this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
+        return this;
+    }
+
+    @Override
+    public Map<String, String> getDynamicFields() {
+        return Collections.unmodifiableMap(this.dynamicFields);
+    }
+
+    @Override
+    public AbstractCommand addDynamicFields(Map<String, String> dynamicFields) {
+        this.dynamicFields.putAll(dynamicFields);
+        return this;
+    }
+
+    @Override
+    public VariableRetention getSaveTo() {
+        return saveTo;
+    }
+
+    @Override
+    public void setSaveTo(VariableRetention saveTo) {
+        this.saveTo = saveTo;
+    }
+
+    @Override
+    public AbstractCommand withSaveTo(VariableRetention saveTo) {
+        this.saveTo = saveTo;
         return this;
     }
 }

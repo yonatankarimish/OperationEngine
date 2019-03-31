@@ -1,4 +1,4 @@
-package com.SixSense.data.Outcomes;
+package com.SixSense.data.outcomes;
 
 import java.util.Objects;
 

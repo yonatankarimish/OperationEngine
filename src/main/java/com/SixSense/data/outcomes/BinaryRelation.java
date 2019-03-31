@@ -1,4 +1,4 @@
-package com.SixSense.data.Outcomes;
+package com.SixSense.data.outcomes;
 
 public enum BinaryRelation {
     EQUALS,
