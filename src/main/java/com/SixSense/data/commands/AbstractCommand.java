@@ -1,5 +1,6 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.outcomes.ExecutionCondition;
 import com.SixSense.data.outcomes.ExpectedOutcome;
 import com.SixSense.data.outcomes.LogicalCondition;
 import com.SixSense.data.retention.VariableRetention;
@@ -9,6 +10,9 @@ import java.util.*;
 public abstract class AbstractCommand implements ICommand{
     protected boolean alreadyExecuted;
 
+    protected List<ExecutionCondition> executionConditions;
+    protected LogicalCondition conditionAggregation;
+
     protected List<ExpectedOutcome> expectedOutcomes;
     protected LogicalCondition outcomeAggregation;
     protected String aggregatedOutcomeMessage;
@@ -16,20 +20,33 @@ public abstract class AbstractCommand implements ICommand{
     protected Map<String, String> dynamicFields;
     protected VariableRetention saveTo;
 
+    /*Try not to pollute with additional constructors
+    * The empty constructor is for using the 'with' design pattern
+    * The parameterized constructor is for conditions and results only */
     public AbstractCommand(){
         this.alreadyExecuted = false;
+
+        this.executionConditions = new ArrayList<>();
+        this.conditionAggregation = LogicalCondition.OR;
+
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
         this.aggregatedOutcomeMessage = "";
+
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
     }
 
-    public AbstractCommand(List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+    public AbstractCommand(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
         this.alreadyExecuted = false;
+
+        this.executionConditions = executionConditions;
+        this.conditionAggregation = conditionAggregation;
+
         this.expectedOutcomes = expectedOutcomes;
         this.outcomeAggregation = outcomeAggregation;
         this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
+
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
     }
@@ -47,6 +64,38 @@ public abstract class AbstractCommand implements ICommand{
     @Override
     public AbstractCommand withAlreadyExecuted(boolean hasBeenExecuted) {
         this.alreadyExecuted = hasBeenExecuted;
+        return this;
+    }
+
+    @Override
+    public List<ExecutionCondition> getExecutionConditions() {
+        return executionConditions;
+    }
+
+    @Override
+    public void setExecutionConditions(List<ExecutionCondition> executionConditions) {
+        this.executionConditions = executionConditions;
+    }
+
+    @Override
+    public AbstractCommand withExecutionConditions(List<ExecutionCondition> executionConditions) {
+        this.executionConditions = executionConditions;
+        return this;
+    }
+
+    @Override
+    public LogicalCondition getConditionAggregation() {
+        return conditionAggregation;
+    }
+
+    @Override
+    public void setConditionAggregation(LogicalCondition conditionAggregation) {
+        this.conditionAggregation = conditionAggregation;
+    }
+
+    @Override
+    public AbstractCommand withConditionAggregation(LogicalCondition conditionAggregation) {
+        this.conditionAggregation = conditionAggregation;
         return this;
     }
 

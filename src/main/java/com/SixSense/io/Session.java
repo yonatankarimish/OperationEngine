@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Session implements Closeable {
     private static Logger logger = Logger.getLogger(Session.class);
 
+    private boolean isClosed = false;
     private final Process localProcess; //The operating system process to which we write local commands
     private final Process remoteProcess; //The operating system process to which we write remote commands (ideally - after a connect block)
     private final List<String> commandOutput; //Line separated response from both the process output stream and the process error stream.
@@ -190,7 +191,7 @@ public class Session implements Closeable {
         }
     }
 
-    private Map<String, String> getCurrentSessionVariables(){
+    public Map<String, String> getCurrentSessionVariables(){
         Map<String, String> currentSessionFields = new HashMap<>();
         for(String field : this.sessionVariables.keySet()){
             VariableRetention currentValue = this.sessionVariables.get(field).peek();
@@ -201,12 +202,17 @@ public class Session implements Closeable {
         return currentSessionFields;
     }
 
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     @Override
     public void close() throws IOException {
         this.localProcess.destroy();
         this.remoteProcess.destroy();
         this.localProcessInput.close();
         this.remoteProcessInput.close();
+        this.isClosed = true;
         logger.info("Session " +  this.sessionShellId.toString() + " has been closed");
     }
 }

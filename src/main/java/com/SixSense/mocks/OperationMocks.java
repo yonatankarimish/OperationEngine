@@ -103,7 +103,7 @@ public class OperationMocks {
         ExpectedOutcome shouldContainDockerInterface = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("The correct interface name was found")
-                .withExpectedOutput("docker")
+                .withExpectedValue("docker")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -123,7 +123,7 @@ public class OperationMocks {
         ExpectedOutcome shouldContainEth0 = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("The correct interface name was found")
-                .withExpectedOutput("eth0")
+                .withExpectedValue("eth0")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -143,7 +143,7 @@ public class OperationMocks {
         ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("The correct IP address is defined for the interface")
-                .withExpectedOutput("172.31.254.65")
+                .withExpectedValue("172.31.254.65")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -163,7 +163,7 @@ public class OperationMocks {
         ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("The correct IP address is defined for the interface")
-                .withExpectedOutput("1000")
+                .withExpectedValue("1000")
                 .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -183,7 +183,7 @@ public class OperationMocks {
         ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("The correct IP address is defined for the interface")
-                .withExpectedOutput("1000")
+                .withExpectedValue("1000")
                 .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -203,7 +203,7 @@ public class OperationMocks {
         ExpectedOutcome shouldNeverResolve = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("Docker interface should not be here")
-                .withExpectedOutput("docker")
+                .withExpectedValue("docker")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
@@ -230,13 +230,13 @@ public class OperationMocks {
         ExpectedOutcome shouldMatchBlockId = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("Block ID has benn matched")
-                .withExpectedOutput(blockID)
+                .withExpectedValue(blockID)
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         ExpectedOutcome shouldMatchCommandId = new ExpectedOutcome()
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("Command ID has benn matched")
-                .withExpectedOutput(commandID)
+                .withExpectedValue(commandID)
                 .withBinaryRelation(BinaryRelation.CONTAINS);
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();

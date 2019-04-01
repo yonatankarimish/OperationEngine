@@ -1,6 +1,7 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.outcomes.CommandType;
+import com.SixSense.data.outcomes.ExecutionCondition;
 import com.SixSense.data.outcomes.ExpectedOutcome;
 import com.SixSense.data.outcomes.LogicalCondition;
 import com.SixSense.util.CommandUtils;
@@ -14,6 +15,9 @@ public class Command extends AbstractCommand implements ICommand{
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
 
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for conditions and results only */
     public Command() {
         super();
         this.commandType = CommandType.REMOTE;
@@ -25,8 +29,8 @@ public class Command extends AbstractCommand implements ICommand{
         this.aggregatedOutcomeMessage = "";
     }
 
-    public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
-        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         this.commandType = commandType;
         this.commandText = commandText;
         this.minimalSecondsToResponse = minimalTimeToResponse;
@@ -97,6 +101,8 @@ public class Command extends AbstractCommand implements ICommand{
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
                 ", alreadyExecuted=" + alreadyExecuted +
+                ", executionConditions=" + executionConditions +
+                ", conditionAggregation=" + conditionAggregation +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +

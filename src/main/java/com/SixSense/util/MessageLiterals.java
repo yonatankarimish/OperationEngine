@@ -15,7 +15,8 @@ public class MessageLiterals {
     public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";
 
     public static final String ExpectedOutcomeNotNumeric = "Expected outcome is not a number";
-    public static final String CommandDidNotReachOutcome = "Command did not reach any of it's expected outcomes";
+    public static final String CommandDidNotMatchConditions = "Command did not match it's execution conditions";
+    public static final String CommandDidNotReachOutcome = "Command did not reach it's expected outcomes";
     public static final String InvalidCommandParameters = "Command has invalid parameters";
     public static final String InvalidExecutionBlock = "Execution block is not a valid block";
     public static final String UnsuportedBinaryRelation = "Expected outcome has an unsupported binary relation";

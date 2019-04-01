@@ -1,5 +1,6 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.outcomes.ExecutionCondition;
 import com.SixSense.data.outcomes.ExpectedOutcome;
 import com.SixSense.data.outcomes.LogicalCondition;
 import com.SixSense.util.CommandUtils;
@@ -16,14 +17,17 @@ public class Block extends AbstractCommand implements ICommand {
     private Iterator<ICommand> commandIterator;
     private ICommand currentCommand;
 
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for conditions and results only */
     public Block() {
         super();
         this.internalCounter = 0;
         this.childBlocks = new ArrayList<>();
     }
 
-    public Block(int repeatCount, List<ICommand> childBlocks, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
-        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public Block(int repeatCount, List<ICommand> childBlocks, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         if(repeatCount < 0){
             throw new IllegalArgumentException("Cannot construct Block with a negative repeat count");
         } else {
@@ -140,6 +144,8 @@ public class Block extends AbstractCommand implements ICommand {
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +
                 ", alreadyExecuted=" + alreadyExecuted +
+                ", executionConditions=" + executionConditions +
+                ", conditionAggregation=" + conditionAggregation +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +

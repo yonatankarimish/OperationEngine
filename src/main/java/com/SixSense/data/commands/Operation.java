@@ -1,5 +1,6 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.outcomes.ExecutionCondition;
 import com.SixSense.data.outcomes.ExpectedOutcome;
 import com.SixSense.data.outcomes.LogicalCondition;
 
@@ -21,8 +22,8 @@ public class Operation extends AbstractCommand implements ICommand {
         this.outcomeAggregation = LogicalCondition.OR;
     }
 
-    public Operation(String VPV, String operationName, ICommand executionBlock, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
-        super(expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public Operation(String VPV, String operationName, ICommand executionBlock, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         this.VPV = VPV;
         this.operationName = operationName;
         this.executionBlock = executionBlock;
@@ -92,6 +93,8 @@ public class Operation extends AbstractCommand implements ICommand {
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", alreadyExecuted=" + alreadyExecuted +
+                ", executionConditions=" + executionConditions +
+                ", conditionAggregation=" + conditionAggregation +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +

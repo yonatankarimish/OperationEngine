@@ -7,6 +7,7 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.io.Session;
+import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
 import org.apache.log4j.Logger;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 
+import static com.SixSense.util.MessageLiterals.CommandDidNotMatchConditions;
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 public class SessionEngine implements Closeable{
@@ -63,11 +65,19 @@ public class SessionEngine implements Closeable{
 
         try (Session session = this.createSession()) {
             ICommand executionBlock = engineOperation.getExecutionBlock();
-            session.loadSessionDynamicFields(engineOperation);
-            ExpectedOutcome sessionResult = this.executeBlock(session, executionBlock);
+            ExpectedOutcome sessionResult;
+
+            if(executionConditionsMet(session, executionBlock)) {
+                session.loadSessionDynamicFields(engineOperation);
+                sessionResult = this.executeBlock(session, executionBlock);
+                session.removeSessionDynamicFields(engineOperation);
+                sessionResult = expectedResult(sessionResult, engineOperation);
+            }else{
+                sessionResult = ExpectedOutcome.skip();
+            }
+
             engineOperation.setAlreadyExecuted(true);
-            session.removeSessionDynamicFields(engineOperation);
-            return expectedResult(sessionResult, engineOperation);
+            return sessionResult;
         }catch (Exception e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
             return ExpectedOutcome.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
@@ -78,22 +88,32 @@ public class SessionEngine implements Closeable{
         if (executionBlock instanceof Command) {
             return this.executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
+            /*the progressive result updates for each of the blocks child commands/blocks
+            * progressive + failure = immediate return
+            * progressive + skip = progressive
+            * progressive + success = success*/
             Block parentBlock = (Block)executionBlock;
             ExpectedOutcome progressiveResult = ExpectedOutcome.defaultOutcome();
 
-            session.loadSessionDynamicFields(parentBlock);
-            while(!parentBlock.hasExhaustedCommands()){
-                ICommand nextCommand = parentBlock.getNextCommand();
-                if(nextCommand != null){
-                    progressiveResult = this.executeBlock(session, nextCommand);
-                    if(progressiveResult.getOutcome().equals(ResultStatus.FAILURE)){
-                        return  progressiveResult;
+            if(executionConditionsMet(session, parentBlock)) {
+                session.loadSessionDynamicFields(parentBlock);
+                while (!parentBlock.hasExhaustedCommands()) {
+                    ICommand nextCommand = parentBlock.getNextCommand();
+                    if (nextCommand != null) {
+                        ExpectedOutcome commandResult = this.executeBlock(session, nextCommand);
+                        if (commandResult.getOutcome().equals(ResultStatus.FAILURE)) {
+                            return commandResult;
+                        }else if(!commandResult.equals(ExpectedOutcome.skip())){
+                            progressiveResult = commandResult;
+                        }
                     }
                 }
+                session.removeSessionDynamicFields(parentBlock);
+            }else{
+                progressiveResult = ExpectedOutcome.skip();
             }
-            session.removeSessionDynamicFields(parentBlock);
-            parentBlock.setAlreadyExecuted(true);
 
+            parentBlock.setAlreadyExecuted(true);
             return expectedResult(progressiveResult, executionBlock);
         }else{
             return ExpectedOutcome.executionError(MessageLiterals.InvalidExecutionBlock);
@@ -101,11 +121,26 @@ public class SessionEngine implements Closeable{
     }
 
     private ExpectedOutcome executeCommand(Session session, Command currentCommand) throws IOException{
-        session.loadSessionDynamicFields(currentCommand);
-        ExpectedOutcome progressiveResult = session.executeCommand(currentCommand);
+        ExpectedOutcome commandResult;
+
+        if(executionConditionsMet(session, currentCommand)) {
+            session.loadSessionDynamicFields(currentCommand);
+            commandResult = session.executeCommand(currentCommand);
+            session.removeSessionDynamicFields(currentCommand);
+        }else{
+            commandResult = ExpectedOutcome.skip();
+        }
+
         currentCommand.setAlreadyExecuted(true);
-        session.removeSessionDynamicFields(currentCommand);
-        return progressiveResult;
+        return commandResult;
+    }
+
+    private boolean executionConditionsMet(Session session, ICommand command){
+        return ExpectedOutcomeResolver.checkExecutionConditions(
+                session.getCurrentSessionVariables(),
+                command.getExecutionConditions(),
+                command.getConditionAggregation()
+        ).isResolved();
     }
 
     private ExpectedOutcome expectedResult(ExpectedOutcome achievedResult, ICommand parent){
@@ -116,7 +151,7 @@ public class SessionEngine implements Closeable{
         }
 
         for(ExpectedOutcome expectedOutcome : parent.getExpectedOutcomes()){
-            if(expectedOutcome.weakEquals(achievedResult)){
+            if(expectedOutcome.equals(achievedResult)){
                 return expectedOutcome;
             }
         }

@@ -51,10 +51,12 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
             } while (lastResponse != null);
 
             logger.debug("finished reading from stream for session " + this.session.getTerminalIdentifier());
-            return true;
         } catch (Exception e){
-            logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: ", e);
-            throw new IOException(e);
+            if(!session.isClosed()) {
+                logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: ", e);
+                throw new IOException(e);
+            }
         }
+        return true;
     }
 }

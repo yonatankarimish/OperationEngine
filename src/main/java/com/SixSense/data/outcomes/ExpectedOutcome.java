@@ -1,12 +1,10 @@
 package com.SixSense.data.outcomes;
 
-import java.util.Objects;
-
-public class ExpectedOutcome {
+public class ExpectedOutcome implements IFlowConnector {
     private boolean resolved; //Did the expected outcome turn out to be true?
     private ResultStatus outcome; //If the expected outcome has been resolved, what should be the outcome of the command?
     private String message; //Arbitrary message, if the expected outcome has been resolved
-    private String expectedOutput;
+    private String expectedValue;
     private BinaryRelation binaryRelation;
 
     //The default expected outcome wills search for the empty string in any result, therefore always returning CommandResult.SUCCESS.
@@ -14,15 +12,15 @@ public class ExpectedOutcome {
         this.resolved = false;
         this.outcome = ResultStatus.SUCCESS;
         this.message = "";
-        this.expectedOutput = "";
+        this.expectedValue = "";
         this.binaryRelation = BinaryRelation.CONTAINS;
     }
 
-    public ExpectedOutcome(String expectedOutput, BinaryRelation binaryRelation, ResultStatus outcome, String message) {
+    public ExpectedOutcome(String expectedValue, BinaryRelation binaryRelation, ResultStatus outcome, String message) {
         this.resolved = false;
         this.outcome = outcome;
         this.message = message;
-        this.expectedOutput = expectedOutput;
+        this.expectedValue = expectedValue;
         this.binaryRelation = binaryRelation;
     }
 
@@ -31,8 +29,17 @@ public class ExpectedOutcome {
                 .withResolved(true)
                 .withOutcome(ResultStatus.SUCCESS)
                 .withMessage("")
-                .withExpectedOutput("")
+                .withExpectedValue("")
                 .withBinaryRelation(BinaryRelation.CONTAINS);
+    }
+
+    public static ExpectedOutcome skip(){
+        return new ExpectedOutcome()
+                .withResolved(true)
+                .withOutcome(ResultStatus.SUCCESS)
+                .withMessage("")
+                .withExpectedValue("")
+                .withBinaryRelation(BinaryRelation.NONE);
     }
 
     public static ExpectedOutcome executionError(String errorMessage){
@@ -40,18 +47,21 @@ public class ExpectedOutcome {
                 .withResolved(false)
                 .withOutcome(ResultStatus.FAILURE)
                 .withMessage(errorMessage)
-                .withExpectedOutput("")
+                .withExpectedValue("")
                 .withBinaryRelation(BinaryRelation.NONE);
     }
 
+    @Override
     public boolean isResolved() {
         return resolved;
     }
 
+    @Override
     public void setResolved(boolean resolved) {
         this.resolved = resolved;
     }
 
+    @Override
     public ExpectedOutcome withResolved(boolean resolved) {
         this.resolved = resolved;
         return this;
@@ -83,19 +93,21 @@ public class ExpectedOutcome {
         return this;
     }
 
-    public String getExpectedOutput() {
-        return expectedOutput;
+    @Override
+    public String getExpectedValue() {
+        return expectedValue;
     }
 
-    public void setExpectedOutput(String expectedOutput) {
-        this.expectedOutput = expectedOutput;
+    public void setExpectedValue(String expectedValue) {
+        this.expectedValue = expectedValue;
     }
 
-    public ExpectedOutcome withExpectedOutput(String expectedOutput) {
-        this.expectedOutput = expectedOutput;
+    public ExpectedOutcome withExpectedValue(String expectedValue) {
+        this.expectedValue = expectedValue;
         return this;
     }
 
+    @Override
     public BinaryRelation getBinaryRelation() {
         return binaryRelation;
     }
@@ -116,17 +128,24 @@ public class ExpectedOutcome {
         }
         else if (other == null || getClass() != other.getClass()) {
             return false;
-        }else {
-            ExpectedOutcome otherOutcome = (ExpectedOutcome) other;
-            return weakEquals(otherOutcome) &&
-                    Objects.equals(message, otherOutcome.message) &&
-                    Objects.equals(expectedOutput, otherOutcome.expectedOutput) &&
-                    binaryRelation == otherOutcome.binaryRelation;
         }
+        return equals((ExpectedOutcome) other);
+    }
+
+    public boolean equals(ExpectedOutcome otherOutcome) {
+        return weakEquals(otherOutcome)
+                && this.expectedValue.equals(otherOutcome.expectedValue)
+                && this.binaryRelation.equals(otherOutcome.binaryRelation);
     }
 
     public boolean weakEquals(ExpectedOutcome otherOutcome) {
-        return this.resolved == otherOutcome.resolved && this.outcome == otherOutcome.outcome;
+        return this.resolved == otherOutcome.resolved
+                && this.outcome.equals(otherOutcome.outcome);
+    }
+
+    public boolean strongEquals(ExpectedOutcome otherOutcome) {
+        return equals(otherOutcome)
+                && this.message.equals(otherOutcome.message);
     }
 
     @Override
@@ -135,7 +154,7 @@ public class ExpectedOutcome {
                 "resolved=" + resolved +
                 ", outcome=" + outcome +
                 ", message='" + message + '\'' +
-                ", expectedOutput='" + expectedOutput + '\'' +
+                ", expectedValue='" + expectedValue + '\'' +
                 ", binaryRelation=" + binaryRelation +
                 '}';
     }
