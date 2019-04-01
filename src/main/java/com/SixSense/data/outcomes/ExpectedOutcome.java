@@ -24,6 +24,14 @@ public class ExpectedOutcome implements IFlowConnector {
         this.binaryRelation = binaryRelation;
     }
 
+    public ExpectedOutcome(ExpectedOutcome clone) {
+        this.resolved = clone.resolved;
+        this.outcome = clone.outcome;
+        this.message = clone.message;
+        this.expectedValue = clone.expectedValue;
+        this.binaryRelation = clone.binaryRelation;
+    }
+
     public static ExpectedOutcome defaultOutcome(){
         return new ExpectedOutcome()
                 .withResolved(true)
