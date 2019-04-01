@@ -96,9 +96,12 @@ public class Command extends AbstractCommand implements ICommand{
                 ", commandText='" + commandText + '\'' +
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
+                ", alreadyExecuted=" + alreadyExecuted +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
+                ", dynamicFields=" + dynamicFields +
+                ", saveTo=" + saveTo +
                 '}';
     }
 }

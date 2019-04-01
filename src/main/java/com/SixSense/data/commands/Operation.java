@@ -91,9 +91,12 @@ public class Operation extends AbstractCommand implements ICommand {
                 ", executionBlock=" + executionBlock +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
+                ", alreadyExecuted=" + alreadyExecuted +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
+                ", dynamicFields=" + dynamicFields +
+                ", saveTo=" + saveTo +
                 '}';
     }
 }

@@ -6,7 +6,7 @@ public class VariableRetention {
     private boolean overwriteParent;
 
     public VariableRetention() {
-        this.resultRetention = ResultRetention.NONE;
+        this.resultRetention = ResultRetention.None;
         this.name = "";
         this.overwriteParent = false;
     }

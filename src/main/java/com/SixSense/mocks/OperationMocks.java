@@ -54,7 +54,7 @@ public class OperationMocks {
             ExpectedOutcome blockOutcome = ExpectedOutcome.defaultOutcome().withMessage("block-"+i+" completed successfully");
 
             Map<String, String> dynamicFields = new HashMap<>();
-            dynamicFields.put("\\$var.block.id", blockID);
+            dynamicFields.put("\\$var.block.id", blockID+"-should-get-overridden");
             commandBlock.addDynamicFields(dynamicFields);
 
             List<ExpectedOutcome> blockOutcomes = new ArrayList<>();

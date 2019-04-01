@@ -41,60 +41,35 @@ public class Block extends AbstractCommand implements ICommand {
         return CommandUtils.chainCommands(this, additional);
     }
 
-    public Command getNextCommand(){
+    public ICommand getNextCommand(){
         //If no iterator has been created, obtain an iterator from the childBlocks list
         Iterator<ICommand> commandIterator = this.getCommandIterator();
 
         //If the last available command has been returned, return null
-        if(hasExhaustedCommands(this)){
+        if(hasExhaustedCommands()){
             return null;
         }
 
         //If not returned by this step, there is a next command available
-        //If the last command was a plain command, or never requested, obtain the next command.
-        if(this.currentCommand == null || this.currentCommand instanceof Command){
+        //If the last command was a plain command, or already executed, obtain the next command.
+        if(this.currentCommand == null || this.currentCommand.isAlreadyExecuted()){
             this.currentCommand = commandIterator.next();
         }
 
-        //If the command we just got is a plain command, return it to the invoker.
-        if(this.currentCommand instanceof Command){
-            return (Command)this.currentCommand;
-        }
+        //finally, return the next command which has not been executed
+        return this.currentCommand;
 
-        //If the command we just got is a block of commands
-        if(this.currentCommand instanceof Block){
-            Command childCommand = ((Block) this.currentCommand).getNextCommand();
-            if(childCommand != null){
-                return childCommand;
-            } else {
-                //the block has exhausted all it's commands and has no more commands to return
-                //We iterate to the next command, and invoke ourselves recursively to return
-                this.currentCommand = commandIterator.next();
-                return getNextCommand();
-            }
-        }
-
-        //If neither a command or a block (that is, null), return null.
-        return null;
     }
 
     public boolean hasExhaustedCommands(){
-        return hasExhaustedCommands(this);
-    }
-
-    private boolean hasExhaustedCommands(Block block){
-        if(!block.getCommandIterator().hasNext()){
-            boolean childExhaustedCommands = true;
-            if(block.currentCommand instanceof Block){
-                childExhaustedCommands = ((Block)block.currentCommand).hasExhaustedCommands();
-            }
-
-            if(!childExhaustedCommands){
-                //If the current command is a block command, which has not exhausted it's own child commands, return false
+        if(!this.getCommandIterator().hasNext()){
+            if(this.currentCommand == null){
+                return true;
+            }else if(!this.currentCommand.isAlreadyExecuted()){
                 return false;
             }else if(internalCounter < repeatCount) {
                 //If the passed block is a repeating block, which has not yet finished repeating, reset the current loop and return false
-                block.resetNextCommandLoop();
+                this.resetNextCommandLoop();
                 return false;
             }
             return true;
@@ -104,11 +79,10 @@ public class Block extends AbstractCommand implements ICommand {
 
     private void resetNextCommandLoop(){
         this.internalCounter++;
-        if(this.commandIterator != null) {
-            this.commandIterator = this.childBlocks.iterator();
-        }
+        this.commandIterator = this.getCommandIterator();
 
         for(ICommand command : this.getChildBlocks()){
+            command.setAlreadyExecuted(false);
             if(command instanceof Block){
                 ((Block) command).resetNextCommandLoop();
                 ((Block) command).internalCounter = 0;
@@ -165,9 +139,12 @@ public class Block extends AbstractCommand implements ICommand {
                 ", childBlocks=" + childBlocks +
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +
+                ", alreadyExecuted=" + alreadyExecuted +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +
                 ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
+                ", dynamicFields=" + dynamicFields +
+                ", saveTo=" + saveTo +
                 '}';
     }
 }

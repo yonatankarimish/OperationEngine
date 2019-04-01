@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface ICommand {
+    boolean isAlreadyExecuted();
+    void setAlreadyExecuted(boolean alreadyExecuted);
+    ICommand withAlreadyExecuted(boolean alreadyExecuted);
     List<ExpectedOutcome> getExpectedOutcomes();
     void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);
     ICommand withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);

@@ -185,7 +185,7 @@ public class Session implements Closeable {
                 if(!dynamicFieldStack.isEmpty()) {
                     dynamicFieldStack.pop();
                 }
-                dynamicFieldStack.push(topmostVariable);
+                dynamicFieldStack.push(topmostVariable.withOverwriteParent(false));
             }
         }
     }

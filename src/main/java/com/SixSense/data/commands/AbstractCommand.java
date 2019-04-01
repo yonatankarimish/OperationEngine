@@ -7,6 +7,8 @@ import com.SixSense.data.retention.VariableRetention;
 import java.util.*;
 
 public abstract class AbstractCommand implements ICommand{
+    protected boolean alreadyExecuted;
+
     protected List<ExpectedOutcome> expectedOutcomes;
     protected LogicalCondition outcomeAggregation;
     protected String aggregatedOutcomeMessage;
@@ -15,6 +17,7 @@ public abstract class AbstractCommand implements ICommand{
     protected VariableRetention saveTo;
 
     public AbstractCommand(){
+        this.alreadyExecuted = false;
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
         this.aggregatedOutcomeMessage = "";
@@ -23,11 +26,28 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     public AbstractCommand(List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        this.alreadyExecuted = false;
         this.expectedOutcomes = expectedOutcomes;
         this.outcomeAggregation = outcomeAggregation;
         this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
+    }
+
+    @Override
+    public boolean isAlreadyExecuted() {
+        return alreadyExecuted;
+    }
+
+    @Override
+    public void setAlreadyExecuted(boolean alreadyExecuted) {
+        this.alreadyExecuted = alreadyExecuted;
+    }
+
+    @Override
+    public AbstractCommand withAlreadyExecuted(boolean hasBeenExecuted) {
+        this.alreadyExecuted = hasBeenExecuted;
+        return this;
     }
 
     @Override
