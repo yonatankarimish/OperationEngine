@@ -7,6 +7,7 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.outcomes.*;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.util.InternalCommands;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,10 +21,10 @@ public class F5BigIpBackup {
                 .chainCommands(exitCommand());
 
         Map<String, String> dynamicFields = new HashMap<>();
-        dynamicFields.put("\\$device.host", host);
-        dynamicFields.put("\\$device.username", username);
-        dynamicFields.put("\\$device.password", password);
-        dynamicFields.put("\\$device.port", "22");
+        dynamicFields.put("device.host", host);
+        dynamicFields.put("device.username", username);
+        dynamicFields.put("device.password", password);
+        dynamicFields.put("device.port", "22");
         operationBlock.addDynamicFields(dynamicFields);
 
         return new Operation()
@@ -36,6 +37,7 @@ public class F5BigIpBackup {
         Command ssh = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("ssh $device.username@$device.host -p $device.port")
+                .withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60);
 
         ExpectedOutcome template = new ExpectedOutcome()
@@ -70,8 +72,8 @@ public class F5BigIpBackup {
 
         List<ExpectedOutcome> sshExpectedOutcomes = new ArrayList<>();
         sshExpectedOutcomes.add(password);
-        sshExpectedOutcomes.add(hashbang);
-        sshExpectedOutcomes.add(bracket);
+        //sshExpectedOutcomes.add(hashbang);
+        //sshExpectedOutcomes.add(bracket);
         sshExpectedOutcomes.add(connectYesNo);
         sshExpectedOutcomes.add(connecting);
         sshExpectedOutcomes.add(identificationChange);
@@ -82,16 +84,17 @@ public class F5BigIpBackup {
 
         ssh.setSaveTo(new VariableRetention()
             .withResultRetention(ResultRetention.Variable)
-            .withName("\\$ssh.connect.response")
+            .withName("ssh.connect.response")
         );
 
         Command rsaFirstTime = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("yes")
+                .withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60);
 
         ExecutionCondition rsaFirstTimeCondition = new ExecutionCondition()
-                .withVariable("\\$ssh.connect.response")
+                .withVariable("ssh.connect.response")
                 .withBinaryRelation(BinaryRelation.CONTAINS)
                 .withExpectedValue("connecting (yes/no)");
 
@@ -111,8 +114,8 @@ public class F5BigIpBackup {
 
         List<ExpectedOutcome> rsaFirstTimeExpectedOutcomes = new ArrayList<>();
         rsaFirstTimeExpectedOutcomes.add(password);
-        rsaFirstTimeExpectedOutcomes.add(hashbang);
-        rsaFirstTimeExpectedOutcomes.add(bracket);
+        //rsaFirstTimeExpectedOutcomes.add(hashbang);
+        //rsaFirstTimeExpectedOutcomes.add(bracket);
         rsaFirstTimeExpectedOutcomes.add(denied);
         rsaFirstTimeExpectedOutcomes.add(nameOrServiceUnknown);
         rsaFirstTimeExpectedOutcomes.add(identificationChange);
@@ -124,16 +127,17 @@ public class F5BigIpBackup {
 
         rsaFirstTime.setSaveTo(new VariableRetention()
                 .withResultRetention(ResultRetention.Variable)
-                .withName("\\$ssh.connect.response")
+                .withName("ssh.connect.response")
         );
 
         Command typePassword = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("$device.password")
+                .withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60);
 
         ExecutionCondition typePasswordCondition = new ExecutionCondition()
-                .withVariable("\\$device.password")
+                .withVariable("device.password")
                 .withBinaryRelation(BinaryRelation.NOT_EQUALS)
                 .withExpectedValue("");
 
@@ -147,7 +151,7 @@ public class F5BigIpBackup {
                 .withOutcome(ResultStatus.SUCCESS);
 
         ExpectedOutcome connectionRefused = new ExpectedOutcome(template)
-                .withExpectedValue("Connection")
+                .withExpectedValue("onnection")
                 .withOutcome(ResultStatus.FAILURE)
                 .withMessage("Connection refused");
 
@@ -156,21 +160,23 @@ public class F5BigIpBackup {
                 .withOutcome(ResultStatus.FAILURE)
                 .withMessage("Wrong username or password");
 
-        ExpectedOutcome wrongCredentials = new ExpectedOutcome(template)
+        /*ExpectedOutcome wrongCredentials = new ExpectedOutcome(template)
                 .withExpectedValue("word:")
                 .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Wrong credentials");
+                .withMessage("Wrong credentials");*/
 
         List<ExpectedOutcome> typePasswordExpectedOutcomes = new ArrayList<>();
-        typePasswordExpectedOutcomes.add(emptySuccess);
+        //typePasswordExpectedOutcomes.add(emptySuccess);
+        typePasswordExpectedOutcomes.add(hashbang);
         typePasswordExpectedOutcomes.add(connectionRefused);
         typePasswordExpectedOutcomes.add(connectionDenied);
-        typePasswordExpectedOutcomes.add(wrongCredentials);
+        //typePasswordExpectedOutcomes.add(wrongCredentials);
         typePassword.setExpectedOutcomes(typePasswordExpectedOutcomes);
 
         Command tmsh = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("tmsh modify cli preference pager disabled")
+                .withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(30);
 
         List<ExpectedOutcome> tmshExpectedOutcomes = new ArrayList<>();
@@ -179,6 +185,7 @@ public class F5BigIpBackup {
 
         return ssh.chainCommands(rsaFirstTime)
                 .chainCommands(typePassword)
+                .chainCommands(InternalCommands.invalidateCurrentPrompt())
                 .chainCommands(tmsh);
     }
 

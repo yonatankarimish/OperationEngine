@@ -54,7 +54,7 @@ public class OperationMocks {
             ExpectedOutcome blockOutcome = ExpectedOutcome.defaultOutcome().withMessage("block-"+i+" completed successfully");
 
             Map<String, String> dynamicFields = new HashMap<>();
-            dynamicFields.put("\\$var.block.id", blockID+"-should-get-overridden");
+            dynamicFields.put("var.block.id", blockID+"-should-get-overridden");
             commandBlock.addDynamicFields(dynamicFields);
 
             List<ExpectedOutcome> blockOutcomes = new ArrayList<>();
@@ -95,7 +95,7 @@ public class OperationMocks {
 
     public static ICommand dockerInterface(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'docker'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
@@ -115,7 +115,7 @@ public class OperationMocks {
 
     public static ICommand eth0Interface(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'eth0'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
@@ -135,7 +135,7 @@ public class OperationMocks {
 
     public static ICommand localIp(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
@@ -155,8 +155,8 @@ public class OperationMocks {
 
     public static ICommand rxBytes(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed  's/bytes://g'")
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
@@ -175,8 +175,8 @@ public class OperationMocks {
 
     public static ICommand txBytes(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
-                .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed  's/bytes://g'")
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
 
@@ -195,7 +195,7 @@ public class OperationMocks {
 
     public static ICommand commandWithExpectedOutcomeNotReached(){
         Command command = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10);
@@ -215,7 +215,7 @@ public class OperationMocks {
 
     public static ICommand blockPartCommand(String blockID, String commandID){
         ICommand command = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withCommandType(CommandType.LOCAL)
                 .withCommandText("echo $var.block.id $var.command.id")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -223,8 +223,8 @@ public class OperationMocks {
                 .withAggregatedOutcomeMessage("Command params found in response");
 
         Map<String, String> dynamicFields = new HashMap<>();
-        dynamicFields.put("\\$var.block.id", blockID);
-        dynamicFields.put("\\$var.command.id", commandID);
+        dynamicFields.put("var.block.id", blockID);
+        dynamicFields.put("var.command.id", commandID);
         command.addDynamicFields(dynamicFields);
 
         ExpectedOutcome shouldMatchBlockId = new ExpectedOutcome()

@@ -14,6 +14,7 @@ public class Command extends AbstractCommand implements ICommand{
     private String commandText;
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
+    private boolean useRawOutput;
 
     /*Try not to pollute with additional constructors
      * The empty constructor is for using the 'with' design pattern
@@ -27,6 +28,7 @@ public class Command extends AbstractCommand implements ICommand{
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
         this.aggregatedOutcomeMessage = "";
+        this.useRawOutput = false;
     }
 
     public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
@@ -35,6 +37,7 @@ public class Command extends AbstractCommand implements ICommand{
         this.commandText = commandText;
         this.minimalSecondsToResponse = minimalTimeToResponse;
         this.secondsToTimeout = secondsToTimeout;
+        this.useRawOutput = false;
     }
 
     public ICommand chainCommands(ICommand additional){
@@ -93,6 +96,19 @@ public class Command extends AbstractCommand implements ICommand{
         return this;
     }
 
+    public boolean isUseRawOutput() {
+        return useRawOutput;
+    }
+
+    public void setUseRawOutput(boolean useRawOutput) {
+        this.useRawOutput = useRawOutput;
+    }
+
+    public Command withUseRawOutput(boolean useRawOutput) {
+        this.useRawOutput = useRawOutput;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Command{" +
@@ -100,6 +116,7 @@ public class Command extends AbstractCommand implements ICommand{
                 ", commandText='" + commandText + '\'' +
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
+                ", useRawOutput=" + useRawOutput +
                 ", alreadyExecuted=" + alreadyExecuted +
                 ", executionConditions=" + executionConditions +
                 ", conditionAggregation=" + conditionAggregation +

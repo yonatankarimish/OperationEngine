@@ -13,7 +13,8 @@ const appRoot = path.join(__dirname, "/..");
 
 const sshUtils = new SSH2Utils();
 const uploadTasks = {
-    j: uploadJar, jar: uploadJar
+    j: uploadJar, jar: uploadJar,
+    d: uploadJar, dependencies: uploadDependencies
 };
 
 //Executes the proper upload task according to the value passed to the --task flag.
@@ -40,7 +41,20 @@ function uploadJar(){
     });
 }
 
-//transfers a directory from the local dev enviroment to the remote Backbox server, as defined in the sftp.config.js file
+function uploadDependencies(){
+    let deployCommands = [
+        'echo "finished running uploadDependencies"', //notify the developer's machine CLI that all commands have run successfully.
+    ];
+
+    return Promise.all([
+        sftpTransferFile(appRoot+"/src/main/resources/log4j.properties", "/tmp/SixSense/config/log4j.properties"),
+        sftpTransferDir(appRoot+"/target/dependency-jars", "/tmp/SixSense/dependency-jars")
+    ]).then(() => {
+        return executeSsh(deployCommands);
+    });
+}
+
+//transfers a directory from the local dev environment to the remote Backbox server, as defined in the sftp.config.js file
 function sftpTransferDir(source, destination){
     console.log("starting sftp transfer from " + source);
     let executions = [];

@@ -46,22 +46,22 @@ public class CommandUtils {
 
     public static String evaluateAgainstDynamicFields(Command command, Map<String, String> additionalFields){
         Map<String, String> dynamicFields = command.getDynamicFields();
-        String evaluatedExpression = command.getCommandText();
+        String commandText = command.getCommandText();
+        commandText = evaluateAgainstDynamicFields(commandText, command.getDynamicFields());
+        commandText = evaluateAgainstDynamicFields(commandText, additionalFields);
+        return commandText;
+    }
 
-        if(evaluatedExpression == null || evaluatedExpression.isEmpty()){
-            return evaluatedExpression;
+    public static String evaluateAgainstDynamicFields(String commandText, Map<String, String> dynamicFields){
+        if(commandText == null || commandText.isEmpty()){
+            return commandText;
         }
         if(dynamicFields != null) {
             for (String dynamicField : dynamicFields.keySet()) {
-                evaluatedExpression = evaluatedExpression.replaceAll(dynamicField, dynamicFields.get(dynamicField));
-            }
-        }
-        if(additionalFields != null) {
-            for (String dynamicField : additionalFields.keySet()) {
-                evaluatedExpression = evaluatedExpression.replaceAll(dynamicField, additionalFields.get(dynamicField));
+                commandText = commandText.replaceAll(MessageLiterals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
             }
         }
 
-        return evaluatedExpression;
+        return commandText;
     }
 }

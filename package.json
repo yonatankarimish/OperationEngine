@@ -9,7 +9,9 @@
     "clean": "mvn clean",
     "build-jar": "mvn clean & mvn package -Dmaven.test.skip=true",
     "upload-jar": "node ./scripts/ssh-upload.js --task=jar",
-    "deploy": "yarn build-jar && yarn upload-jar"
+    "upload-dependencies": "node ./scripts/ssh-upload.js --task=dependencies",
+    "deploy": "yarn build-jar && yarn upload-jar",
+    "deploy-full": "yarn build-jar && yarn upload-jar && yarn upload-dependencies"
   },
   "devDependencies": {
     "promise": "~8.0.1",

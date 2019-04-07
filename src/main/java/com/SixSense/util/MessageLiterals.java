@@ -9,11 +9,14 @@ import java.nio.file.FileSystems;
 public class MessageLiterals {
     private static Logger logger = Logger.getLogger(MessageLiterals.class);
     public static final String FileSeparator = FileSystems.getDefault().getSeparator();
+    public static final String CarriageReturn = "\r";
     public static final String LineBreak = System.lineSeparator();
+    public static final String VariableMark = "\\$";
 
 
     public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";
 
+    public static final String ExceptionEncountered = "The session engine encountered an error";
     public static final String ExpectedOutcomeNotNumeric = "Expected outcome is not a number";
     public static final String CommandDidNotMatchConditions = "Command did not match it's execution conditions";
     public static final String CommandDidNotReachOutcome = "Command did not reach it's expected outcomes";

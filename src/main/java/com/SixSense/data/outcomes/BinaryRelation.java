@@ -11,5 +11,6 @@ public enum BinaryRelation {
     GREATER_THAN,
     LESSER_OR_EQUAL_TO,
     GREATER_OR_EQUAL_TO,
+    MATCHES_REGEX,
     NONE
 }

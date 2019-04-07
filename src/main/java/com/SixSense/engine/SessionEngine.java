@@ -7,8 +7,11 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.io.Session;
+import com.SixSense.mocks.LocalhostConfig;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
+import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -20,13 +23,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 
-import static com.SixSense.util.MessageLiterals.CommandDidNotMatchConditions;
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 public class SessionEngine implements Closeable{
     private static Logger logger = Logger.getLogger(SessionEngine.class);
     private static SessionEngine engineInstance;
-    private ProcessBuilder builder = new ProcessBuilder().redirectErrorStream(true); //Creates shell processes, with their error stream merged into their output stream
+    private final SSHClient sshClient = new SSHClient();
     private final ExecutorService workerPool = Executors.newCachedThreadPool();
 
     private final Map<String, String> sessionProperties = new HashMap<>();
@@ -44,6 +46,17 @@ public class SessionEngine implements Closeable{
             logger.error("Session engine failed to initialize - failed to load session properties. Caused by: ", e);
             throw e;
         }
+
+        try{
+            this.sshClient.addHostKeyVerifier(new PromiscuousVerifier());
+            this.sshClient.connect(LocalhostConfig.host);
+            this.sshClient.authPassword(LocalhostConfig.username, LocalhostConfig.password);
+        } catch (IOException e) {
+            logger.error("Session engine failed to initialize - failed to initialize ssh client. Caused by: ", e);
+            throw e;
+        }
+
+        logger.info("Session engine initialized");
     }
 
     public static synchronized SessionEngine getInstance() throws IOException{
@@ -70,8 +83,8 @@ public class SessionEngine implements Closeable{
             if(executionConditionsMet(session, executionBlock)) {
                 session.loadSessionDynamicFields(engineOperation);
                 sessionResult = this.executeBlock(session, executionBlock);
-                session.removeSessionDynamicFields(engineOperation);
                 sessionResult = expectedResult(sessionResult, engineOperation);
+                session.removeSessionDynamicFields(engineOperation);
             }else{
                 sessionResult = ExpectedOutcome.skip();
             }
@@ -159,17 +172,30 @@ public class SessionEngine implements Closeable{
     }
 
     private Session createSession() throws IOException{
-        Process localProcess = builder.command("/bin/bash").start();
-        Process remoteProcess = builder.command("/bin/bash").start();
-        Session session = new Session(localProcess, remoteProcess);
+        net.schmizz.sshj.connection.channel.direct.Session localSession = sshClient.startSession();
+        net.schmizz.sshj.connection.channel.direct.Session remoteSession = sshClient.startSession();
+
+        Session session = new Session(localSession, remoteSession);
         session.loadSessionVariables(this.sessionProperties);
-        Future<Boolean> sessionLocalOutput = workerPool.submit(session.getLocalOutputAndErrors());
-        Future<Boolean> sessionRemoteOutput = workerPool.submit(session.getRemoteOutputAndErrors());
+
+        Future<Boolean> sessionLocalOutput = workerPool.submit(session.getLocalStreamWrapper());
+        Future<Boolean> sessionRemoteOutput = workerPool.submit(session.getRemoteStreamWrapper());
+
+        //executeCommand(session, LocalhostConfig.sessionStartBlock(CommandType.LOCAL));
+        //executeCommand(session, LocalhostConfig.sessionStartBlock(CommandType.REMOTE));
+
         return session;
     }
 
     @Override
     public void close() {
         this.workerPool.shutdownNow();
+        try {
+            this.sshClient.close();
+        } catch (IOException e) {
+            logger.error("Session engine failed to close - failed to close ssh client. Caused by: ", e);
+        }
+
+        logger.info("Session engine closed");
     }
 }

@@ -23,6 +23,13 @@ public class ExecutionCondition implements IFlowConnector {
         this.resolved = false;
     }
 
+    public ExecutionCondition (ExecutionCondition clone){
+        this.variable = clone.variable;
+        this.binaryRelation = clone.binaryRelation;
+        this.expectedValue = clone.expectedValue;
+        this.resolved = clone.resolved;
+    }
+
     public static ExecutionCondition matchingSuccess(){
         return new ExecutionCondition()
                 .withBinaryRelation(BinaryRelation.NONE)

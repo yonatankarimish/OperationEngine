@@ -7,6 +7,8 @@ import com.SixSense.data.outcomes.LogicalCondition;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.SixSense.util.MessageLiterals.CommandDidNotReachOutcome;
 import static com.SixSense.util.MessageLiterals.UnsuportedBinaryRelation;
@@ -22,7 +24,7 @@ public class ExpectedOutcomeResolver {
         switch (conditionAggregation) {
             case OR:{
                 for(ExecutionCondition executionCondition : executionConditions){
-                    resolvedCondition = (ExecutionCondition)ExpectedOutcomeResolver.resolveBinaryOperand(sessionFields.get(executionCondition.getVariable()), executionCondition);
+                    resolvedCondition = evaluateAndResolveCondition(executionCondition, sessionFields);
                     if (resolvedCondition.isResolved()) {
                         return resolvedCondition;
                     }
@@ -31,7 +33,7 @@ public class ExpectedOutcomeResolver {
             }
             case NOR:{
                 for (ExecutionCondition executionCondition : executionConditions) {
-                    resolvedCondition = (ExecutionCondition)ExpectedOutcomeResolver.resolveBinaryOperand(sessionFields.get(executionCondition.getVariable()), executionCondition);
+                    resolvedCondition = evaluateAndResolveCondition(executionCondition, sessionFields);
                     if (resolvedCondition.isResolved()) {
                         return ExecutionCondition.matchingFailure();
                     }
@@ -40,7 +42,7 @@ public class ExpectedOutcomeResolver {
             }
             case AND:{
                 for (ExecutionCondition executionCondition : executionConditions) {
-                    resolvedCondition = (ExecutionCondition)ExpectedOutcomeResolver.resolveBinaryOperand(sessionFields.get(executionCondition.getVariable()), executionCondition);
+                    resolvedCondition = evaluateAndResolveCondition(executionCondition, sessionFields);
                     if (!resolvedCondition.isResolved()) {
                         return ExecutionCondition.matchingFailure();
                     }
@@ -49,7 +51,7 @@ public class ExpectedOutcomeResolver {
             }
             case NAND:{
                 for (ExecutionCondition executionCondition : executionConditions) {
-                    resolvedCondition = (ExecutionCondition)ExpectedOutcomeResolver.resolveBinaryOperand(sessionFields.get(executionCondition.getVariable()), executionCondition);
+                    resolvedCondition = evaluateAndResolveCondition(executionCondition, sessionFields);
                     if (!resolvedCondition.isResolved()) {
                         return resolvedCondition;
                     }
@@ -62,13 +64,20 @@ public class ExpectedOutcomeResolver {
         }
     }
 
-    public static ExpectedOutcome resolveExpectedOutcome(List<String> commandOutout, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation){
-        String outputAsString = getStringRepresentation(commandOutout);
+    private static ExecutionCondition evaluateAndResolveCondition(ExecutionCondition executionCondition, Map<String, String> sessionFields){
+        String conditionInput = CommandUtils.evaluateAgainstDynamicFields(executionCondition.getVariable(), sessionFields);
+        String conditionValue = CommandUtils.evaluateAgainstDynamicFields(executionCondition.getExpectedValue(), sessionFields);
+        ExecutionCondition withExpectedValue = new ExecutionCondition(executionCondition).withExpectedValue(conditionValue);
+
+        return (ExecutionCondition)ExpectedOutcomeResolver.resolveBinaryOperand(conditionInput, withExpectedValue);
+    }
+
+    public static ExpectedOutcome resolveExpectedOutcome(String commandOutput, Map<String, String> sessionFields, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation){
         ExpectedOutcome resolvedOutcome;
         switch (outcomeAggregation) {
             case OR: {
                 for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
-                    resolvedOutcome = (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(outputAsString, possibleOutcome);
+                    resolvedOutcome = evaluateAndResolveOutcome(commandOutput, possibleOutcome, sessionFields);
                     if (resolvedOutcome.isResolved()) {
                         return resolvedOutcome;
                     }
@@ -77,7 +86,7 @@ public class ExpectedOutcomeResolver {
             }
             case NOR: {
                 for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
-                    resolvedOutcome = (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(outputAsString, possibleOutcome);
+                    resolvedOutcome = evaluateAndResolveOutcome(commandOutput, possibleOutcome, sessionFields);
                     if (resolvedOutcome.isResolved()) {
                         return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
                     }
@@ -86,7 +95,7 @@ public class ExpectedOutcomeResolver {
             }
             case AND: {
                 for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
-                    resolvedOutcome = (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(outputAsString, possibleOutcome);
+                    resolvedOutcome = evaluateAndResolveOutcome(commandOutput, possibleOutcome, sessionFields);
                     if (!resolvedOutcome.isResolved()) {
                         return ExpectedOutcome.executionError(CommandDidNotReachOutcome);
                     }
@@ -95,7 +104,7 @@ public class ExpectedOutcomeResolver {
             }
             case NAND: {
                 for (ExpectedOutcome possibleOutcome : expectedOutcomes) {
-                    resolvedOutcome = (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(outputAsString, possibleOutcome);
+                    resolvedOutcome = evaluateAndResolveOutcome(commandOutput, possibleOutcome, sessionFields);
                     if (!resolvedOutcome.isResolved()) {
                         return resolvedOutcome;
                     }
@@ -106,6 +115,13 @@ public class ExpectedOutcomeResolver {
                 return ExpectedOutcome.executionError(UnsuportedBinaryRelation);
             }
         }
+    }
+
+    private static ExpectedOutcome evaluateAndResolveOutcome(String commandOutput, ExpectedOutcome possibleOutcome, Map<String, String> sessionFields){
+        String outcomeValue = CommandUtils.evaluateAgainstDynamicFields(possibleOutcome.getExpectedValue(), sessionFields);
+        ExpectedOutcome withExpectedValue = new ExpectedOutcome(possibleOutcome).withExpectedValue(outcomeValue);
+
+        return (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(commandOutput, withExpectedValue);
     }
     
     private static IFlowConnector resolveBinaryOperand(String output, IFlowConnector expectedOutcome){
@@ -121,6 +137,7 @@ public class ExpectedOutcomeResolver {
                 case LESSER_OR_EQUAL_TO: return expectLesserThanOrEqual(output, expectedOutcome);
                 case GREATER_THAN: return expectGreaterThan(output, expectedOutcome);
                 case GREATER_OR_EQUAL_TO: return expectGreaterThanOrEqual(output, expectedOutcome);
+                case MATCHES_REGEX: return expectMatchesRegex(output, expectedOutcome);
                 default: return ExpectedOutcome.executionError(UnsuportedBinaryRelation);
             }
         }catch (NumberFormatException e){
@@ -181,11 +198,10 @@ public class ExpectedOutcomeResolver {
         return expectedOutcome.withResolved(outputAsDouble >= expectedOutcomeAsDouble);
     }
 
-    private static String getStringRepresentation(List<String> output){
-        StringBuilder stringRepresentation = new StringBuilder();
-        for(String line : output){
-            stringRepresentation.append(line.trim()).append(" ");
-        }
-        return stringRepresentation.toString();
+    private static IFlowConnector expectMatchesRegex(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
+        Pattern expectedPattern = Pattern.compile(expectedOutcome.getExpectedValue());
+        Matcher patternMatcher = expectedPattern.matcher(output);
+        return expectedOutcome.withResolved(patternMatcher.find());
     }
+
 }

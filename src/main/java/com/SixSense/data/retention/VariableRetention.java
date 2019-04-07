@@ -3,17 +3,20 @@ package com.SixSense.data.retention;
 public class VariableRetention {
     private ResultRetention resultRetention;
     private String name;
+    private String value;
     private boolean overwriteParent;
 
     public VariableRetention() {
         this.resultRetention = ResultRetention.None;
         this.name = "";
+        this.value = "";
         this.overwriteParent = false;
     }
 
-    public VariableRetention(ResultRetention resultRetention, String name, boolean overwriteParent) {
+    public VariableRetention(ResultRetention resultRetention, String name, String value, boolean overwriteParent) {
         this.resultRetention = resultRetention;
-        this.name = name;
+        this.name = value;
+        this.value = name;
         this.overwriteParent = overwriteParent;
     }
 
@@ -43,6 +46,19 @@ public class VariableRetention {
         return this;
     }
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public VariableRetention withValue(String value) {
+        this.value = value;
+        return this;
+    }
+
     public boolean isOverwriteParent() {
         return overwriteParent;
     }
@@ -61,6 +77,7 @@ public class VariableRetention {
         return "VariableRetention{" +
                 "resultRetention=" + resultRetention +
                 ", name='" + name + '\'' +
+                ", value='" + value + '\'' +
                 ", overwriteParent=" + overwriteParent +
                 '}';
     }
