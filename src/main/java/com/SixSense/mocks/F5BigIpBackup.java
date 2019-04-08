@@ -8,21 +8,15 @@ import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class F5BigIpBackup {
     public static Operation f5BigIpBackup(String host, String username, String password){
         ICommand operationBlock = sshConnect()
                 .chainCommands(rebuildSixSenseDirectory())
-                .chainCommands(exitCommand());
-
-        Map<String, String> dynamicFields = new HashMap<>();
-        dynamicFields.put("device.host", host);
-        dynamicFields.put("device.username", username);
-        dynamicFields.put("device.password", password);
-        dynamicFields.put("device.port", "22");
-        operationBlock.addDynamicFields(dynamicFields);
+                .chainCommands(exitCommand())
+                .addDynamicField("device.host", host)
+                .addDynamicField("device.username", username)
+                .addDynamicField("device.password", password)
+                .addDynamicField("device.port", "22");
 
         return new Operation()
                 .withVPV("F5 BigIP Version 11 and above")
@@ -78,8 +72,7 @@ public class F5BigIpBackup {
                         .withVariable("ssh.connect.response")
                         .withBinaryRelation(BinaryRelation.CONTAINS)
                         .withExpectedValue("connecting (yes/no)")
-                )
-                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
+                ).addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
                 .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("denied"))
                 .addExpectedOutcome(
                         new ExpectedOutcome(template)
@@ -171,7 +164,7 @@ public class F5BigIpBackup {
         ICommand makeNewDir = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("mkdir -p /var/SixSense")
-                .withSecondsToTimeout(90)
+                .withSecondsToTimeout(15)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
                         .withExpectedValue("")
@@ -186,12 +179,6 @@ public class F5BigIpBackup {
         return new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("exit")
-                .withSecondsToTimeout(60)
-                /*.addExpectedOutcome(
-                        new ExpectedOutcome()
-                        .withExpectedValue("")
-                        .withBinaryRelation(BinaryRelation.EQUALS)
-                        .withOutcome(ResultStatus.SUCCESS)
-                )*/;
+                .withSecondsToTimeout(10);
     }
 }
