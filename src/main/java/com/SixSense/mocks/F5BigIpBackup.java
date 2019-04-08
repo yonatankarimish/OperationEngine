@@ -8,9 +8,7 @@ import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class F5BigIpBackup {
@@ -40,7 +38,7 @@ public class F5BigIpBackup {
         ICommand ssh = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("ssh $device.username@$device.host -p $device.port")
-                .withMinimalSecondsToResponse(5)
+                //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
                 .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
                 .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("connecting (yes/no)"))
@@ -73,7 +71,7 @@ public class F5BigIpBackup {
         ICommand rsaFirstTime = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("yes")
-                .withMinimalSecondsToResponse(5)
+                //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
                 .addExecutionCondition(
                         new ExecutionCondition()
@@ -120,7 +118,7 @@ public class F5BigIpBackup {
         ICommand typePassword = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("$device.password")
-                .withMinimalSecondsToResponse(5)
+                //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
                 .addExecutionCondition(
                         new ExecutionCondition()
@@ -143,7 +141,7 @@ public class F5BigIpBackup {
         ICommand tmsh = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("tmsh modify cli preference pager disabled")
-                .withMinimalSecondsToResponse(5)
+                //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(30)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
@@ -173,8 +171,8 @@ public class F5BigIpBackup {
         ICommand makeNewDir = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("mkdir -p /var/SixSense")
-                .withSecondsToTimeout(90
-                ).addExpectedOutcome(
+                .withSecondsToTimeout(90)
+                .addExpectedOutcome(
                         new ExpectedOutcome()
                         .withExpectedValue("")
                         .withBinaryRelation(BinaryRelation.EQUALS)
@@ -189,11 +187,11 @@ public class F5BigIpBackup {
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("exit")
                 .withSecondsToTimeout(60)
-                .addExpectedOutcome(
+                /*.addExpectedOutcome(
                         new ExpectedOutcome()
                         .withExpectedValue("")
                         .withBinaryRelation(BinaryRelation.EQUALS)
                         .withOutcome(ResultStatus.SUCCESS)
-                );
+                )*/;
     }
 }
