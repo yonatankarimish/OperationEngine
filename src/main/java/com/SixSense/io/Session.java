@@ -99,25 +99,30 @@ public class Session implements Closeable {
 
         String output = "";
         long elapsedSeconds = 0L;
-        boolean commandEndReached = false;
+        boolean commandEndReached;
         boolean hasWaitElapsed = command.getExpectedOutcomes().isEmpty();
         ExpectedOutcome resolvedOutcome = ExpectedOutcome.defaultOutcome();
         LocalDateTime commandStartTime = LocalDateTime.now();
         try {
             Thread.sleep(command.getMinimalSecondsToResponse() * 1000);
             while(!hasWaitElapsed){
+                /*this.removeOutdatedChunks() clears the command output from data left over from previous commands (edits processOutput in place)
+                 *and returns a boolean which is true only if the command has certainly finished writing it's output (if true, then certainly finished. if false, may be either way)*/
+                List<String> pipedProcessOutput;
                 synchronized (processOutput) {
-                    /*this.removeOutdatedChunks() clears the command output from data left over from previous commands (edits processOutput in place)
-                    * and returns a boolean which is true only if the command has certainly finished writing it's output (if true, then certainly finished. if false, may be either way)
-                    * then parse the command output into a concatenated user-friendly string*/
                     commandEndReached = this.removeOutdatedChunks(evaluatedCommand, processOutput);
-                    if(command.isUseRawOutput()) {
-                        output = String.join(MessageLiterals.LineBreak, processOutput);
-                    }else {
-                        output = this.filterRawOutput(evaluatedCommand, processOutput);
-                    }
+                    pipedProcessOutput = CommandUtils.pipeCommandOutput(command, processOutput);
                 }
 
+                //Parse the command output into a concatenated user-friendly string
+                if(command.isUseRawOutput()) {
+                    output = String.join(MessageLiterals.LineBreak, pipedProcessOutput);
+                }else {
+                    output = this.filterRawOutput(evaluatedCommand, pipedProcessOutput);
+                }
+
+                /*Attempt to resolve the latest chunk against the current expected outcomes
+                * Then continue if successful, if the command returned completely, or if our waiting period had elapsed */
                 resolvedOutcome = this.attemptToResolve(command, output);
                 elapsedSeconds = commandStartTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
                 if(commandEndReached || resolvedOutcome.isResolved() || elapsedSeconds >= command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()){
@@ -133,7 +138,10 @@ public class Session implements Closeable {
         //logger.debug(this.getTerminalIdentifier() + " session finished command wait");
         logger.debug("command output was " + output);
         logger.debug("resolved outcome is " + resolvedOutcome);
+        this.commandLock.unlock();
+        //logger.debug(this.getTerminalIdentifier() + " session released lock");
 
+        //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
             if(command.getSaveTo().getValue().isEmpty()){
                 command.getSaveTo().setValue(output);
@@ -147,8 +155,6 @@ public class Session implements Closeable {
             resolvedOutcome.setMessage(MessageLiterals.TimeoutInCommand);
         }
 
-        this.commandLock.unlock();
-        //logger.debug(this.getTerminalIdentifier() + " session released lock");
         return resolvedOutcome;
     }
 
@@ -206,10 +212,9 @@ public class Session implements Closeable {
             );
         }
 
-        String squashedMultilineCommand = evaluatedCommand.replaceAll("[\\r\\n]+", " ");
         return stringRepresentation.toString()
                 .replaceAll("\\s+", " ")
-                .replaceAll(Pattern.quote(squashedMultilineCommand), "")
+                .replaceAll(Pattern.quote(evaluatedCommand), "")
                 .replaceAll(Pattern.quote(this.currentPrompt), "")
                 .trim();
     }

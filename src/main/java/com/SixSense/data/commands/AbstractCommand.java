@@ -73,13 +73,14 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     @Override
-    public void setExecutionConditions(List<ExecutionCondition> executionConditions) {
-        this.executionConditions = executionConditions;
+    public AbstractCommand addExecutionCondition(ExecutionCondition executionCondition) {
+        this.executionConditions.add(executionCondition);
+        return this;
     }
 
     @Override
-    public AbstractCommand withExecutionConditions(List<ExecutionCondition> executionConditions) {
-        this.executionConditions = executionConditions;
+    public AbstractCommand addExecutionConditions(List<ExecutionCondition> executionConditions) {
+        this.executionConditions.addAll(executionConditions);
         return this;
     }
 
@@ -105,13 +106,14 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     @Override
-    public void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
+    public AbstractCommand addExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
+        this.expectedOutcomes.addAll(expectedOutcomes);
+        return this;
     }
 
     @Override
-    public AbstractCommand withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes = expectedOutcomes;
+    public AbstractCommand addExpectedOutcome(ExpectedOutcome expectedOutcome) {
+        this.expectedOutcomes.add(expectedOutcome);
         return this;
     }
 
@@ -150,6 +152,12 @@ public abstract class AbstractCommand implements ICommand{
     @Override
     public Map<String, String> getDynamicFields() {
         return Collections.unmodifiableMap(this.dynamicFields);
+    }
+
+    @Override
+    public AbstractCommand addDynamicField(String key, String value) {
+        this.dynamicFields.put(key, value);
+        return this;
     }
 
     @Override

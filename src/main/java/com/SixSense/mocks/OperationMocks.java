@@ -21,7 +21,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(defaultOutcome);
-        localBlock.setExpectedOutcomes(expectedOutcomes);
+        localBlock.addExpectedOutcomes(expectedOutcomes);
 
         return new Operation()
                 .withVPV("Linux generic centos6")
@@ -38,7 +38,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(defaultOutcome);
-        localBlock.setExpectedOutcomes(expectedOutcomes);
+        localBlock.addExpectedOutcomes(expectedOutcomes);
 
         return new Operation()
                 .withVPV("Linux generic centos6")
@@ -59,7 +59,7 @@ public class OperationMocks {
 
             List<ExpectedOutcome> blockOutcomes = new ArrayList<>();
             blockOutcomes.add(blockOutcome);
-            parentBlock.setExpectedOutcomes(blockOutcomes);
+            parentBlock.addExpectedOutcomes(blockOutcomes);
 
             for(int j=1; j<=3; j++){
                 String commandID = "command-"+j;
@@ -78,7 +78,7 @@ public class OperationMocks {
         ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome().withMessage("Parent block completed successfully");
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(defaultOutcome);
-        parentBlock.setExpectedOutcomes(expectedOutcomes);
+        parentBlock.addExpectedOutcomes(expectedOutcomes);
 
         Operation operation =  new Operation()
                 .withVPV("Linux generic centos6")
@@ -108,7 +108,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainDockerInterface);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -128,7 +128,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainEth0);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -148,7 +148,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainLocalIp);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -168,7 +168,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainLocalIp);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -188,7 +188,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldContainLocalIp);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -208,7 +208,7 @@ public class OperationMocks {
 
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldNeverResolve);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }
@@ -242,7 +242,7 @@ public class OperationMocks {
         List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
         expectedOutcomes.add(shouldMatchBlockId);
         expectedOutcomes.add(shouldMatchCommandId);
-        command.setExpectedOutcomes(expectedOutcomes);
+        command.addExpectedOutcomes(expectedOutcomes);
 
         return command;
     }

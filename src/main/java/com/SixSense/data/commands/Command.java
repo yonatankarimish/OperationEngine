@@ -4,17 +4,19 @@ import com.SixSense.data.outcomes.CommandType;
 import com.SixSense.data.outcomes.ExecutionCondition;
 import com.SixSense.data.outcomes.ExpectedOutcome;
 import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.pipes.AbstractOutputPipe;
 import com.SixSense.util.CommandUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Command extends AbstractCommand implements ICommand{
     private CommandType commandType;
     private String commandText;
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
+
     private boolean useRawOutput;
+    private LinkedHashSet<AbstractOutputPipe> outputPipes; // ordered set (i.e. no duplicate pipes)
 
     /*Try not to pollute with additional constructors
      * The empty constructor is for using the 'with' design pattern
@@ -28,16 +30,20 @@ public class Command extends AbstractCommand implements ICommand{
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
         this.aggregatedOutcomeMessage = "";
+
         this.useRawOutput = false;
+        this.outputPipes = new LinkedHashSet<>();
     }
 
-    public Command(CommandType commandType, String commandText, int minimalTimeToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+    public Command(CommandType commandType, String commandText, int minimalSecondsToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, LinkedHashSet<AbstractOutputPipe> outputPipes) {
         super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
         this.commandType = commandType;
         this.commandText = commandText;
-        this.minimalSecondsToResponse = minimalTimeToResponse;
+        this.minimalSecondsToResponse = minimalSecondsToResponse;
         this.secondsToTimeout = secondsToTimeout;
+
         this.useRawOutput = false;
+        this.outputPipes = outputPipes;
     }
 
     public ICommand chainCommands(ICommand additional){
@@ -109,6 +115,20 @@ public class Command extends AbstractCommand implements ICommand{
         return this;
     }
 
+    public Set<AbstractOutputPipe> getOutputPipes() {
+        return outputPipes;
+    }
+
+    public Command addOutputPipe(AbstractOutputPipe outputPipe) {
+        this.outputPipes.add(outputPipe);
+        return this;
+    }
+
+    public Command addOutputPipes(Collection<AbstractOutputPipe> outputPipes) {
+        this.outputPipes.addAll(outputPipes);
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Command{" +
@@ -117,6 +137,7 @@ public class Command extends AbstractCommand implements ICommand{
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
                 ", useRawOutput=" + useRawOutput +
+                ", outputPipes=" + outputPipes +
                 ", alreadyExecuted=" + alreadyExecuted +
                 ", executionConditions=" + executionConditions +
                 ", conditionAggregation=" + conditionAggregation +

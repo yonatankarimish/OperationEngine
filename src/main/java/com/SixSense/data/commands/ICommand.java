@@ -15,9 +15,9 @@ public interface ICommand {
 
     List<ExecutionCondition> getExecutionConditions();
 
-    void setExecutionConditions(List<ExecutionCondition> executionConditions);
+    AbstractCommand addExecutionCondition(ExecutionCondition executionCondition);
 
-    AbstractCommand withExecutionConditions(List<ExecutionCondition> executionConditions);
+    AbstractCommand addExecutionConditions(List<ExecutionCondition> executionConditions);
 
     LogicalCondition getConditionAggregation();
 
@@ -27,9 +27,9 @@ public interface ICommand {
 
     List<ExpectedOutcome> getExpectedOutcomes();
 
-    void setExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);
+    ICommand addExpectedOutcome(ExpectedOutcome expectedOutcomes);
 
-    ICommand withExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);
+    ICommand addExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);
 
     LogicalCondition getOutcomeAggregation();
 
@@ -46,6 +46,8 @@ public interface ICommand {
     ICommand chainCommands(ICommand additional);
 
     Map<String, String> getDynamicFields();
+
+    AbstractCommand addDynamicField(String key, String value);
 
     AbstractCommand addDynamicFields(Map<String, String> dynamicFields);
 

@@ -1,6 +1,5 @@
 package com.SixSense.mocks;
 
-import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
@@ -34,154 +33,124 @@ public class F5BigIpBackup {
     }
 
     private static ICommand sshConnect(){
-        Command ssh = new Command()
-                .withCommandType(CommandType.REMOTE)
-                .withCommandText("ssh $device.username@$device.host -p $device.port")
-                .withMinimalSecondsToResponse(5)
-                .withSecondsToTimeout(60);
-
         ExpectedOutcome template = new ExpectedOutcome()
                 .withBinaryRelation(BinaryRelation.CONTAINS)
                 .withOutcome(ResultStatus.SUCCESS);
 
-        ExpectedOutcome password = new ExpectedOutcome(template).withExpectedValue("assword:");
-        ExpectedOutcome hashbang = new ExpectedOutcome(template).withExpectedValue("#");
-        ExpectedOutcome bracket = new ExpectedOutcome(template).withExpectedValue(">");
-        ExpectedOutcome connectYesNo = new ExpectedOutcome(template).withExpectedValue("connecting (yes/no)");
-        ExpectedOutcome connecting = new ExpectedOutcome(template).withExpectedValue("connecting");
+        ICommand ssh = new Command()
+                .withCommandType(CommandType.REMOTE)
+                .withCommandText("ssh $device.username@$device.host -p $device.port")
+                .withMinimalSecondsToResponse(5)
+                .withSecondsToTimeout(60)
+                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
+                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("connecting (yes/no)"))
+                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("connecting"))
+                .addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("REMOTE HOST IDENTIFICATION HAS CHANGE")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("SSH Key Mismatch")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Connection timed out")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Connection timed out")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Connection refused")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Connection refused")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("No route to host")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("No route to host")
+                ).withSaveTo(new VariableRetention()
+                        .withResultRetention(ResultRetention.Variable)
+                        .withName("ssh.connect.response")
+                );
 
-        ExpectedOutcome identificationChange = new ExpectedOutcome(template)
-                .withExpectedValue("REMOTE HOST IDENTIFICATION HAS CHANGE")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("SSH Key Mismatch");
-
-        ExpectedOutcome timeout = new ExpectedOutcome(template)
-                .withExpectedValue("Connection timed out")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Connection timed out");
-
-        ExpectedOutcome refusal = new ExpectedOutcome(template)
-                .withExpectedValue("Connection refused")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Connection refused");
-
-        ExpectedOutcome noRouteToHost = new ExpectedOutcome(template)
-                .withExpectedValue("No route to host")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("No route to host");
-
-        List<ExpectedOutcome> sshExpectedOutcomes = new ArrayList<>();
-        sshExpectedOutcomes.add(password);
-        //sshExpectedOutcomes.add(hashbang);
-        //sshExpectedOutcomes.add(bracket);
-        sshExpectedOutcomes.add(connectYesNo);
-        sshExpectedOutcomes.add(connecting);
-        sshExpectedOutcomes.add(identificationChange);
-        sshExpectedOutcomes.add(timeout);
-        sshExpectedOutcomes.add(refusal);
-        sshExpectedOutcomes.add(noRouteToHost);
-        ssh.setExpectedOutcomes(sshExpectedOutcomes);
-
-        ssh.setSaveTo(new VariableRetention()
-            .withResultRetention(ResultRetention.Variable)
-            .withName("ssh.connect.response")
-        );
-
-        Command rsaFirstTime = new Command()
+        ICommand rsaFirstTime = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("yes")
                 .withMinimalSecondsToResponse(5)
-                .withSecondsToTimeout(60);
+                .withSecondsToTimeout(60)
+                .addExecutionCondition(
+                        new ExecutionCondition()
+                        .withVariable("ssh.connect.response")
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                        .withExpectedValue("connecting (yes/no)")
+                )
+                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
+                .addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("denied"))
+                .addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Name or service not known")
+                        .withOutcome(ResultStatus.FAILURE)
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("REMOTE HOST IDENTIFICATION HAS CHANGE")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("SSH Key Mismatch")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Connection timed out")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Connection timed out")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Connection refused")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Connection refused")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("No route to host")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("No route to host")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("Invalid argument")
+                        .withOutcome(ResultStatus.FAILURE)
+                ).withSaveTo(
+                        new VariableRetention()
+                        .withResultRetention(ResultRetention.Variable)
+                        .withName("ssh.connect.response")
+                );
 
-        ExecutionCondition rsaFirstTimeCondition = new ExecutionCondition()
-                .withVariable("ssh.connect.response")
-                .withBinaryRelation(BinaryRelation.CONTAINS)
-                .withExpectedValue("connecting (yes/no)");
-
-        List<ExecutionCondition> rsaFirstTimeConditions = new ArrayList<>();
-        rsaFirstTimeConditions.add(rsaFirstTimeCondition);
-        rsaFirstTime.setExecutionConditions(rsaFirstTimeConditions);
-
-        ExpectedOutcome denied = new ExpectedOutcome(template).withExpectedValue("denied");
-
-        ExpectedOutcome nameOrServiceUnknown = new ExpectedOutcome(template)
-                .withExpectedValue("Name or service not known")
-                .withOutcome(ResultStatus.FAILURE);
-
-        ExpectedOutcome invalidArgument = new ExpectedOutcome(template)
-                .withExpectedValue("Invalid argument")
-                .withOutcome(ResultStatus.FAILURE);
-
-        List<ExpectedOutcome> rsaFirstTimeExpectedOutcomes = new ArrayList<>();
-        rsaFirstTimeExpectedOutcomes.add(password);
-        //rsaFirstTimeExpectedOutcomes.add(hashbang);
-        //rsaFirstTimeExpectedOutcomes.add(bracket);
-        rsaFirstTimeExpectedOutcomes.add(denied);
-        rsaFirstTimeExpectedOutcomes.add(nameOrServiceUnknown);
-        rsaFirstTimeExpectedOutcomes.add(identificationChange);
-        rsaFirstTimeExpectedOutcomes.add(timeout);
-        rsaFirstTimeExpectedOutcomes.add(refusal);
-        rsaFirstTimeExpectedOutcomes.add(noRouteToHost);
-        rsaFirstTimeExpectedOutcomes.add(invalidArgument);
-        rsaFirstTime.setExpectedOutcomes(rsaFirstTimeExpectedOutcomes);
-
-        rsaFirstTime.setSaveTo(new VariableRetention()
-                .withResultRetention(ResultRetention.Variable)
-                .withName("ssh.connect.response")
-        );
-
-        Command typePassword = new Command()
+        ICommand typePassword = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("$device.password")
                 .withMinimalSecondsToResponse(5)
-                .withSecondsToTimeout(60);
+                .withSecondsToTimeout(60)
+                .addExecutionCondition(
+                        new ExecutionCondition()
+                        .withVariable("device.password")
+                        .withBinaryRelation(BinaryRelation.NOT_EQUALS)
+                        .withExpectedValue("")
+                ).addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("#"))
+                .addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("onnection")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Connection refused")
+                ).addExpectedOutcome(
+                        new ExpectedOutcome(template)
+                        .withExpectedValue("enied")
+                        .withOutcome(ResultStatus.FAILURE)
+                        .withMessage("Wrong username or password")
+                );
 
-        ExecutionCondition typePasswordCondition = new ExecutionCondition()
-                .withVariable("device.password")
-                .withBinaryRelation(BinaryRelation.NOT_EQUALS)
-                .withExpectedValue("");
-
-        List<ExecutionCondition> typePasswordConditions = new ArrayList<>();
-        typePasswordConditions.add(typePasswordCondition);
-        typePassword.setExecutionConditions(typePasswordConditions);
-
-        ExpectedOutcome emptySuccess = new ExpectedOutcome()
-                .withExpectedValue("")
-                .withBinaryRelation(BinaryRelation.EQUALS)
-                .withOutcome(ResultStatus.SUCCESS);
-
-        ExpectedOutcome connectionRefused = new ExpectedOutcome(template)
-                .withExpectedValue("onnection")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Connection refused");
-
-        ExpectedOutcome connectionDenied = new ExpectedOutcome(template)
-                .withExpectedValue("enied")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Wrong username or password");
-
-        /*ExpectedOutcome wrongCredentials = new ExpectedOutcome(template)
-                .withExpectedValue("word:")
-                .withOutcome(ResultStatus.FAILURE)
-                .withMessage("Wrong credentials");*/
-
-        List<ExpectedOutcome> typePasswordExpectedOutcomes = new ArrayList<>();
-        //typePasswordExpectedOutcomes.add(emptySuccess);
-        typePasswordExpectedOutcomes.add(hashbang);
-        typePasswordExpectedOutcomes.add(connectionRefused);
-        typePasswordExpectedOutcomes.add(connectionDenied);
-        //typePasswordExpectedOutcomes.add(wrongCredentials);
-        typePassword.setExpectedOutcomes(typePasswordExpectedOutcomes);
-
-        Command tmsh = new Command()
+        ICommand tmsh = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("tmsh modify cli preference pager disabled")
                 .withMinimalSecondsToResponse(5)
-                .withSecondsToTimeout(30);
-
-        List<ExpectedOutcome> tmshExpectedOutcomes = new ArrayList<>();
-        tmshExpectedOutcomes.add(emptySuccess);
-        tmsh.setExpectedOutcomes(tmshExpectedOutcomes);
+                .withSecondsToTimeout(30)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withExpectedValue("")
+                        .withBinaryRelation(BinaryRelation.EQUALS)
+                        .withOutcome(ResultStatus.SUCCESS)
+                );
 
         return ssh.chainCommands(rsaFirstTime)
                 .chainCommands(typePassword)
@@ -190,47 +159,41 @@ public class F5BigIpBackup {
     }
 
     private static ICommand rebuildSixSenseDirectory(){
-        Command deleteOldDir = new Command()
+        ICommand deleteOldDir = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("rm -rf /var/SixSense")
-                .withSecondsToTimeout(600);
+                .withSecondsToTimeout(600)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withExpectedValue("")
+                        .withBinaryRelation(BinaryRelation.EQUALS)
+                        .withOutcome(ResultStatus.SUCCESS)
+                );
 
-        ExpectedOutcome emptySuccess = new ExpectedOutcome()
-                .withExpectedValue("")
-                .withBinaryRelation(BinaryRelation.EQUALS)
-                .withOutcome(ResultStatus.SUCCESS);
-
-        List<ExpectedOutcome> deleteOldDirExpectedOutcomes = new ArrayList<>();
-        deleteOldDirExpectedOutcomes.add(emptySuccess);
-        deleteOldDir.setExpectedOutcomes(deleteOldDirExpectedOutcomes);
-
-        Command makeNewDir = new Command()
+        ICommand makeNewDir = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("mkdir -p /var/SixSense")
-                .withSecondsToTimeout(90);
-
-        List<ExpectedOutcome> makeNewDirExpectedOutcomes = new ArrayList<>();
-        makeNewDirExpectedOutcomes.add(emptySuccess);
-        makeNewDir.setExpectedOutcomes(makeNewDirExpectedOutcomes);
+                .withSecondsToTimeout(90
+                ).addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withExpectedValue("")
+                        .withBinaryRelation(BinaryRelation.EQUALS)
+                        .withOutcome(ResultStatus.SUCCESS)
+                );
 
         return deleteOldDir.chainCommands(makeNewDir);
     }
 
     private static ICommand exitCommand(){
-        Command exit = new Command()
+        return new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("exit")
-                .withSecondsToTimeout(60);
-
-        ExpectedOutcome emptySuccess = new ExpectedOutcome()
-                .withExpectedValue("")
-                .withBinaryRelation(BinaryRelation.EQUALS)
-                .withOutcome(ResultStatus.SUCCESS);
-
-        List<ExpectedOutcome> exitExpectedOutcomes = new ArrayList<>();
-        exitExpectedOutcomes.add(emptySuccess);
-        exit.setExpectedOutcomes(exitExpectedOutcomes);
-
-        return exit;
+                .withSecondsToTimeout(60)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withExpectedValue("")
+                        .withBinaryRelation(BinaryRelation.EQUALS)
+                        .withOutcome(ResultStatus.SUCCESS)
+                );
     }
 }

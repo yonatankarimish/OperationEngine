@@ -3,6 +3,7 @@ package com.SixSense.util;
 import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
+import com.SixSense.pipes.AbstractOutputPipe;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,5 +64,13 @@ public class CommandUtils {
         }
 
         return commandText;
+    }
+
+    public static List<String> pipeCommandOutput(Command command, List<String> output){
+        List<String> outputCopy = new ArrayList<>(output);
+        for(AbstractOutputPipe outputPipe : command.getOutputPipes()){
+            outputCopy = outputPipe.pipe(outputCopy);
+        }
+        return outputCopy;
     }
 }
