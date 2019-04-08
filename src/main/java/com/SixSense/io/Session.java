@@ -92,8 +92,8 @@ public class Session implements Closeable {
         * If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
         * Keep your commands short*/
         this.commandLock.lock();
-        //logger.debug(this.getTerminalIdentifier() + " session acquired lock");
-        logger.debug(this.getSessionShellId() + " is writing " + command.getCommandType() +" command " + evaluatedCommand);
+        logger.debug(this.getTerminalIdentifier() + " session acquired lock");
+        logger.info(this.getSessionShellId() + " is writing " + command.getCommandType() +" command " + evaluatedCommand);
         writeToProcess.write(evaluatedCommand + MessageLiterals.LineBreak);
         writeToProcess.flush();
 
@@ -135,11 +135,11 @@ public class Session implements Closeable {
         } catch (InterruptedException e) {
             logger.warn("Session " + this.sessionShellId.toString() + " interrupted while waiting for command " + this.commandOrdinal + "to return.", e);
         }
-        //logger.debug(this.getTerminalIdentifier() + " session finished command wait");
-        logger.debug("command output was " + output);
-        logger.debug("resolved outcome is " + resolvedOutcome);
+        logger.debug(this.getTerminalIdentifier() + " session finished command wait");
+        logger.info("command output was " + output);
+        logger.info("resolved outcome is " + resolvedOutcome);
         this.commandLock.unlock();
-        //logger.debug(this.getTerminalIdentifier() + " session released lock");
+        logger.debug(this.getTerminalIdentifier() + " session released lock");
 
         //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
