@@ -112,6 +112,10 @@ public class Session implements Closeable {
                 synchronized (processOutput) {
                     commandEndReached = this.removeOutdatedChunks(evaluatedCommand, processOutput);
                     pipedProcessOutput = CommandUtils.pipeCommandOutput(command, processOutput);
+                    if(commandEndReached){
+                        processOutput.clear();
+                        processOutput.add(this.currentPrompt);
+                    }
                 }
 
                 //Parse the command output into a concatenated user-friendly string
@@ -183,16 +187,18 @@ public class Session implements Closeable {
         }
 
         int firstRelevantIdx = 0;
-        int chunkScore = 0;
+        int promptScore = 0;
+        int cmdScore = 0;
         boolean currentPromptAfterCurrentCommand = false;
-        for (int lineNum = output.size() - 1; lineNum >= 0 && chunkScore < 2; lineNum--) {
+        for (int lineNum = output.size() - 1; lineNum >= 0 && promptScore + cmdScore < 2; lineNum--) {
             String currentLine = output.get(lineNum);
             if(currentLine.startsWith(this.currentPrompt)){
-                chunkScore++;
+                promptScore++;
                 firstRelevantIdx = lineNum;
                 if(currentLine.contains(firstLineOfCommand)){
-                    chunkScore++;
-                }else{
+                    cmdScore++;
+                }
+                if(cmdScore >= 2){
                     currentPromptAfterCurrentCommand = true;
                 }
             }

@@ -40,16 +40,16 @@ public class Main {
         System.out.println("Operation " + simpleFailingBlock.getFullOperationName() + " Completed with result " + simpleFailingBlockOperationResult.getOutcome());
         System.out.println("Result Message: " + simpleFailingBlockOperationResult.getMessage());*/
 
-        Operation blockTesting = OperationMocks.nestedBlock();
+        /*Operation blockTesting = OperationMocks.nestedBlock();
         ExpectedOutcome blockTestingOperationResult = sessionEngine.executeOperation(blockTesting);
         System.out.println("Operation " + blockTesting.getFullOperationName() + " Completed with result " + blockTestingOperationResult.getOutcome());
-        System.out.println("Result Message: " + blockTestingOperationResult.getMessage());
+        System.out.println("Result Message: " + blockTestingOperationResult.getMessage());*/
 
         //Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
-        /*Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+        Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
         ExpectedOutcome backupResult = sessionEngine.executeOperation(f5BigIpBackup);
         System.out.println("Operation " + f5BigIpBackup.getFullOperationName() + " Completed with result " + backupResult.getOutcome());
-        System.out.println("Result Message: " + backupResult.getMessage());*/
+        System.out.println("Result Message: " + backupResult.getMessage());
 
         sessionEngine.close();
 
