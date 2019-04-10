@@ -2,7 +2,7 @@ package com.SixSense.util;
 
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
-import com.SixSense.data.outcomes.*;
+import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.pipes.LastLinePipe;

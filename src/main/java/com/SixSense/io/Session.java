@@ -2,10 +2,10 @@ package com.SixSense.io;
 
 
 import com.SixSense.data.commands.ICommand;
-import com.SixSense.data.outcomes.CommandType;
+import com.SixSense.data.logic.CommandType;
 import com.SixSense.data.commands.Command;
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.ResultStatus;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.CommandUtils;
@@ -121,7 +121,7 @@ public class Session implements Closeable {
                     output = this.filterRawOutput(evaluatedCommand, pipedProcessOutput);
                 }
 
-                /*Attempt to resolve the latest chunk against the current expected outcomes
+                /*Attempt to resolve the latest chunk against the current expected logic
                 * Then continue if successful, if the command returned completely, or if our waiting period had elapsed */
                 resolvedOutcome = this.attemptToResolve(command, output);
                 elapsedSeconds = commandStartTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
@@ -175,10 +175,16 @@ public class Session implements Closeable {
             return false;
         }
 
+        String firstLineOfCommand;
+        if(evaluatedCommand.contains("\n")){
+            firstLineOfCommand = evaluatedCommand.substring(0, evaluatedCommand.indexOf("\n")+1); //if the command contains multiple lines, only search for the first line in the output
+        }else{
+            firstLineOfCommand = evaluatedCommand;
+        }
+
         int firstRelevantIdx = 0;
         int chunkScore = 0;
         boolean currentPromptAfterCurrentCommand = false;
-        String firstLineOfCommand = evaluatedCommand.substring(0, evaluatedCommand.indexOf("\n")+1); //if the command contains multiple lines, only search for the first line in the output
         for (int lineNum = output.size() - 1; lineNum >= 0 && chunkScore < 2; lineNum--) {
             String currentLine = output.get(lineNum);
             if(currentLine.startsWith(this.currentPrompt)){
@@ -220,7 +226,7 @@ public class Session implements Closeable {
     }
 
     private ExpectedOutcome attemptToResolve(Command command, String outputAsString){
-        /*Check if the command output matches any of our expected outcomes
+        /*Check if the command output matches any of our expected logic
          * If a match is found, return the corresponding result for that expected outcome.
          * If no expected outcome achieved (or none exist), return CommandResult.SUCCESS to progress to the next command*/
         ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(

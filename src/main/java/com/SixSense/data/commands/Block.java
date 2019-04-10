@@ -1,8 +1,8 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.outcomes.ExecutionCondition;
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.data.logic.ExecutionCondition;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.LogicalCondition;
 import com.SixSense.util.CommandUtils;
 
 import java.util.ArrayList;
@@ -37,11 +37,15 @@ public class Block extends AbstractCommand implements ICommand {
         }
     }
 
-    public Block addCommands(ICommand childCommand){
+    public Block addCommand(Command childCommand){
         return CommandUtils.addCommand(this, childCommand);
     }
 
-    public Block chainCommands(ICommand additional){
+    public Block addBlock(Block childCommand){
+        return CommandUtils.addBlock(this, childCommand);
+    }
+
+    public ICommand chainCommands(ICommand additional){
         return CommandUtils.chainCommands(this, additional);
     }
 
@@ -126,12 +130,13 @@ public class Block extends AbstractCommand implements ICommand {
         return childBlocks;
     }
 
-    public void setChildBlocks(List<ICommand> childBlocks) {
-        this.childBlocks = childBlocks;
+    public Block addChildBlock(ICommand childBlock) {
+        this.childBlocks.add(childBlock);
+        return this;
     }
 
-    public Block withtChildBlocks(List<ICommand> childBlocks) {
-        this.childBlocks = childBlocks;
+    public Block addChildBlocks(List<ICommand> childBlocks) {
+        this.childBlocks.addAll(childBlocks);
         return this;
     }
 

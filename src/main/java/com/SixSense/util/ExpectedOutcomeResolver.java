@@ -1,9 +1,9 @@
 package com.SixSense.util;
 
-import com.SixSense.data.outcomes.ExecutionCondition;
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.IFlowConnector;
-import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.data.logic.ExecutionCondition;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.IFlowConnector;
+import com.SixSense.data.logic.LogicalCondition;
 
 import java.util.List;
 import java.util.Map;

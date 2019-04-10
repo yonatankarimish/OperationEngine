@@ -3,7 +3,9 @@ package com.SixSense.mocks;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.outcomes.*;
+import com.SixSense.data.devices.Device;
+import com.SixSense.data.devices.VendorProductVersion;
+import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
@@ -19,7 +21,12 @@ public class F5BigIpBackup {
                 .addDynamicField("device.port", "22");
 
         return new Operation()
-                .withVPV("F5 BigIP Version 11 and above")
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                        .withVendor("F5")
+                        .withProduct("BigIP")
+                        .withVersion("11 and above")
+                ))
                 .withOperationName("Configuration Backup")
                 .withExecutionBlock(operationBlock);
     }

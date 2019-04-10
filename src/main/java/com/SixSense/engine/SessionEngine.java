@@ -1,7 +1,7 @@
 package com.SixSense.engine;
 
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.ResultStatus;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;

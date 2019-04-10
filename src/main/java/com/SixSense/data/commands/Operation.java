@@ -1,46 +1,49 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.outcomes.ExecutionCondition;
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.data.devices.Device;
+import com.SixSense.data.logic.ExecutionCondition;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.WorkflowPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-public class Operation extends AbstractCommand implements ICommand {
-    private String VPV;
+public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     private String operationName;
+    private Device device;
     private ICommand executionBlock;
     private List<ExpectedOutcome> expectedOutcomes;
     private LogicalCondition outcomeAggregation;
 
     public Operation() {
         super();
-        this.VPV = "";
         this.operationName = "";
+        this.device = new Device();
         this.expectedOutcomes = new ArrayList<>();
         this.outcomeAggregation = LogicalCondition.OR;
     }
 
-    public Operation(String VPV, String operationName, ICommand executionBlock, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
-        this.VPV = VPV;
+    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, Set<WorkflowPolicy> workflowPolicies, List<IWorkflow> sequentialWorkflow, String operationName, Device device, ICommand executionBlock, List<ExpectedOutcome> expectedOutcomes1, LogicalCondition outcomeAggregation1) {
+        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage, workflowPolicies, sequentialWorkflow);
         this.operationName = operationName;
+        this.device = device;
         this.executionBlock = executionBlock;
-        this.expectedOutcomes = expectedOutcomes;
-        this.outcomeAggregation = outcomeAggregation;
+        this.expectedOutcomes = expectedOutcomes1;
+        this.outcomeAggregation = outcomeAggregation1;
     }
 
-    public String getVPV() {
-        return VPV;
+    public Device getDevice() {
+        return device;
     }
 
-    public void setVPV(String VPV) {
-        this.VPV = VPV;
+    public void setDevice(Device device) {
+        this.device = device;
     }
 
-    public Operation withVPV(String VPV) {
-        this.VPV = VPV;
+    public Operation withDevice(Device device) {
+        this.device = device;
         return this;
     }
 
@@ -49,7 +52,7 @@ public class Operation extends AbstractCommand implements ICommand {
     }
 
     public String getFullOperationName() {
-        return VPV + " " + operationName;
+        return device.getVpv().getName() + " " + operationName;
     }
 
     public void setOperationName(String operationName) {
@@ -75,11 +78,6 @@ public class Operation extends AbstractCommand implements ICommand {
     }
 
     @Override
-    public List<ExpectedOutcome> getExpectedOutcomes() {
-        return null;
-    }
-
-    @Override
     public ICommand chainCommands(ICommand additional) {
         throw new UnsupportedOperationException("Not yet supported, but it should be...");
     }
@@ -87,8 +85,8 @@ public class Operation extends AbstractCommand implements ICommand {
     @Override
     public String toString() {
         return "Operation{" +
-                "VPV='" + VPV + '\'' +
-                ", operationName='" + operationName + '\'' +
+                "operationName='" + operationName + '\'' +
+                ", device=" + device +
                 ", executionBlock=" + executionBlock +
                 ", expectedOutcomes=" + expectedOutcomes +
                 ", outcomeAggregation=" + outcomeAggregation +

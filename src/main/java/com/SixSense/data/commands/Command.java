@@ -1,9 +1,9 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.outcomes.CommandType;
-import com.SixSense.data.outcomes.ExecutionCondition;
-import com.SixSense.data.outcomes.ExpectedOutcome;
-import com.SixSense.data.outcomes.LogicalCondition;
+import com.SixSense.data.logic.CommandType;
+import com.SixSense.data.logic.ExecutionCondition;
+import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.LogicalCondition;
 import com.SixSense.pipes.AbstractOutputPipe;
 import com.SixSense.util.CommandUtils;
 

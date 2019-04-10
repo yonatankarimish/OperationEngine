@@ -1,8 +1,6 @@
 package com.SixSense.util;
 
-import com.SixSense.data.commands.Block;
-import com.SixSense.data.commands.Command;
-import com.SixSense.data.commands.ICommand;
+import com.SixSense.data.commands.*;
 import com.SixSense.pipes.AbstractOutputPipe;
 
 import java.util.ArrayList;
@@ -11,32 +9,79 @@ import java.util.Map;
 
 public class CommandUtils {
     //Adds a new Command or Block to the current block's child blocks
-    public static Block addCommand(Block parent, ICommand childCommand){
+    public static Block addCommand(Block parent, Command childCommand){
+        parent.getChildBlocks().add(childCommand);
+        return parent;
+    }
+
+    public static Block addBlock(Block parent, Block childCommand){
         parent.getChildBlocks().add(childCommand);
         return parent;
     }
 
     //Merge an additional Block of commands to the current block of commands;
     // the new blocks child commands will be added to the current block, ignoring any settings on the chained block.
-    public static Block chainCommands(ICommand original, ICommand additional){
-        if(original instanceof Block){
-            Block originalAsBlock = ((Block) original);
-            if(additional instanceof Block){
-                originalAsBlock.getChildBlocks().addAll(((Block) additional).getChildBlocks());
-                return originalAsBlock;
+    public static ICommand chainCommands(ICommand original, ICommand additional){
+        if(original instanceof ParallelWorkflow || additional instanceof ParallelWorkflow){
+            throw new UnsupportedOperationException("Workflows can be merged, but not chained");
+        }
+
+        if(original instanceof Operation){
+            Operation originalAsOperation = (Operation)original;
+            ICommand originalExecutionBlock = originalAsOperation.getExecutionBlock();
+            if(additional instanceof Operation){
+                Operation additionalAsOperation = (Operation)additional;
+                ICommand additionalExecutionBlock = additionalAsOperation.getExecutionBlock();
+                return originalAsOperation.withExecutionBlock(chainCommands(originalExecutionBlock, additionalExecutionBlock));
             }else{
-                return addCommand(originalAsBlock, additional);
+                return originalAsOperation.withExecutionBlock(chainCommands(originalExecutionBlock, additional));
+            }
+        }else if(original instanceof Block){
+            Block originalAsBlock = (Block) original;
+            if(additional instanceof Operation){
+                Operation additionalAsOperation = (Operation)additional;
+                ICommand additionalExecutionBlock = additionalAsOperation.getExecutionBlock();
+                return additionalAsOperation.withExecutionBlock(chainCommands(original, additionalExecutionBlock));
+            }else if(additional instanceof Block){
+                return originalAsBlock.addChildBlocks(((Block) additional).getChildBlocks());
+            }else{
+                Command additionalAsCommand = (Command)additional;
+                return addCommand(originalAsBlock, additionalAsCommand);
             }
         }else{
-            if(additional instanceof Block){
-                Block additionalAsBlock = ((Block) additional);
+            if(additional instanceof Operation){
+                Operation additionalAsOperation = (Operation)additional;
+                ICommand additionalExecutionBlock = additionalAsOperation.getExecutionBlock();
+                return additionalAsOperation.withExecutionBlock(chainCommands(original, additionalExecutionBlock));
+            }if(additional instanceof Block){
+                Block additionalAsBlock = (Block) additional;
                 additionalAsBlock.getChildBlocks().add(0, original);
                 return additionalAsBlock;
             }else{
-                List<ICommand> chainedBlocks = new ArrayList<>();
-                chainedBlocks.add(original);
-                chainedBlocks.add(additional);
-                return new Block().withtChildBlocks(chainedBlocks);
+                return new Block()
+                        .addChildBlock(original)
+                        .addChildBlock(additional);
+            }
+        }
+    }
+
+    public static AbstractWorkflow mergeWorkflows(AbstractWorkflow original, AbstractWorkflow additional){
+        if(original instanceof ParallelWorkflow){
+            ParallelWorkflow originalAsWorkflow = (ParallelWorkflow)original;
+            if(additional instanceof ParallelWorkflow){
+                return originalAsWorkflow.addParallelOperations(((ParallelWorkflow)additional).getParallelOperations());
+            }else{
+                return originalAsWorkflow.addParallelOperation((Operation)additional);
+            }
+        }else{
+            if(additional instanceof ParallelWorkflow){
+                throw new UnsupportedOperationException("Parallel workflows cannot be merged into an operation");
+            }else{
+                Operation originalAsOperation = (Operation)original;
+                Operation additionalAsOperation = (Operation)additional;
+                return new ParallelWorkflow()
+                        .addParallelOperation(originalAsOperation)
+                        .addParallelOperation(additionalAsOperation);
             }
         }
     }

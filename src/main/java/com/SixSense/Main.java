@@ -1,11 +1,10 @@
 package com.SixSense;
 
-import com.SixSense.data.outcomes.ExpectedOutcome;
+import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.mocks.F5BigIpBackup;
 import com.SixSense.mocks.OperationMocks;
-import com.SixSense.util.InternalCommands;
 import org.apache.log4j.Logger;
 
 import java.util.Scanner;
@@ -23,7 +22,6 @@ public class Main {
         System.out.println("Starting now");
 
         SessionEngine sessionEngine = SessionEngine.getInstance();
-
         /*Operation simpleLocalBlock = OperationMocks.simpleLocalOperation();
         ExpectedOutcome simpleLocalBlockOperationResult = sessionEngine.executeOperation(simpleLocalBlock);
         System.out.println("Operation " + simpleLocalBlock.getFullOperationName() + " Completed with result " + simpleLocalBlockOperationResult.getOutcome());
@@ -42,16 +40,16 @@ public class Main {
         System.out.println("Operation " + simpleFailingBlock.getFullOperationName() + " Completed with result " + simpleFailingBlockOperationResult.getOutcome());
         System.out.println("Result Message: " + simpleFailingBlockOperationResult.getMessage());*/
 
-        /*Operation blockTesting = OperationMocks.nestedBlock();
+        Operation blockTesting = OperationMocks.nestedBlock();
         ExpectedOutcome blockTestingOperationResult = sessionEngine.executeOperation(blockTesting);
         System.out.println("Operation " + blockTesting.getFullOperationName() + " Completed with result " + blockTestingOperationResult.getOutcome());
-        System.out.println("Result Message: " + blockTestingOperationResult.getMessage());*/
+        System.out.println("Result Message: " + blockTestingOperationResult.getMessage());
 
         //Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
-        Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+        /*Operation f5BigIpBackup = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
         ExpectedOutcome backupResult = sessionEngine.executeOperation(f5BigIpBackup);
         System.out.println("Operation " + f5BigIpBackup.getFullOperationName() + " Completed with result " + backupResult.getOutcome());
-        System.out.println("Result Message: " + backupResult.getMessage());
+        System.out.println("Result Message: " + backupResult.getMessage());*/
 
         sessionEngine.close();
 

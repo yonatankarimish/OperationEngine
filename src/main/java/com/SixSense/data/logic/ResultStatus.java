@@ -1,4 +1,4 @@
-package com.SixSense.data.outcomes;
+package com.SixSense.data.logic;
 
 public enum ResultStatus {
     SUCCESS, FAILURE;

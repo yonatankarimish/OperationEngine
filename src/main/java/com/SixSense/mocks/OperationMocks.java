@@ -1,6 +1,8 @@
 package com.SixSense.mocks;
 
-import com.SixSense.data.outcomes.*;
+import com.SixSense.data.devices.Device;
+import com.SixSense.data.devices.VendorProductVersion;
+import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.*;
 
 import java.util.ArrayList;
@@ -14,237 +16,181 @@ public class OperationMocks {
                 .chainCommands(eth0Interface())
                 .chainCommands(localIp())
                 .chainCommands(rxBytes())
-                .chainCommands(txBytes());
-
-        ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome()
-                .withMessage("Completed successfully");
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(defaultOutcome);
-        localBlock.addExpectedOutcomes(expectedOutcomes);
+                .chainCommands(txBytes())
+                .addExpectedOutcome(ExpectedOutcome.defaultOutcome().withMessage("Completed successfully"));
 
         return new Operation()
-                .withVPV("Linux generic centos6")
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
                 .withOperationName("Network Details - Simple")
                 .withExecutionBlock(localBlock);
     }
 
     public static Operation simpleFailingOperation(){
         ICommand localBlock =  dockerInterface()
-                .chainCommands(commandWithExpectedOutcomeNotReached());
-
-        ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome()
-                .withMessage("Completed successfully");
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(defaultOutcome);
-        localBlock.addExpectedOutcomes(expectedOutcomes);
+                .chainCommands(commandWithExpectedOutcomeNotReached())
+                .addExpectedOutcome(ExpectedOutcome.defaultOutcome().withMessage("Completed successfully"));
 
         return new Operation()
-                .withVPV("Linux generic centos6")
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
                 .withOperationName("Network Details - Planned failure")
                 .withExecutionBlock(localBlock);
     }
 
-    public static Operation nestedBlock(){
-        Block parentBlock = new Block();
-        for(int i=1; i<=3; i++){
-            String blockID = "block-"+i;
-            Block commandBlock = new Block();
-            ExpectedOutcome blockOutcome = ExpectedOutcome.defaultOutcome().withMessage("block-"+i+" completed successfully");
+    public static Operation nestedBlock() {
+        Block parentBlock = (Block) new Block().addExpectedOutcome(ExpectedOutcome.defaultOutcome().withMessage("Parent block completed successfully"));
+        for (int i = 1; i <= 3; i++) {
+            String blockID = "block-" + i;
+            Block commandBlock = (Block)new Block()
+                    .addExpectedOutcome(ExpectedOutcome.defaultOutcome().withMessage("block-" + i + " completed successfully"))
+                    .addDynamicField("var.block.id", blockID + "-should-get-overridden");
 
-            Map<String, String> dynamicFields = new HashMap<>();
-            dynamicFields.put("var.block.id", blockID+"-should-get-overridden");
-            commandBlock.addDynamicFields(dynamicFields);
-
-            List<ExpectedOutcome> blockOutcomes = new ArrayList<>();
-            blockOutcomes.add(blockOutcome);
-            parentBlock.addExpectedOutcomes(blockOutcomes);
-
-            for(int j=1; j<=3; j++){
-                String commandID = "command-"+j;
-                ICommand blockPart =  blockPartCommand(blockID, commandID);
-                commandBlock.addCommands(blockPart);
+            for (int j = 1; j <= 3; j++) {
+                String commandID = "command-" + j;
+                Command blockPart = blockPartCommand(blockID, commandID);
+                commandBlock.addCommand(blockPart);
             }
-            parentBlock.addCommands(commandBlock);
+            parentBlock.addBlock(commandBlock);
         }
 
-        Map<String, String> operationDynamicFields = new HashMap<>();
-        operationDynamicFields.put("\\$var.operation.name", "Three nested blocks");
-        operationDynamicFields.put("\\$var.operation.vendor", "Linux");
-        operationDynamicFields.put("\\$var.operation.product", "CentOS");
-        operationDynamicFields.put("\\$var.operation.version", "6");
-
-        ExpectedOutcome defaultOutcome = ExpectedOutcome.defaultOutcome().withMessage("Parent block completed successfully");
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(defaultOutcome);
-        parentBlock.addExpectedOutcomes(expectedOutcomes);
-
-        Operation operation =  new Operation()
-                .withVPV("Linux generic centos6")
+        return (Operation) new Operation()
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
                 .withOperationName("Block testing - three nested blocks, three commands each")
-                .withExecutionBlock(parentBlock);
-        operation.addDynamicFields(operationDynamicFields);
-        return operation;
+                .withExecutionBlock(parentBlock)
+                .addDynamicField("var.operation.name", "Three nested blocks")
+                .addDynamicField("var.operation.vendor", "Linux")
+                .addDynamicField("var.operation.product", "CentOS")
+                .addDynamicField("var.operation.version", "6");
     }
-
-    public static ICommand sshConnect(String remoteHost, String username, String password){
-        return null;
-    }
-
 
     public static ICommand dockerInterface(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'docker'")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainDockerInterface = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct interface name was found")
-                .withExpectedValue("docker")
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainDockerInterface);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("The correct interface name was found")
+                        .withExpectedValue("docker")
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
     }
 
     public static ICommand eth0Interface(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'eth0'")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainEth0 = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct interface name was found")
-                .withExpectedValue("eth0")
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainEth0);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("The correct interface name was found")
+                        .withExpectedValue("eth0")
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
     }
 
     public static ICommand localIp(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct IP address is defined for the interface")
-                .withExpectedValue("172.31.254.65")
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainLocalIp);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("The correct IP address is defined for the interface")
+                        .withExpectedValue("172.31.254.65")
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
     }
 
     public static ICommand rxBytes(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct IP address is defined for the interface")
-                .withExpectedValue("1000")
-                .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainLocalIp);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("The correct IP address is defined for the interface")
+                        .withExpectedValue("1000")
+                        .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO)
+                );
     }
 
     public static ICommand txBytes(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldContainLocalIp = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("The correct IP address is defined for the interface")
-                .withExpectedValue("1000")
-                .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldContainLocalIp);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("The correct IP address is defined for the interface")
+                        .withExpectedValue("1000")
+                        .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO)
+                );
     }
 
     public static ICommand commandWithExpectedOutcomeNotReached(){
-        Command command = new Command()
+        return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes'")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(10);
-
-        ExpectedOutcome shouldNeverResolve = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("Docker interface should not be here")
-                .withExpectedValue("docker")
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldNeverResolve);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("Docker interface should not be here")
+                        .withExpectedValue("docker")
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
     }
 
-    public static ICommand blockPartCommand(String blockID, String commandID){
-        ICommand command = new Command()
+    public static Command blockPartCommand(String blockID, String commandID){
+        return (Command)new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("echo $var.block.id $var.command.id")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
+                .addDynamicField("var.block.id", blockID)
+                .addDynamicField("var.command.id", commandID)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("Block ID has benn matched")
+                        .withExpectedValue(blockID)
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                )
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                        .withOutcome(ResultStatus.SUCCESS)
+                        .withMessage("Command ID has benn matched")
+                        .withExpectedValue(commandID)
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                )
                 .withOutcomeAggregation(LogicalCondition.AND)
                 .withAggregatedOutcomeMessage("Command params found in response");
-
-        Map<String, String> dynamicFields = new HashMap<>();
-        dynamicFields.put("var.block.id", blockID);
-        dynamicFields.put("var.command.id", commandID);
-        command.addDynamicFields(dynamicFields);
-
-        ExpectedOutcome shouldMatchBlockId = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("Block ID has benn matched")
-                .withExpectedValue(blockID)
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        ExpectedOutcome shouldMatchCommandId = new ExpectedOutcome()
-                .withOutcome(ResultStatus.SUCCESS)
-                .withMessage("Command ID has benn matched")
-                .withExpectedValue(commandID)
-                .withBinaryRelation(BinaryRelation.CONTAINS);
-
-        List<ExpectedOutcome> expectedOutcomes = new ArrayList<>();
-        expectedOutcomes.add(shouldMatchBlockId);
-        expectedOutcomes.add(shouldMatchCommandId);
-        command.addExpectedOutcomes(expectedOutcomes);
-
-        return command;
     }
 
 }

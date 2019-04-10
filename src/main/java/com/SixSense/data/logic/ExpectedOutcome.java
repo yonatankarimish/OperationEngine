@@ -1,4 +1,4 @@
-package com.SixSense.data.outcomes;
+package com.SixSense.data.logic;
 
 public class ExpectedOutcome implements IFlowConnector {
     private boolean resolved; //Did the expected outcome turn out to be true?
