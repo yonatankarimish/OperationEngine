@@ -5,7 +5,7 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
-import com.SixSense.pipes.LastLinePipe;
+import com.SixSense.data.pipes.LastLinePipe;
 
 public class InternalCommands {
     public static ICommand invalidateCurrentPrompt(){

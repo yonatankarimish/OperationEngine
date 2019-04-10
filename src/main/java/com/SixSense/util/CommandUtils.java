@@ -1,7 +1,7 @@
 package com.SixSense.util;
 
 import com.SixSense.data.commands.*;
-import com.SixSense.pipes.AbstractOutputPipe;
+import com.SixSense.data.pipes.AbstractOutputPipe;
 
 import java.util.ArrayList;
 import java.util.List;

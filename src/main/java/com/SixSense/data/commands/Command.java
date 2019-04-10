@@ -4,7 +4,7 @@ import com.SixSense.data.logic.CommandType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalCondition;
-import com.SixSense.pipes.AbstractOutputPipe;
+import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.SixSense.util.CommandUtils;
 
 import java.util.*;

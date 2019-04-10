@@ -1,4 +1,4 @@
-package com.SixSense.pipes;
+package com.SixSense.data.pipes;
 
 import java.util.List;
 import java.util.Objects;
