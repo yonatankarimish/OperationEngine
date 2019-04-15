@@ -4,34 +4,26 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalCondition;
-import com.SixSense.data.logic.WorkflowPolicy;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     private String operationName;
     private Device device;
     private ICommand executionBlock;
-    private List<ExpectedOutcome> expectedOutcomes;
-    private LogicalCondition outcomeAggregation;
 
     public Operation() {
         super();
         this.operationName = "";
         this.device = new Device();
-        this.expectedOutcomes = new ArrayList<>();
-        this.outcomeAggregation = LogicalCondition.OR;
+        this.executionBlock = new Block();
     }
 
-    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, Set<WorkflowPolicy> workflowPolicies, List<IWorkflow> sequentialWorkflow, String operationName, Device device, ICommand executionBlock, List<ExpectedOutcome> expectedOutcomes1, LogicalCondition outcomeAggregation1) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage, workflowPolicies, sequentialWorkflow);
+    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock) {
+        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.operationName = operationName;
         this.device = device;
         this.executionBlock = executionBlock;
-        this.expectedOutcomes = expectedOutcomes1;
-        this.outcomeAggregation = outcomeAggregation1;
     }
 
     public Device getDevice() {
@@ -88,8 +80,7 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
                 "operationName='" + operationName + '\'' +
                 ", device=" + device +
                 ", executionBlock=" + executionBlock +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
+                ", uuid=" + uuid +
                 ", alreadyExecuted=" + alreadyExecuted +
                 ", executionConditions=" + executionConditions +
                 ", conditionAggregation=" + conditionAggregation +

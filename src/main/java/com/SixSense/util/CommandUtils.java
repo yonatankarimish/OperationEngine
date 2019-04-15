@@ -10,12 +10,12 @@ import java.util.Map;
 public class CommandUtils {
     //Adds a new Command or Block to the current block's child blocks
     public static Block addCommand(Block parent, Command childCommand){
-        parent.getChildBlocks().add(childCommand);
+        parent.addChildBlock(childCommand);
         return parent;
     }
 
     public static Block addBlock(Block parent, Block childCommand){
-        parent.getChildBlocks().add(childCommand);
+        parent.addChildBlock(childCommand);
         return parent;
     }
 
@@ -55,7 +55,7 @@ public class CommandUtils {
                 return additionalAsOperation.withExecutionBlock(chainCommands(original, additionalExecutionBlock));
             }if(additional instanceof Block){
                 Block additionalAsBlock = (Block) additional;
-                additionalAsBlock.getChildBlocks().add(0, original);
+                additionalAsBlock.prependChildBlock(original);
                 return additionalAsBlock;
             }else{
                 return new Block()

@@ -6,12 +6,13 @@ import com.SixSense.data.logic.LogicalCondition;
 import com.SixSense.util.CommandUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 public class Block extends AbstractCommand implements ICommand {
+    private int repeatLimit;
     private int repeatCount;
-    private int internalCounter;
     private List<ICommand> childBlocks;
 
     private Iterator<ICommand> commandIterator;
@@ -22,17 +23,17 @@ public class Block extends AbstractCommand implements ICommand {
      * The parameterized constructor is for conditions and results only */
     public Block() {
         super();
-        this.internalCounter = 0;
+        this.repeatCount = 0;
         this.childBlocks = new ArrayList<>();
     }
 
-    public Block(int repeatCount, List<ICommand> childBlocks, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+    public Block(int repeatLimit, List<ICommand> childBlocks, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
         super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
-        if(repeatCount < 0){
+        if(repeatLimit < 0){
             throw new IllegalArgumentException("Cannot construct Block with a negative repeat count");
         } else {
-            this.internalCounter = 0;
-            this.repeatCount = repeatCount;
+            this.repeatCount = 0;
+            this.repeatLimit = repeatLimit;
             this.childBlocks = childBlocks;
         }
     }
@@ -75,7 +76,7 @@ public class Block extends AbstractCommand implements ICommand {
                 return true;
             }else if(!this.currentCommand.isAlreadyExecuted()){
                 return false;
-            }else if(internalCounter < repeatCount) {
+            }else if(repeatCount < repeatLimit) {
                 //If the passed block is a repeating block, which has not yet finished repeating, reset the current loop and return false
                 this.resetNextCommandLoop();
                 return false;
@@ -86,14 +87,14 @@ public class Block extends AbstractCommand implements ICommand {
     }
 
     private void resetNextCommandLoop(){
-        this.internalCounter++;
+        this.repeatCount++;
         this.commandIterator = this.getCommandIterator();
 
         for(ICommand command : this.getChildBlocks()){
             command.setAlreadyExecuted(false);
             if(command instanceof Block){
                 ((Block) command).resetNextCommandLoop();
-                ((Block) command).internalCounter = 0;
+                ((Block) command).repeatCount = 0;
             }
         }
     }
@@ -105,29 +106,34 @@ public class Block extends AbstractCommand implements ICommand {
         return this.commandIterator;
     }
 
-    public int getRepeatCount() {
-        return repeatCount;
+    public int getRepeatLimit() {
+        return repeatLimit;
     }
 
-    public void setRepeatCount(int repeatCount) {
-        if(repeatCount < 0) {
+    public void setRepeatLimit(int repeatLimit) {
+        if(repeatLimit < 0) {
             throw new IllegalArgumentException("Cannot construct Block with a negative repeat count");
         } else {
-            this.repeatCount = repeatCount;
+            this.repeatLimit = repeatLimit;
         }
     }
 
-    public Block withRepeatCount(int repeatCount) {
-        if(repeatCount < 0) {
+    public Block withRepeatLimit(int repeatLimit) {
+        if(repeatLimit < 0) {
             throw new IllegalArgumentException("Cannot construct Block with a negative repeat count");
         } else {
-            this.repeatCount = repeatCount;
+            this.repeatLimit = repeatLimit;
             return this;
         }
     }
 
     public List<ICommand> getChildBlocks() {
-        return childBlocks;
+        return Collections.unmodifiableList(childBlocks);
+    }
+
+    public Block prependChildBlock(ICommand childBlock) {
+        this.childBlocks.add(0, childBlock);
+        return this;
     }
 
     public Block addChildBlock(ICommand childBlock) {
@@ -143,8 +149,7 @@ public class Block extends AbstractCommand implements ICommand {
     @Override
     public String toString() {
         return "Block{" +
-                "repeatCount=" + repeatCount +
-                ", internalCounter=" + internalCounter +
+                "repeatLimit=" + repeatLimit +
                 ", childBlocks=" + childBlocks +
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +

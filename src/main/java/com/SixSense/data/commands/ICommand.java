@@ -9,8 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 public interface ICommand {
+    String getUUID();
+
     boolean isAlreadyExecuted();
+
     void setAlreadyExecuted(boolean alreadyExecuted);
+
     ICommand withAlreadyExecuted(boolean alreadyExecuted);
 
     List<ExecutionCondition> getExecutionConditions();

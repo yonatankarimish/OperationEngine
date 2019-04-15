@@ -8,32 +8,38 @@ import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.io.Session;
 import com.SixSense.mocks.LocalhostConfig;
+import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
+@Service
 public class SessionEngine implements Closeable{
     private static Logger logger = Logger.getLogger(SessionEngine.class);
-    private static SessionEngine engineInstance;
-    private final SSHClient sshClient = new SSHClient();
-    private final ExecutorService workerPool = Executors.newCachedThreadPool();
+    @Autowired private WorkflowManager workflowManager;
+    @Autowired private WorkerQueue workerQueue;
 
+    private final SSHClient sshClient = new SSHClient();
+    private boolean isClosed = false;
+
+    private final Set<String> canceledSessionIds = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Session> runningSessions = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, String> sessionProperties = new HashMap<>();
 
-    private SessionEngine() throws IOException{
+    private SessionEngine() throws Exception{
         Path path = Paths.get(SessionPropertiesPath);
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             Properties sessionProperties = new Properties();
@@ -59,17 +65,14 @@ public class SessionEngine implements Closeable{
         logger.info("Session engine initialized");
     }
 
-    public static synchronized SessionEngine getInstance() throws IOException{
-        if(engineInstance == null){
-            engineInstance = new SessionEngine();
-            logger.info("SessionEngine Created");
-        }
-        return engineInstance;
-    }
-
     public ExpectedOutcome executeOperation(Operation engineOperation) {
-        if(this.workerPool.isShutdown()){
+        if(this.isClosed){
             return ExpectedOutcome.executionError("Session engine has been shut down");
+        }
+
+        boolean canceledPrematurely = this.canceledSessionIds.remove(engineOperation.getUUID());
+        if(canceledPrematurely){
+            return ExpectedOutcome.executionError("Operation " + engineOperation.getUUID() + " has ben canceled before reaching session engine");
         }
 
         if(engineOperation == null || engineOperation.getExecutionBlock() == null){
@@ -77,6 +80,7 @@ public class SessionEngine implements Closeable{
         }
 
         try (Session session = this.createSession()) {
+            this.runningSessions.put(engineOperation.getUUID(), session);
             ICommand executionBlock = engineOperation.getExecutionBlock();
             ExpectedOutcome sessionResult;
 
@@ -89,8 +93,16 @@ public class SessionEngine implements Closeable{
                 sessionResult = ExpectedOutcome.skip();
             }
 
-            engineOperation.setAlreadyExecuted(true);
+            if(!session.isClosed()) {
+                engineOperation.setAlreadyExecuted(true);
+            }else{
+                sessionResult = ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+            }
+
+            this.runningSessions.remove(engineOperation.getUUID());
+            this.notifyWorkflowManager(engineOperation, sessionResult);
             return sessionResult;
+
         }catch (Exception e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
             return ExpectedOutcome.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
@@ -98,7 +110,9 @@ public class SessionEngine implements Closeable{
     }
 
     private ExpectedOutcome executeBlock(Session session, ICommand executionBlock) throws IOException{
-        if (executionBlock instanceof Command) {
+        if(session.isClosed()){
+            return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+        }else if (executionBlock instanceof Command) {
             return this.executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
             /*the progressive result updates for each of the blocks child commands/blocks
@@ -134,8 +148,11 @@ public class SessionEngine implements Closeable{
     }
 
     private ExpectedOutcome executeCommand(Session session, Command currentCommand) throws IOException{
-        ExpectedOutcome commandResult;
+        if(session.isClosed()){
+            return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+        }
 
+        ExpectedOutcome commandResult;
         if(executionConditionsMet(session, currentCommand)) {
             session.loadSessionDynamicFields(currentCommand);
             commandResult = session.executeCommand(currentCommand);
@@ -146,6 +163,23 @@ public class SessionEngine implements Closeable{
 
         currentCommand.setAlreadyExecuted(true);
         return commandResult;
+    }
+
+    public ExpectedOutcome terminateOperation(String operationID){
+        Session terminatingSession = this.runningSessions.remove(operationID);
+        if(terminatingSession == null){
+            logger.warn("Operation " + operationID + " has no running session, and therefore cannot be terminated");
+            this.canceledSessionIds.add(operationID);
+        }else{
+            try {
+                terminatingSession.close();
+            } catch (IOException e) {
+                logger.error("Operation " + operationID + " failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: ", e);
+                return ExpectedOutcome.executionError(MessageLiterals.ExceptionEncountered);
+            }
+        }
+
+        return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
     }
 
     private boolean executionConditionsMet(Session session, ICommand command){
@@ -178,24 +212,38 @@ public class SessionEngine implements Closeable{
         Session session = new Session(localSession, remoteSession);
         session.loadSessionVariables(this.sessionProperties);
 
-        Future<Boolean> sessionLocalOutput = workerPool.submit(session.getLocalStreamWrapper());
-        Future<Boolean> sessionRemoteOutput = workerPool.submit(session.getRemoteStreamWrapper());
-
-        //executeCommand(session, LocalhostConfig.sessionStartBlock(CommandType.LOCAL));
-        //executeCommand(session, LocalhostConfig.sessionStartBlock(CommandType.REMOTE));
+        try {
+            Future<Boolean> sessionLocalOutput = this.workerQueue.submit(session.getLocalStreamWrapper());
+            Future<Boolean> sessionRemoteOutput = this.workerQueue.submit(session.getRemoteStreamWrapper());
+        }catch (Exception e){
+            String message = "Failed to create new session - could not submit IO streams to worker queue.";
+            logger.error(message, e);
+            session.close();
+            throw new IOException(message, e);
+        }
 
         return session;
     }
 
+    private void notifyWorkflowManager(Operation operation, ExpectedOutcome resolvedOutcome){
+        /*We submit the notify request to the worker queue so that we can return the expected outcome without waiting for the next workflow to complete
+        * Since workflows are lengthy operations, this is a major time and resource saver*/
+        try {
+            workerQueue.submit(() -> workflowManager.notifyWorkflow(operation, resolvedOutcome));
+        }catch (Exception e){
+            logger.error("Failed to notify workflow manager that operation " + operation.getUUID() + " has completed. Caused by: ", e);
+        }
+    }
+
     @Override
     public void close() {
-        this.workerPool.shutdownNow();
         try {
             this.sshClient.close();
         } catch (IOException e) {
             logger.error("Session engine failed to close - failed to close ssh client. Caused by: ", e);
         }
 
+        this.isClosed = true;
         logger.info("Session engine closed");
     }
 }

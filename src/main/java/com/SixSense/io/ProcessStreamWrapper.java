@@ -34,7 +34,7 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
                 bytesRead = this.processStream.read(rawData);
                 if(bytesRead != -1) {
                     String currentChunk = new String(rawData, 0, bytesRead);
-                    //logger.debug("read chunk " + currentChunk + " directly from stream");
+                    logger.debug("read chunk " + currentChunk + " directly from stream");
                     synchronized (this.processOutput) {
                         //splitChunk will always have at least one entry (if no line break was read)
                         String[] splitChunk = (" "  + currentChunk  //pad the current chunk with whitespace to split on leading line breaks
@@ -59,13 +59,15 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
                         }
                     }
 
-                    this.session.getCommandLock().lock();
-                    //logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
-                    try {
-                        this.session.getNewChunkReceived().signalAll();
-                    } finally {
-                        this.session.getCommandLock().unlock();
-                        //logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
+                    if(!this.session.isClosed()) {
+                        this.session.getCommandLock().lock();
+                        logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
+                        try {
+                            this.session.getNewChunkReceived().signalAll();
+                        } finally {
+                            this.session.getCommandLock().unlock();
+                            logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
+                        }
                     }
                 }
             } while (bytesRead != -1);

@@ -8,6 +8,7 @@ import com.SixSense.data.retention.VariableRetention;
 import java.util.*;
 
 public abstract class AbstractCommand implements ICommand{
+    protected final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
     protected boolean alreadyExecuted;
 
     protected List<ExecutionCondition> executionConditions;
@@ -24,6 +25,7 @@ public abstract class AbstractCommand implements ICommand{
     * The empty constructor is for using the 'with' design pattern
     * The parameterized constructor is for conditions and results only */
     public AbstractCommand(){
+        this.uuid = UUID.randomUUID();
         this.alreadyExecuted = false;
 
         this.executionConditions = new ArrayList<>();
@@ -38,6 +40,7 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     public AbstractCommand(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+        this.uuid = UUID.randomUUID();
         this.alreadyExecuted = false;
 
         this.executionConditions = executionConditions;
@@ -49,6 +52,11 @@ public abstract class AbstractCommand implements ICommand{
 
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
+    }
+
+    @Override
+    public String getUUID() {
+        return uuid.toString();
     }
 
     @Override
@@ -69,7 +77,7 @@ public abstract class AbstractCommand implements ICommand{
 
     @Override
     public List<ExecutionCondition> getExecutionConditions() {
-        return executionConditions;
+        return Collections.unmodifiableList(executionConditions);
     }
 
     @Override
@@ -102,7 +110,7 @@ public abstract class AbstractCommand implements ICommand{
 
     @Override
     public List<ExpectedOutcome> getExpectedOutcomes() {
-        return expectedOutcomes;
+        return Collections.unmodifiableList(expectedOutcomes);
     }
 
     @Override

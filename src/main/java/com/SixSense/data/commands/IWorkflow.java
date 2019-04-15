@@ -1,20 +1,18 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.logic.WorkflowPolicy;
-
 import java.util.List;
-import java.util.Set;
 
 public interface IWorkflow {
-    Set<WorkflowPolicy> getWorkflowPolicies();
 
-    AbstractWorkflow addWorkflowPolicy(WorkflowPolicy workflowPolicy);
+    List<ParallelWorkflow> getSequentialWorkflowUponSuccess();
 
-    AbstractWorkflow addWorkflowPolicies(Set<WorkflowPolicy> workflowPolicies);
+    AbstractWorkflow addSequentialWorkflowUponSuccess(ParallelWorkflow sequentialWorkflow);
 
-    List<IWorkflow> getSequentialWorkflow();
+    AbstractWorkflow addSequentialWorkflowsUponSuccess(List<ParallelWorkflow> sequentialWorkflow);
 
-    AbstractWorkflow addSequentialWorkflow(IWorkflow sequentialWorkflow);
+    List<ParallelWorkflow> getSequentialWorkflowUponFailure();
 
-    AbstractWorkflow addSequentialWorkflows(List<IWorkflow> sequentialWorkflow);
+    AbstractWorkflow addSequentialWorkflowUponFailure(ParallelWorkflow sequentialWorkflow);
+
+    AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow);
 }

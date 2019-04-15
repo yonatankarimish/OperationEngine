@@ -248,7 +248,7 @@ public class Session implements Closeable {
         return resolvedOutcome;
     }
 
-    String getSessionShellId() {
+    public String getSessionShellId() {
         return this.sessionShellId.toString();
     }
 
