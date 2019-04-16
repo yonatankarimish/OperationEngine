@@ -111,10 +111,6 @@ public class Session implements Closeable {
                 synchronized (processOutput) {
                     commandEndReached = this.removeOutdatedChunks(evaluatedCommand, processOutput);
                     pipedProcessOutput = CommandUtils.pipeCommandOutput(command, processOutput);
-                    if(commandEndReached){
-                        processOutput.clear();
-                        processOutput.add(this.currentPrompt);
-                    }
                 }
 
                 //Parse the command output into a concatenated user-friendly string
@@ -125,8 +121,16 @@ public class Session implements Closeable {
                 }
 
                 /*Attempt to resolve the latest chunk against the current expected logic
-                * Then continue if successful, if the command returned completely, or if our waiting period had elapsed */
+                 * Then continue if successful, if the command returned completely, or if our waiting period had elapsed */
                 resolvedOutcome = this.attemptToResolve(command, output);
+
+                if(commandEndReached){
+                    synchronized (processOutput) {
+                        processOutput.clear();
+                        processOutput.add(this.currentPrompt);
+                    }
+                }
+
                 elapsedSeconds = commandStartTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
                 if(commandEndReached || resolvedOutcome.isResolved() || elapsedSeconds >= command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()){
                     hasWaitElapsed = true;
@@ -196,12 +200,14 @@ public class Session implements Closeable {
         int promptScore = 0;
         int cmdScore = 0;
         boolean promptAppearsTwice = false;
+        boolean commandAppearsOnce = false;
         for (int lineNum = output.size() - 1; lineNum >= 0 && promptScore + cmdScore < 2; lineNum--) {
             String currentLine = output.get(lineNum);
             if(currentLine.startsWith(this.currentPrompt)){
                 promptScore++;
                 firstRelevantIdx = lineNum;
                 if(currentLine.contains(firstLineOfCommand)){
+                    commandAppearsOnce = true;
                     cmdScore++;
                 }
                 if(promptScore >= 2){
@@ -215,7 +221,7 @@ public class Session implements Closeable {
             firstRelevantIdx--;
         }
 
-        return promptAppearsTwice; //We assume that if the prompt appears twice, than case 1) is met
+        return commandAppearsOnce && promptAppearsTwice; //We assume that if the prompt appears twice, and the command appears once, than case 1) is met
     }
 
     private String filterRawOutput(String evaluatedCommand, List<String> output){

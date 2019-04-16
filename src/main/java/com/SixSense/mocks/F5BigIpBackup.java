@@ -6,6 +6,7 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
+import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
@@ -143,10 +144,11 @@ public class F5BigIpBackup {
                 .withCommandText("tmsh modify cli preference pager disabled")
                 //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(30)
+                .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                        .withExpectedValue("")
-                        .withBinaryRelation(BinaryRelation.EQUALS)
+                        .withExpectedValue("tmsh.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                         .withOutcome(ResultStatus.SUCCESS)
                 );
 
@@ -161,22 +163,24 @@ public class F5BigIpBackup {
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("rm -rf /var/SixSense")
                 .withSecondsToTimeout(600)
+                .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                        .withExpectedValue("")
-                        .withBinaryRelation(BinaryRelation.EQUALS)
-                        .withOutcome(ResultStatus.SUCCESS)
+                                .withExpectedValue("rm -rf.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                                .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
+                                .withOutcome(ResultStatus.SUCCESS)
                 );
 
         ICommand makeNewDir = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("mkdir -p /var/SixSense")
                 .withSecondsToTimeout(15)
+                .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                        .withExpectedValue("")
-                        .withBinaryRelation(BinaryRelation.EQUALS)
-                        .withOutcome(ResultStatus.SUCCESS)
+                                .withExpectedValue("mkdir -p.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                                .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
+                                .withOutcome(ResultStatus.SUCCESS)
                 );
 
         return deleteOldDir.chainCommands(makeNewDir);

@@ -76,6 +76,8 @@ public class Block extends AbstractCommand implements ICommand {
                 return true;
             }else if(!this.currentCommand.isAlreadyExecuted()){
                 return false;
+            }else if(this.repeatConditions.isEmpty()){
+                return true;
             }else if(ExpectedOutcomeResolver.checkExecutionConditions(context.getCurrentSessionVariables(), repeatConditions, repeatAggregation).isResolved()) {//as long as resolved, the halting condition is not met
                 //If the passed block is a repeating block, which has not yet finished repeating, reset the current loop and return false
                 this.resetNextCommandLoop();
