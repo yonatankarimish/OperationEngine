@@ -94,7 +94,6 @@ public class WorkflowManager {
             }
 
             if(workflowPolicies.contains(WorkflowPolicy.OPERATIONS_DEPENDENT)){
-                //TODO: should be sessionEngine.terminate() for each remaining operation with alreadyExecuted == false
                 try {
                     for (Operation operation : workflow.getParallelOperations()) {
                         if (!operation.isAlreadyExecuted()) {

@@ -124,8 +124,8 @@ public class SessionEngine implements Closeable{
 
             if(executionConditionsMet(session, parentBlock)) {
                 session.loadSessionDynamicFields(parentBlock);
-                while (!parentBlock.hasExhaustedCommands()) {
-                    ICommand nextCommand = parentBlock.getNextCommand();
+                while (!parentBlock.hasExhaustedCommands(session)) {
+                    ICommand nextCommand = parentBlock.getNextCommand(session);
                     if (nextCommand != null) {
                         ExpectedOutcome commandResult = this.executeBlock(session, nextCommand);
                         if (commandResult.getOutcome().equals(ResultStatus.FAILURE)) {

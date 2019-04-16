@@ -76,7 +76,7 @@ public class F5BigIpBackup {
                 .withSecondsToTimeout(60)
                 .addExecutionCondition(
                         new ExecutionCondition()
-                        .withVariable("ssh.connect.response")
+                        .withVariable("$ssh.connect.response")
                         .withBinaryRelation(BinaryRelation.CONTAINS)
                         .withExpectedValue("connecting (yes/no)")
                 ).addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("assword:"))
@@ -122,7 +122,7 @@ public class F5BigIpBackup {
                 .withSecondsToTimeout(60)
                 .addExecutionCondition(
                         new ExecutionCondition()
-                        .withVariable("device.password")
+                        .withVariable("$device.password")
                         .withBinaryRelation(BinaryRelation.NOT_EQUALS)
                         .withExpectedValue("")
                 ).addExpectedOutcome(new ExpectedOutcome(template).withExpectedValue("#"))

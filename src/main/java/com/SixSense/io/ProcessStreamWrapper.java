@@ -38,8 +38,8 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
                     synchronized (this.processOutput) {
                         //splitChunk will always have at least one entry (if no line break was read)
                         String[] splitChunk = (" "  + currentChunk  //pad the current chunk with whitespace to split on leading line breaks
-                                .replaceAll(" *"+MessageLiterals.CarriageReturn+" *", "") //trim all space characters around carriage returns
-                                .replaceAll(" *"+MessageLiterals.CarriageReturn+MessageLiterals.LineBreak+" *", MessageLiterals.LineBreak) //while retaining the line breaks
+                                .replace(" *"+MessageLiterals.CarriageReturn+" *", "") //trim all space characters around carriage returns
+                                .replace(" *"+MessageLiterals.CarriageReturn+MessageLiterals.LineBreak+" *", MessageLiterals.LineBreak) //while retaining the line breaks
                                 + " ")// then pad the current chunk with whitespace to split on trailing line breaks
                                 .split(MessageLiterals.LineBreak); //so we can split on them here
 

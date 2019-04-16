@@ -50,4 +50,23 @@ public class InternalCommands {
 
         return lastChunk.chainCommands(currentChunk);
     }
+
+    public static ICommand assignValue(String assignedField, String expression){
+        return new Command()
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("expr " + expression)
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(5)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withExpectedValue("")
+                                .withBinaryRelation(BinaryRelation.NOT_EQUALS)
+                                .withOutcome(ResultStatus.SUCCESS)
+                )
+                .withSaveTo(new VariableRetention()
+                        .withResultRetention(ResultRetention.Variable)
+                        .withName(assignedField)
+                        .withOverwriteParent(true)
+                );
+    }
 }

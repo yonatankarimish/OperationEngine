@@ -11,7 +11,7 @@ public class MessageLiterals {
     public static final String FileSeparator = FileSystems.getDefault().getSeparator();
     public static final String CarriageReturn = "\r";
     public static final String LineBreak = System.lineSeparator();
-    public static final String VariableMark = "\\$";
+    public static final String VariableMark = "$";
 
 
     public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";

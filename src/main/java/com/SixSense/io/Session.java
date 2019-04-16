@@ -151,8 +151,13 @@ public class Session implements Closeable {
                 command.getSaveTo().setValue(output);
             }
             if(command.getSaveTo().getResultRetention().equals(ResultRetention.Variable)){
-                this.sessionVariables.putIfAbsent(command.getSaveTo().getName(), new ArrayDeque<>());
-                this.sessionVariables.get(command.getSaveTo().getName()).push(command.getSaveTo());
+                String variable = command.getSaveTo().getName();
+                this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
+                Deque<VariableRetention> varStack = this.sessionVariables.get(variable);
+                if(!varStack.isEmpty()) {
+                    varStack.pop();
+                }
+                varStack.push(command.getSaveTo());
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
             //If a timeout occured, the command failed to execute and the method will return a failure
@@ -189,7 +194,7 @@ public class Session implements Closeable {
         int firstRelevantIdx = 0;
         int promptScore = 0;
         int cmdScore = 0;
-        boolean currentPromptAfterCurrentCommand = false;
+        boolean promptAppearsTwice = false;
         for (int lineNum = output.size() - 1; lineNum >= 0 && promptScore + cmdScore < 2; lineNum--) {
             String currentLine = output.get(lineNum);
             if(currentLine.startsWith(this.currentPrompt)){
@@ -198,8 +203,8 @@ public class Session implements Closeable {
                 if(currentLine.contains(firstLineOfCommand)){
                     cmdScore++;
                 }
-                if(cmdScore >= 2){
-                    currentPromptAfterCurrentCommand = true;
+                if(promptScore >= 2){
+                    promptAppearsTwice = true;
                 }
             }
         }
@@ -209,25 +214,25 @@ public class Session implements Closeable {
             firstRelevantIdx--;
         }
 
-        return currentPromptAfterCurrentCommand;
+        return promptAppearsTwice; //We assume that if the prompt appears twice, than case 1) is met
     }
 
     private String filterRawOutput(String evaluatedCommand, List<String> output){
         StringJoiner stringRepresentation = new StringJoiner(" ", "", "");
         for(String line : output){
             stringRepresentation.add(line
-                    .replaceAll(MessageLiterals.CarriageReturn+MessageLiterals.LineBreak, " ")
-                    .replaceAll(MessageLiterals.LineBreak, " ")
-                    .replaceAll(MessageLiterals.CarriageReturn, " ")
-                    .replaceAll(Pattern.quote(evaluatedCommand), "")
+                    .replace(MessageLiterals.CarriageReturn+MessageLiterals.LineBreak, " ")
+                    .replace(MessageLiterals.LineBreak, " ")
+                    .replace(MessageLiterals.CarriageReturn, " ")
+                    .replace(evaluatedCommand, "")
                     .trim()
             );
         }
 
         return stringRepresentation.toString()
                 .replaceAll("\\s+", " ")
-                .replaceAll(Pattern.quote(evaluatedCommand), "")
-                .replaceAll(Pattern.quote(this.currentPrompt), "")
+                .replace(evaluatedCommand, "")
+                .replace(this.currentPrompt, "")
                 .trim();
     }
 

@@ -4,6 +4,7 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.*;
+import com.SixSense.util.InternalCommands;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,6 +76,41 @@ public class OperationMocks {
                 .addDynamicField("var.operation.vendor", "Linux")
                 .addDynamicField("var.operation.product", "CentOS")
                 .addDynamicField("var.operation.version", "6");
+    }
+
+    public static Operation repeatingBlock(int repeatCount) {
+        ICommand echoValue = new Command()
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("echo $var.block.counter")
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(500)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withExpectedValue("$var.block.counter")
+                                .withBinaryRelation(BinaryRelation.EQUALS)
+                                .withOutcome(ResultStatus.SUCCESS)
+                );
+        ICommand increment = InternalCommands.assignValue("var.block.counter", "$var.block.counter + 1");
+
+        Block repeatingBlock = ((Block)echoValue.chainCommands(increment))
+                .addRepeatCondition(
+                        new ExecutionCondition()
+                        .withVariable("$var.block.counter")
+                        .withBinaryRelation(BinaryRelation.LESSER_OR_EQUAL_TO)
+                        .withExpectedValue("$var.block.repeatCount")
+                );
+
+        return (Operation) new Operation()
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
+                .withOperationName("Block testing - repeating block")
+                .withExecutionBlock(repeatingBlock)
+                .addDynamicField("var.block.repeatCount", String.valueOf(repeatCount))
+                .addDynamicField("var.block.counter", "1");
     }
 
     public static ICommand dockerInterface(){

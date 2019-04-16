@@ -104,7 +104,7 @@ public class CommandUtils {
         }
         if(dynamicFields != null) {
             for (String dynamicField : dynamicFields.keySet()) {
-                commandText = commandText.replaceAll(MessageLiterals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
+                commandText = commandText.replace(MessageLiterals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
             }
         }
 
