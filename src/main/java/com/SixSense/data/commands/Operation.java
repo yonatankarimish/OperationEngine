@@ -74,21 +74,33 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
         throw new UnsupportedOperationException("Not yet supported, but it should be...");
     }
 
+    //Returns a new instance of the same operation in its pristine state. That is - as if the new state was never executed
+    @Override
+    public Operation deepClone(){
+       return assignDefaults(new Operation());
+    }
+
+    //Reverts the same operation instance to it's pristine state.  That is - as if the same command was never executed
+    @Override
+    public Operation reset(){
+        return assignDefaults(this);
+    }
+
+    private Operation assignDefaults(Operation operation){
+        return (Operation)operation
+                .withOperationName(this.operationName)
+                .withDevice(this.device.deepClone())
+                .withExecutionBlock(this.executionBlock.deepClone())
+                .withSuperCloneState(this);
+    }
+
     @Override
     public String toString() {
         return "Operation{" +
                 "operationName='" + operationName + '\'' +
                 ", device=" + device +
                 ", executionBlock=" + executionBlock +
-                ", uuid=" + uuid +
-                ", alreadyExecuted=" + alreadyExecuted +
-                ", executionConditions=" + executionConditions +
-                ", conditionAggregation=" + conditionAggregation +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
-                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
-                ", dynamicFields=" + dynamicFields +
-                ", saveTo=" + saveTo +
+                ", " + super.superToString() +
                 '}';
     }
 }

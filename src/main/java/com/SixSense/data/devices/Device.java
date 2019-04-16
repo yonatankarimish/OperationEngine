@@ -44,4 +44,19 @@ public class Device {
         this.dynamicFields.putAll(dynamicFields);
         return this;
     }
+
+    //Returns a new instance of the same device in its pristine state. That is - as if the new state was never executed
+    public Device deepClone(){
+        return new Device()
+                .withVpv(this.vpv.deepClone())
+                .addDynamicFields(this.dynamicFields);
+    }
+
+    @Override
+    public String toString() {
+        return "Device{" +
+                "vpv=" + vpv +
+                ", dynamicFields=" + dynamicFields +
+                '}';
+    }
 }

@@ -129,6 +129,29 @@ public class Command extends AbstractCommand implements ICommand{
         return this;
     }
 
+    //Returns a new instance of the same command in its pristine state. That is - as if the new state was never executed
+    @Override
+    public Command deepClone(){
+        return assignDefaults(new Command());
+    }
+
+    //Reverts the same command instance to it's pristine state.  That is - as if the same command was never executed
+    @Override
+    public Command reset(){
+        return assignDefaults(this);
+    }
+
+    private Command assignDefaults(Command command){
+        return (Command)command
+                .withCommandType(this.commandType)
+                .withCommandText(this.commandText)
+                .withMinimalSecondsToResponse(this.minimalSecondsToResponse)
+                .withSecondsToTimeout(this.secondsToTimeout)
+                .withUseRawOutput(this.useRawOutput)
+                .addOutputPipes(this.outputPipes)
+                .withSuperCloneState(this);
+    }
+
     @Override
     public String toString() {
         return "Command{" +
@@ -138,14 +161,7 @@ public class Command extends AbstractCommand implements ICommand{
                 ", secondsToTimeout=" + secondsToTimeout +
                 ", useRawOutput=" + useRawOutput +
                 ", outputPipes=" + outputPipes +
-                ", alreadyExecuted=" + alreadyExecuted +
-                ", executionConditions=" + executionConditions +
-                ", conditionAggregation=" + conditionAggregation +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
-                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
-                ", dynamicFields=" + dynamicFields +
-                ", saveTo=" + saveTo +
+                ", " + super.superToString() +
                 '}';
     }
 }

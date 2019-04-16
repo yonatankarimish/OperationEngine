@@ -60,6 +60,14 @@ public class VendorProductVersion {
         return vendor + " " + product + " " + version;
     }
 
+    //Returns a new instance of the same vpv in its pristine state. That is - as if the new state was never executed
+    public VendorProductVersion deepClone(){
+        return new VendorProductVersion()
+                .withVendor(this.vendor)
+                .withProduct(this.product)
+                .withVersion(this.version);
+    }
+
     @Override
     public String toString() {
         return "VendorProductVersion{" +

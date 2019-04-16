@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 import net.schmizz.sshj.connection.channel.direct.Session.Shell;
 
@@ -147,17 +146,19 @@ public class Session implements Closeable {
 
         //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
-            if(command.getSaveTo().getValue().isEmpty()){
-                command.getSaveTo().setValue(output);
+            //We clone the retention so that if the command is called again, any action we take within this code block will not affect subsequent executions
+            VariableRetention clonedRetention = command.getSaveTo().deepClone();
+            if(clonedRetention.getValue().isEmpty()){
+                clonedRetention.setValue(output);
             }
-            if(command.getSaveTo().getResultRetention().equals(ResultRetention.Variable)){
-                String variable = command.getSaveTo().getName();
+            if(clonedRetention.getResultRetention().equals(ResultRetention.Variable)){
+                String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
                 Deque<VariableRetention> varStack = this.sessionVariables.get(variable);
                 if(!varStack.isEmpty()) {
                     varStack.pop();
                 }
-                varStack.push(command.getSaveTo());
+                varStack.push(clonedRetention);
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
             //If a timeout occured, the command failed to execute and the method will return a failure

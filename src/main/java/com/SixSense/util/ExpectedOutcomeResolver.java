@@ -119,7 +119,7 @@ public class ExpectedOutcomeResolver {
 
     private static ExpectedOutcome evaluateAndResolveOutcome(String commandOutput, ExpectedOutcome possibleOutcome, Map<String, String> sessionFields){
         String outcomeValue = CommandUtils.evaluateAgainstDynamicFields(possibleOutcome.getExpectedValue(), sessionFields);
-        ExpectedOutcome withExpectedValue = new ExpectedOutcome(possibleOutcome).withExpectedValue(outcomeValue);
+        ExpectedOutcome withExpectedValue = possibleOutcome.deepClone().withExpectedValue(outcomeValue);
 
         return (ExpectedOutcome) ExpectedOutcomeResolver.resolveBinaryOperand(commandOutput, withExpectedValue);
     }

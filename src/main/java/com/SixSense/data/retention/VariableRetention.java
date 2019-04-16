@@ -1,10 +1,10 @@
 package com.SixSense.data.retention;
 
-public class VariableRetention {
+public class VariableRetention{
     private ResultRetention resultRetention;
     private String name;
-    private String value;
-    private boolean overwriteParent;
+    private String value; //Value may be set either upon creation (preconfigured value) or when a command outputs (dynamic value)
+    private boolean overwriteParent; //If true, will overwrite it's entire variable stack, ignoring variable scoping considerations
 
     public VariableRetention() {
         this.resultRetention = ResultRetention.None;
@@ -70,6 +70,15 @@ public class VariableRetention {
     public VariableRetention withOverwriteParent(boolean overwriteParent) {
         this.overwriteParent = overwriteParent;
         return this;
+    }
+
+    //Returns a new instance of the same variable retention in its pristine state. That is - as if the new state was never saved
+    public VariableRetention deepClone(){
+        return new VariableRetention()
+                .withResultRetention(this.resultRetention)
+                .withName(this.name)
+                .withValue(this.value) //
+                .withOverwriteParent(this.overwriteParent);
     }
 
     @Override

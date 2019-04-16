@@ -7,6 +7,7 @@ import com.SixSense.data.logic.LogicalCondition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AbstractWorkflow extends AbstractCommand implements ICommand, IWorkflow {
     private List<ParallelWorkflow> sequentialWorkflowUponSuccess;
@@ -68,5 +69,21 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
     public AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow) {
         this.sequentialWorkflowUponFailure.addAll(sequentialWorkflow);
         return this;
+    }
+
+    protected AbstractWorkflow withSuperCloneState(AbstractWorkflow creator){
+        List<ParallelWorkflow> successClone = creator.sequentialWorkflowUponSuccess.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
+        List<ParallelWorkflow> failClone = creator.sequentialWorkflowUponFailure.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
+        this.sequentialWorkflowUponSuccess.clear();
+        this.sequentialWorkflowUponFailure.clear();
+
+        return ((AbstractWorkflow)super.withSuperCloneState(creator))
+                .addSequentialWorkflowsUponSuccess(successClone)
+                .addSequentialWorkflowsUponFailure(failClone);
+    }
+    public String superToString() {
+        return " sequentialWorkflowUponSuccess=" + sequentialWorkflowUponSuccess +
+                ", sequentialWorkflowUponFailure=" + sequentialWorkflowUponFailure +
+                ", " + super.superToString();
     }
 }

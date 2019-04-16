@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Block extends AbstractCommand implements ICommand {
     private List<ICommand> childBlocks;
@@ -86,13 +87,15 @@ public class Block extends AbstractCommand implements ICommand {
     }
 
     private void resetNextCommandLoop(){
+        this.reset();
         this.commandIterator = childBlocks.iterator();
         this.currentCommand = null;
 
         for(ICommand command : this.getChildBlocks()){
-            command.setAlreadyExecuted(false);
             if(command instanceof Block){
                 ((Block) command).resetNextCommandLoop();
+            }else if(command instanceof Command){
+                command.reset();
             }
         }
     }
@@ -150,6 +153,31 @@ public class Block extends AbstractCommand implements ICommand {
         return this;
     }
 
+    //Returns a new instance of the same block in its pristine state. That is - as if the new state was never executed
+    @Override
+    public Block deepClone(){
+        return assignDefaults(new Block());
+    }
+
+    //Reverts the same block instance to it's pristine state.  That is - as if the same command was never executed
+    @Override
+    public Block reset(){
+        return assignDefaults(this);
+    }
+
+    private Block assignDefaults(Block block){
+        List<ICommand> clonedChildBlocks = this.childBlocks.stream().map(ICommand::deepClone).collect(Collectors.toList());
+        List<ExecutionCondition> repeatClone = this.repeatConditions.stream().map(ExecutionCondition::deepClone).collect(Collectors.toList());
+        this.childBlocks.clear();
+        this.repeatConditions.clear();
+
+        return (Block)block
+                .addChildBlocks(clonedChildBlocks)
+                .addRepeatConditions(repeatClone)
+                .withRepeatAggregation(this.repeatAggregation)
+                .withSuperCloneState(this);
+    }
+
     @Override
     public String toString() {
         return "Block{" +
@@ -158,14 +186,7 @@ public class Block extends AbstractCommand implements ICommand {
                 ", repeatAggregation=" + repeatAggregation +
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +
-                ", alreadyExecuted=" + alreadyExecuted +
-                ", executionConditions=" + executionConditions +
-                ", conditionAggregation=" + conditionAggregation +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
-                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
-                ", dynamicFields=" + dynamicFields +
-                ", saveTo=" + saveTo +
+                ", " + super.superToString() +
                 '}';
     }
 }

@@ -109,6 +109,28 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         throw new UnsupportedOperationException("Not yet supported, but it should be...");
     }
 
+    //Returns a new instance of the same workflow in its pristine state. That is - as if the new state was never executed
+    @Override
+    public ParallelWorkflow deepClone(){
+        return assignDefaults(new ParallelWorkflow());
+    }
+
+    //Reverts the same workflow instance to it's pristine state.  That is - as if the same command was never executed
+    @Override
+    public ParallelWorkflow reset(){
+        return assignDefaults(this);
+    }
+
+    private ParallelWorkflow assignDefaults(ParallelWorkflow workflow){
+        List<Operation> clonedOperations = this.parallelOperations.stream().map(Operation::deepClone).collect(Collectors.toList());
+        this.parallelOperations.clear();
+
+        return (ParallelWorkflow)workflow
+                .addParallelOperations(clonedOperations)
+                .addWorkflowPolicies(this.workflowPolicies)
+                .withSuperCloneState(this);
+    }
+
     @Override
     public String toString() {
         return "ParallelWorkflow{" +
@@ -118,15 +140,7 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
                 ", parallelOperations=" + parallelOperations +
                 ", operationOutcomes=" + operationOutcomes +
                 ", workflowPolicies=" + workflowPolicies +
-                ", uuid=" + uuid +
-                ", alreadyExecuted=" + alreadyExecuted +
-                ", executionConditions=" + executionConditions +
-                ", conditionAggregation=" + conditionAggregation +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
-                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
-                ", dynamicFields=" + dynamicFields +
-                ", saveTo=" + saveTo +
+                ", " + super.superToString() +
                 '}';
     }
 }

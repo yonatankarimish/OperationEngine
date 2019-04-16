@@ -6,6 +6,7 @@ import com.SixSense.data.logic.LogicalCondition;
 import com.SixSense.data.retention.VariableRetention;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class AbstractCommand implements ICommand{
     protected final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
@@ -188,5 +189,33 @@ public abstract class AbstractCommand implements ICommand{
     public AbstractCommand withSaveTo(VariableRetention saveTo) {
         this.saveTo = saveTo;
         return this;
+    }
+
+    protected AbstractCommand withSuperCloneState(AbstractCommand creator){
+        List<ExecutionCondition> conditionClone = creator.executionConditions.stream().map(ExecutionCondition::deepClone).collect(Collectors.toList());
+        List<ExpectedOutcome> outcomeClone = creator.expectedOutcomes.stream().map(ExpectedOutcome::deepClone).collect(Collectors.toList());
+        this.executionConditions.clear();
+        this.expectedOutcomes.clear();
+
+        return this.withAlreadyExecuted(false)
+                .addExecutionConditions(conditionClone)
+                .withConditionAggregation(creator.conditionAggregation)
+                .addExpectedOutcomes(outcomeClone)
+                .withOutcomeAggregation(creator.outcomeAggregation)
+                .withAggregatedOutcomeMessage(creator.aggregatedOutcomeMessage)
+                .addDynamicFields(creator.dynamicFields)
+                .withSaveTo(creator.saveTo.deepClone());
+    }
+
+    protected String superToString(){
+        return  " uuid=" + uuid +
+                ", alreadyExecuted=" + alreadyExecuted +
+                ", executionConditions=" + executionConditions +
+                ", conditionAggregation=" + conditionAggregation +
+                ", expectedOutcomes=" + expectedOutcomes +
+                ", outcomeAggregation=" + outcomeAggregation +
+                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
+                ", dynamicFields=" + dynamicFields +
+                ", saveTo=" + saveTo;
     }
 }

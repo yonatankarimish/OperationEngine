@@ -83,7 +83,7 @@ public class OperationMocks {
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("echo $var.block.counter")
                 .withMinimalSecondsToResponse(1)
-                .withSecondsToTimeout(500)
+                .withSecondsToTimeout(5)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
                                 .withExpectedValue("$var.block.counter")

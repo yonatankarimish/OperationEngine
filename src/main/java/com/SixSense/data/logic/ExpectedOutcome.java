@@ -24,14 +24,6 @@ public class ExpectedOutcome implements IFlowConnector {
         this.binaryRelation = binaryRelation;
     }
 
-    public ExpectedOutcome(ExpectedOutcome clone) {
-        this.resolved = clone.resolved;
-        this.outcome = clone.outcome;
-        this.message = clone.message;
-        this.expectedValue = clone.expectedValue;
-        this.binaryRelation = clone.binaryRelation;
-    }
-
     public static ExpectedOutcome defaultOutcome(){
         return new ExpectedOutcome()
                 .withResolved(true)
@@ -154,6 +146,17 @@ public class ExpectedOutcome implements IFlowConnector {
     public boolean strongEquals(ExpectedOutcome otherOutcome) {
         return equals(otherOutcome)
                 && this.message.equals(otherOutcome.message);
+    }
+
+    //Returns a new instance of the same expected outcome in its pristine state. That is - as if the new state was never resolved
+    @Override
+    public ExpectedOutcome deepClone(){
+        return new ExpectedOutcome()
+                .withResolved(false)
+                .withOutcome(this.outcome)
+                .withMessage(this.message)
+                .withExpectedValue(this.expectedValue)
+                .withBinaryRelation(this.binaryRelation);
     }
 
     @Override

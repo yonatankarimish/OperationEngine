@@ -8,7 +8,7 @@ import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.data.pipes.LastLinePipe;
 
 public class InternalCommands {
-    public static ICommand invalidateCurrentPrompt(){
+    public static Command invalidateCurrentPrompt(){
         ICommand lastChunk = new Command()
                 .withCommandType(CommandType.REMOTE)
                 .withCommandText("")
@@ -48,11 +48,11 @@ public class InternalCommands {
                         .withName("sixsense.session.remotePrompt")
                 );
 
-        return lastChunk.chainCommands(currentChunk);
+        return (Command)lastChunk.chainCommands(currentChunk);
     }
 
-    public static ICommand assignValue(String assignedField, String expression){
-        return new Command()
+    public static Command assignValue(String assignedField, String expression){
+        return (Command)new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("expr " + expression)
                 .withMinimalSecondsToResponse(1)

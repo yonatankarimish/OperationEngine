@@ -113,6 +113,16 @@ public class ExecutionCondition implements IFlowConnector {
         }
     }
 
+    //Returns a new instance of the same execution condition in its pristine state. That is - as if the new state was never resolved
+    @Override
+    public ExecutionCondition deepClone(){
+        return new ExecutionCondition()
+                .withVariable(this.variable)
+                .withBinaryRelation(this.binaryRelation)
+                .withExpectedValue(this.expectedValue)
+                .withResolved(false);
+    }
+
     @Override
     public String toString() {
         return "ExecutionCondition{" +

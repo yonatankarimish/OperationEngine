@@ -61,4 +61,8 @@ public interface ICommand {
 
     ICommand withSaveTo(VariableRetention saveTo);
 
+    ICommand deepClone(); //Returns a new instance of the same command in its pristine state. That is - as if the new state was never executed
+
+    ICommand reset(); //Reverts the same command instance to it's pristine state.  That is - as if the same command was never executed
+
 }
