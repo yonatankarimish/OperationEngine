@@ -4,6 +4,7 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.mocks.F5BigIpBackup;
+import com.SixSense.mocks.OperationMocks;
 import com.SixSense.queue.WorkerQueue;
 import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -30,11 +31,13 @@ public class Main {
         try {
             SessionEngine engineInstance = (SessionEngine)appContext.getBean("sessionEngine");
             WorkerQueue queueInstance = (WorkerQueue)appContext.getBean("workerQueue");
-            /*Operation operation = OperationMocks.simpleLocalOperation();*/
+            //Operation operation = OperationMocks.simpleLocalOperation();
 
-            /*Operation operation = OperationMocks.simpleFailingOperation();*/
+            //Operation operation = OperationMocks.simpleFailingOperation();
 
-            /*Operation operation = OperationMocks.nestedBlock();*/
+            //Operation operation = OperationMocks.nestedBlock();
+
+            //Operation operation = OperationMocks.repeatingBlock(5);
 
             //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
             Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
@@ -46,8 +49,6 @@ public class Main {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }
 
-        System.out.println("Press any key to exit");
-        scanner.nextLine();
         SpringApplication.exit(appContext);
     }
 }
