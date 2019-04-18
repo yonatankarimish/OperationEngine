@@ -47,7 +47,7 @@ function uploadDependencies(){
     ];
 
     return Promise.all([
-        sftpTransferFile(appRoot+"/src/main/resources/log4j.properties", "/tmp/SixSense/config/log4j.properties"),
+        //sftpTransferFile(appRoot+"/src/main/resources/log4j2.xml", "/tmp/SixSense/config/log4j2.xml"), //this should be uncommented once we figure out how to point to external config file (currently loads log4j2 from classpath)
         sftpTransferDir(appRoot+"/target/dependency-jars", "/tmp/SixSense/dependency-jars")
     ]).then(() => {
         return executeSsh(deployCommands);

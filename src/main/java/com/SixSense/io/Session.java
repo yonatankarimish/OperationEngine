@@ -11,7 +11,8 @@ import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.*;
 import java.time.LocalDateTime;
@@ -23,9 +24,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.schmizz.sshj.connection.channel.direct.Session.Shell;
+import org.apache.logging.log4j.ThreadContext;
 
 public class Session implements Closeable {
-    private static Logger logger = Logger.getLogger(Session.class);
+    private static final Logger logger = LogManager.getLogger(Session.class);
 
     private final net.schmizz.sshj.connection.channel.direct.Session localSession;
     private final net.schmizz.sshj.connection.channel.direct.Session remoteSession;
@@ -50,6 +52,7 @@ public class Session implements Closeable {
 
 
     public Session(net.schmizz.sshj.connection.channel.direct.Session localSession, net.schmizz.sshj.connection.channel.direct.Session remoteSession) throws IOException{
+        //SSH shell configurations
         this.localSession = localSession;
         this.remoteSession = remoteSession;
         this.localSession.allocateDefaultPTY();
@@ -57,14 +60,16 @@ public class Session implements Closeable {
         this.localShell = localSession.startShell();
         this.remoteShell = remoteSession.startShell();
 
+        //Command IO configurations
         this.localOutput = new ArrayList<>();
         this.remoteOutput = new ArrayList<>();
-
         this.localProcessInput = new BufferedWriter(new OutputStreamWriter(this.localShell.getOutputStream()));
         this.remoteProcessInput = new BufferedWriter(new OutputStreamWriter(this.remoteShell.getOutputStream()));
         this.localStreamWrapper = new ProcessStreamWrapper(this.localShell.getInputStream(), this, this.localOutput);
         this.remoteStreamWrapper = new ProcessStreamWrapper(this.remoteShell.getInputStream(), this, this.remoteOutput);
 
+        //Logging configurations
+        ThreadContext.put("sessionID", this.getSessionShellId());
         logger.info("Session " +  this.sessionShellId.toString() + " has been created");
     }
 
@@ -349,5 +354,6 @@ public class Session implements Closeable {
         this.remoteProcessInput.close();
         this.isClosed = true;
         logger.info("Session " +  this.sessionShellId.toString() + " has been closed");
+        ThreadContext.clearAll();
     }
 }

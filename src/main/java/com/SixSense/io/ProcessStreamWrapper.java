@@ -1,14 +1,15 @@
 package com.SixSense.io;
 
 import com.SixSense.util.MessageLiterals;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 public class ProcessStreamWrapper implements Callable<Boolean> {
-    private static Logger logger = Logger.getLogger(ProcessStreamWrapper.class);
+    private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
 
     private Session session;
     private InputStream processStream;

@@ -1,6 +1,7 @@
 package com.SixSense.queue;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +13,7 @@ import java.util.concurrent.Future;
 
 @Component
 public class WorkerQueue implements Closeable {
-    private static Logger logger = Logger.getLogger(WorkerQueue.class);
+    private static final Logger logger = LogManager.getLogger(WorkerQueue.class);
     private final ExecutorService workerPool = Executors.newCachedThreadPool();
     private boolean isClosed = false;
 

@@ -13,7 +13,8 @@ import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 @Service
 public class SessionEngine implements Closeable{
-    private static Logger logger = Logger.getLogger(SessionEngine.class);
+    private static final Logger logger = LogManager.getLogger(SessionEngine.class);
     @Autowired private WorkflowManager workflowManager;
     @Autowired private WorkerQueue workerQueue;
 

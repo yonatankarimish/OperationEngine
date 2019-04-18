@@ -1,6 +1,7 @@
 package com.SixSense.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.concurrent.*;
 
 //Used for running shell commands in linux enviromnents
 public class OperatingSystem {
-    private static Logger logger = Logger.getLogger(OperatingSystem.class);
+    private static final Logger logger = LogManager.getLogger(OperatingSystem.class);
     private ProcessBuilder builder = new ProcessBuilder();
 
     public OperatingSystem() {

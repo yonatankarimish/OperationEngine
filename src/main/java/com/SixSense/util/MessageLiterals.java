@@ -1,13 +1,14 @@
 package com.SixSense.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
 
 public class MessageLiterals {
-    private static Logger logger = Logger.getLogger(MessageLiterals.class);
+    private static final Logger logger = LogManager.getLogger(MessageLiterals.class);
     public static final String FileSeparator = FileSystems.getDefault().getSeparator();
     public static final String CarriageReturn = "\r";
     public static final String LineBreak = System.lineSeparator();

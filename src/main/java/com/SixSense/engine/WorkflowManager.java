@@ -7,7 +7,8 @@ import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.logic.WorkflowPolicy;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.ExpectedOutcomeResolver;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import java.util.*;
 
 @Service
 public class WorkflowManager {
-    private static Logger logger = Logger.getLogger(WorkflowManager.class);
+    private static final Logger logger = LogManager.getLogger(WorkflowManager.class);
     @Autowired private SessionEngine sessionEngine;
     @Autowired private WorkerQueue workerQueue;
     private final Map<String, ParallelWorkflow> parentWorkflows;
