@@ -15,7 +15,12 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -28,8 +33,9 @@ import java.util.concurrent.*;
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 @Service
-public class SessionEngine implements Closeable{
+public class SessionEngine implements Closeable, ApplicationContextAware {
     private static final Logger logger = LogManager.getLogger(SessionEngine.class);
+    private ApplicationContext appContext;
     @Autowired private WorkflowManager workflowManager;
     @Autowired private WorkerQueue workerQueue;
 
@@ -80,7 +86,7 @@ public class SessionEngine implements Closeable{
             return ExpectedOutcome.defaultOutcome();
         }
 
-        try (Session session = this.createSession()) {
+        try (Session session = (Session)this.appContext.getBean("sixSenseSession")) {
             this.runningSessions.put(engineOperation.getUUID(), session);
             ICommand executionBlock = engineOperation.getExecutionBlock();
             ExpectedOutcome sessionResult;
@@ -206,11 +212,14 @@ public class SessionEngine implements Closeable{
         return achievedResult;
     }
 
+    @Bean(value="sixSenseSession")
+    @Scope("prototype")
     private Session createSession() throws IOException{
         net.schmizz.sshj.connection.channel.direct.Session localSession = sshClient.startSession();
         net.schmizz.sshj.connection.channel.direct.Session remoteSession = sshClient.startSession();
 
         Session session = new Session(localSession, remoteSession);
+        session.setApplicationContext(this.appContext);
         session.loadSessionVariables(this.sessionProperties);
 
         try {
@@ -234,6 +243,11 @@ public class SessionEngine implements Closeable{
         }catch (Exception e){
             logger.error("Failed to notify workflow manager that operation " + operation.getUUID() + " has completed. Caused by: ", e);
         }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.appContext = applicationContext;
     }
 
     @Override

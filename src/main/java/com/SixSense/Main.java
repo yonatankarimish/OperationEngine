@@ -39,7 +39,9 @@ public class Main {
 
             //Operation operation = OperationMocks.nestedBlock();
 
-            Operation operation = OperationMocks.repeatingBlock(5);
+            //Operation operation = OperationMocks.repeatingBlock(5);
+
+            Operation operation = OperationMocks.fileWriteOperation();
 
             //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
             Operation operation2 = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");

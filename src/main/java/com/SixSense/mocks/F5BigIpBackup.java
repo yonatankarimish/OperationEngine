@@ -15,6 +15,7 @@ public class F5BigIpBackup {
     public static Operation f5BigIpBackup(String host, String username, String password){
         ICommand operationBlock = sshConnect()
                 .chainCommands(rebuildSixSenseDirectory())
+                .chainCommands(etcHosts())
                 .chainCommands(exitCommand())
                 .addDynamicField("device.host", host)
                 .addDynamicField("device.username", username)
@@ -184,6 +185,24 @@ public class F5BigIpBackup {
                 );
 
         return deleteOldDir.chainCommands(makeNewDir);
+    }
+
+    private static ICommand etcHosts(){
+        return new Command()
+                .withCommandType(CommandType.REMOTE)
+                .withCommandText("cat /etc/hosts")
+                .withSecondsToTimeout(15)
+                .withUseRawOutput(true)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.remotePrompt\\E")
+                                .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
+                                .withOutcome(ResultStatus.SUCCESS)
+                ).withSaveTo(
+                        new VariableRetention()
+                        .withResultRetention(ResultRetention.File)
+                        .withName("hosts.txt")
+                );
     }
 
     private static ICommand exitCommand(){

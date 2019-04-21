@@ -8,6 +8,7 @@ import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
@@ -25,9 +26,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import net.schmizz.sshj.connection.channel.direct.Session.Shell;
 import org.apache.logging.log4j.ThreadContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 
-public class Session implements Closeable {
+public class Session implements Closeable, ApplicationContextAware{
     private static final Logger logger = LogManager.getLogger(Session.class);
+    private ApplicationContext appContext;
+    private WorkerQueue workerQueue;
 
     private final net.schmizz.sshj.connection.channel.direct.Session localSession;
     private final net.schmizz.sshj.connection.channel.direct.Session remoteSession;
@@ -50,7 +58,6 @@ public class Session implements Closeable {
 
     private final Map<String, Deque<VariableRetention>> sessionVariables = new HashMap<>();
 
-
     public Session(net.schmizz.sshj.connection.channel.direct.Session localSession, net.schmizz.sshj.connection.channel.direct.Session remoteSession) throws IOException{
         //SSH shell configurations
         this.localSession = localSession;
@@ -70,7 +77,7 @@ public class Session implements Closeable {
 
         //Logging configurations
         ThreadContext.put("sessionID", this.getSessionShellId());
-        logger.info("Session " +  this.sessionShellId.toString() + " has been created");
+        logger.info("Session " +  this.getSessionShellId() + " has been created");
     }
 
     public ExpectedOutcome executeCommand(Command command) throws IOException{
@@ -140,12 +147,12 @@ public class Session implements Closeable {
                 if(commandEndReached || resolvedOutcome.isResolved() || elapsedSeconds >= command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()){
                     hasWaitElapsed = true;
                 }else {
-                    this.newChunkReceived.await((long) (command.getSecondsToTimeout() - elapsedSeconds), TimeUnit.SECONDS);
+                    this.newChunkReceived.await(command.getSecondsToTimeout() - elapsedSeconds, TimeUnit.SECONDS);
                 }
             }
 
         } catch (InterruptedException e) {
-            logger.warn("Session " + this.sessionShellId.toString() + " interrupted while waiting for command " + this.commandOrdinal + "to return.", e);
+            logger.warn("Session " + this.getSessionShellId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
         }
         logger.debug(this.getTerminalIdentifier() + " session finished command wait");
         logger.info("command output was " + output);
@@ -160,6 +167,7 @@ public class Session implements Closeable {
             if(clonedRetention.getValue().isEmpty()){
                 clonedRetention.setValue(output);
             }
+
             if(clonedRetention.getResultRetention().equals(ResultRetention.Variable)){
                 String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
@@ -168,6 +176,14 @@ public class Session implements Closeable {
                     varStack.pop();
                 }
                 varStack.push(clonedRetention);
+            }else if(clonedRetention.getResultRetention().equals(ResultRetention.File)){
+                clonedRetention.setValue(this.filterFileOutput(evaluatedCommand, clonedRetention.getValue()));
+                RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
+                try {
+                    this.getWorkerQueue().submit(fileWriter);
+                } catch (Exception e) {
+                    logger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
+                }
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
             //If a timeout occured, the command failed to execute and the method will return a failure
@@ -243,6 +259,13 @@ public class Session implements Closeable {
 
         return stringRepresentation.toString()
                 .replaceAll("\\s+", " ")
+                .replace(evaluatedCommand, "")
+                .replace(this.currentPrompt, "")
+                .trim();
+    }
+
+    private String filterFileOutput(String evaluatedCommand, String fileData){
+        return fileData
                 .replace(evaluatedCommand, "")
                 .replace(this.currentPrompt, "")
                 .trim();
@@ -344,6 +367,18 @@ public class Session implements Closeable {
         return isClosed;
     }
 
+    private WorkerQueue getWorkerQueue(){
+        if(this.workerQueue == null && this.appContext != null){
+            this.workerQueue = (WorkerQueue)appContext.getBean("workerQueue");
+        }
+        return this.workerQueue;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.appContext = applicationContext;
+    }
+
     @Override
     public void close() throws IOException {
         this.localShell.close();
@@ -353,7 +388,7 @@ public class Session implements Closeable {
         this.localProcessInput.close();
         this.remoteProcessInput.close();
         this.isClosed = true;
-        logger.info("Session " +  this.sessionShellId.toString() + " has been closed");
+        logger.info("Session " +  this.getSessionShellId() + " has been closed");
         ThreadContext.clearAll();
     }
 }

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class AbstractWorkflow extends AbstractCommand implements ICommand, IWorkflow {
+    //Theoretically this could be a single workflow, but then we would need to aggregate the operations
+    //and we could not use different outcomes for each sequential workflow
     private List<ParallelWorkflow> sequentialWorkflowUponSuccess;
     private List<ParallelWorkflow> sequentialWorkflowUponFailure;
 

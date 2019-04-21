@@ -7,6 +7,8 @@
         <Property name="consolePattern">%d{HH:mm:ss} %highlight{%logger:}{FATAL=red, ERROR=bright red, WARN=yellow, INFO=white, DEBUG=green, TRACE=bright blue} %m%n</Property>
         <!-- %d for date, %-5 for justified log level, p for priority, %m for message, %n for line break-->
         <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss} %-5p %m%n</Property>
+        <!-- %m for message, %n for line break-->
+        <Property name="defaultPattern">%m%n</Property>
     </Properties>
     <Appenders>
         <Console name="std_out" target="SYSTEM_OUT">
@@ -50,6 +52,19 @@
                 <Route key="${ctx:sessionID}" ref="general_log" /><!-- If no sessionID defined in ThreadContext map, output to general log-->
             </Routes>
         </Routing>
+
+        <Routing name="session_file_log" ignoreExceptions="false">
+            <Routes pattern="${ctx:sessionID}/${ctx:logFile}">
+                <Route>
+                    <File name="trail-${ctx:sessionID}"
+                          fileName="${baseDir}/sessions/${ctx:sessionID}/${ctx:logFile}">
+                        <PatternLayout>
+                            <Pattern>${defaultPattern}</Pattern>
+                        </PatternLayout>
+                    </File>
+                </Route>
+            </Routes>
+        </Routing>
     </Appenders>
     <Loggers>
         <Root level="info">
@@ -59,6 +74,10 @@
         <Logger name="com.SixSense.io.Session" level="info" additivity="false">
             <AppenderRef ref="std_out" level="info"/>
             <AppenderRef ref="session_log" level="info"/>
+            <AppenderRef ref="general_log" level="error"/>
+        </Logger>
+        <Logger name="com.SixSense.io.RetentionFileWriter" level="info" additivity="false">
+            <AppenderRef ref="session_file_log" level="info"/>
             <AppenderRef ref="general_log" level="error"/>
         </Logger>
     </Loggers>

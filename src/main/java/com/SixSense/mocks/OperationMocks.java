@@ -4,6 +4,8 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.*;
+import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
 
 import java.util.ArrayList;
@@ -113,7 +115,35 @@ public class OperationMocks {
                 .addDynamicField("var.block.counter", "1");
     }
 
-    public static ICommand dockerInterface(){
+    public static Operation fileWriteOperation() {
+        ICommand fileWrite = new Command()
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("cat /etc/hosts")
+                .withSecondsToTimeout(90)
+                .withUseRawOutput(true)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.localPrompt\\E")
+                                .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
+                                .withOutcome(ResultStatus.SUCCESS)
+                ).withSaveTo(
+                        new VariableRetention()
+                                .withResultRetention(ResultRetention.File)
+                                .withName("hosts.txt")
+                );
+
+        return (Operation) new Operation()
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
+                .withOperationName("Network details - Write to file")
+                .withExecutionBlock(fileWrite);
+    }
+
+    private static ICommand dockerInterface(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'docker'")
@@ -128,7 +158,7 @@ public class OperationMocks {
                 );
     }
 
-    public static ICommand eth0Interface(){
+    private static ICommand eth0Interface(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'eth0'")
@@ -143,7 +173,7 @@ public class OperationMocks {
                 );
     }
 
-    public static ICommand localIp(){
+    private static ICommand localIp(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1")
@@ -158,7 +188,7 @@ public class OperationMocks {
                 );
     }
 
-    public static ICommand rxBytes(){
+    private static ICommand rxBytes(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
@@ -173,7 +203,7 @@ public class OperationMocks {
                 );
     }
 
-    public static ICommand txBytes(){
+    private static ICommand txBytes(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
@@ -188,7 +218,7 @@ public class OperationMocks {
                 );
     }
 
-    public static ICommand commandWithExpectedOutcomeNotReached(){
+    private static ICommand commandWithExpectedOutcomeNotReached(){
         return new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes'")
@@ -203,7 +233,7 @@ public class OperationMocks {
                 );
     }
 
-    public static Command blockPartCommand(String blockID, String commandID){
+    private static Command blockPartCommand(String blockID, String commandID){
         return (Command)new Command()
                 .withCommandType(CommandType.LOCAL)
                 .withCommandText("echo $var.block.id $var.command.id")

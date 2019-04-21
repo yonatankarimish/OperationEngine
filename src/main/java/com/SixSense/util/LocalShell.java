@@ -10,16 +10,16 @@ import java.util.concurrent.*;
 
 
 //Used for running shell commands in linux enviromnents
-public class OperatingSystem {
-    private static final Logger logger = LogManager.getLogger(OperatingSystem.class);
+public class LocalShell {
+    private static final Logger logger = LogManager.getLogger(LocalShell.class);
     private ProcessBuilder builder = new ProcessBuilder();
 
-    public OperatingSystem() {
+    public LocalShell() {
     }
 
     //Runs a single command, or a series of chained commands
-    //Returns an OperationResult with the output and error returned by the operating system
-    public synchronized OperationResult runCommand(String commandText) throws Exception{
+    //Returns an LocalShellResult with the output and error returned by the operating system
+    public synchronized LocalShellResult runCommand(String commandText) throws Exception{
         ExecutorService resultReader = null;
         try {
             Process process = builder.command("/bin/bash", "-c", commandText).start();
@@ -30,7 +30,7 @@ public class OperatingSystem {
             int exitCode = process.waitFor();
             List<String> output = processOutput.get();
             List<String> errors = processErrors.get();
-            return new OperationResult(exitCode, output, errors);
+            return new LocalShellResult(exitCode, output, errors);
         }catch (IOException e){
             logger.error("Failed to run command " + commandText + ": Failed to start a shell process. Caused by: ", e);
             throw e;
@@ -49,8 +49,8 @@ public class OperatingSystem {
 
     //Executes an entire script, one command after the other.
     //Commands are independent of each other. i.e. the operation is not atomic or transactional
-    //Returns an OperationResult with the output and error returned by the operating system for the entire script
-    public OperationResult runScript(List<String> scriptCommands) throws Exception {
+    //Returns an LocalShellResult with the output and error returned by the operating system for the entire script
+    public LocalShellResult runScript(List<String> scriptCommands) throws Exception {
         String referenceToScript = "[shell-script], starting with: "+ scriptCommands.get(0);
         ExecutorService resultReader = null;
 
@@ -78,7 +78,7 @@ public class OperatingSystem {
             int exitCode = process.waitFor();
             List<String> output = processOutput.get();
             List<String> errors = processErrors.get();
-            return new OperationResult(exitCode, output, errors);
+            return new LocalShellResult(exitCode, output, errors);
         }catch (IOException e){
             logger.error("Failed to run command " + referenceToScript + ": Failed to start a shell process. Caused by: ", e);
             throw e;

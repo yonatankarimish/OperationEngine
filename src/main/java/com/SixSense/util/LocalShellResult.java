@@ -2,12 +2,12 @@ package com.SixSense.util;
 
 import java.util.List;
 
-public class OperationResult {
-    private int exitCode = -1;
+public class LocalShellResult {
+    private int exitCode;
     private List<String> output;
     private List<String> errors;
 
-    public OperationResult(int exitCode, List<String> output, List<String> errors) {
+    public LocalShellResult(int exitCode, List<String> output, List<String> errors) {
         this.exitCode = exitCode;
         this.output = output;
         this.errors = errors;
@@ -43,7 +43,7 @@ public class OperationResult {
 
     @Override
     public String toString() {
-        return "OperationResult{" +
+        return "LocalShellResult{" +
                 "exitCode=" + exitCode +
                 ", output='" + output + '\'' +
                 ", errors='" + errors + '\'' +

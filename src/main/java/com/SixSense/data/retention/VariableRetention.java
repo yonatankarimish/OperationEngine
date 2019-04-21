@@ -77,7 +77,7 @@ public class VariableRetention{
         return new VariableRetention()
                 .withResultRetention(this.resultRetention)
                 .withName(this.name)
-                .withValue(this.value) //
+                .withValue(this.value)
                 .withOverwriteParent(this.overwriteParent);
     }
 
