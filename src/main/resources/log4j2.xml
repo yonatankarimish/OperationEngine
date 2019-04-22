@@ -67,16 +67,18 @@
         </Routing>
     </Appenders>
     <Loggers>
+        <!-- Logger name contains part of a classpath in most examples in documentation.
+             However, you can write any string instead, and call LogManager.getLogger("logName") with that name-->
         <Root level="info">
             <AppenderRef ref="std_out" level="info"/>
             <AppenderRef ref="general_log" level="debug"/>
         </Root>
-        <Logger name="com.SixSense.io.Session" level="info" additivity="false">
+        <Logger name="SessionLogger" level="info" additivity="false">
             <AppenderRef ref="std_out" level="info"/>
             <AppenderRef ref="session_log" level="info"/>
             <AppenderRef ref="general_log" level="error"/>
         </Logger>
-        <Logger name="com.SixSense.io.RetentionFileWriter" level="info" additivity="false">
+        <Logger name="FileLogger" level="info" additivity="false">
             <AppenderRef ref="session_file_log" level="info"/>
             <AppenderRef ref="general_log" level="error"/>
         </Logger>

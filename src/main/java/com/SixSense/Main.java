@@ -37,21 +37,29 @@ public class Main {
 
             //Operation operation = OperationMocks.simpleFailingOperation();
 
+            //Operation operation = OperationMocks.erroneousOperation();
+
             //Operation operation = OperationMocks.nestedBlock();
 
             //Operation operation = OperationMocks.repeatingBlock(5);
 
-            Operation operation = OperationMocks.fileWriteOperation();
+            //Operation operation = OperationMocks.fileWriteOperation();
+
+            Operation operation = OperationMocks.drainingFileOperation();
 
             //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
-            Operation operation2 = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+            //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
 
             Future<ExpectedOutcome> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
+            System.out.println("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
+            System.out.println("Result Message: " + backupResult.get().getMessage());
+
+            /*Future<ExpectedOutcome> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
             Future<ExpectedOutcome> backupResult2 = queueInstance.submit(() -> engineInstance.executeOperation(operation2));
             System.out.println("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
             System.out.println("Result Message: " + backupResult.get().getMessage());
             System.out.println("Operation " + operation2.getFullOperationName() + " Completed with result " + backupResult2.get().getOutcome());
-            System.out.println("Result Message: " + backupResult2.get().getMessage());
+            System.out.println("Result Message: " + backupResult2.get().getMessage());*/
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }

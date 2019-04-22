@@ -2,6 +2,7 @@ package com.SixSense.util;
 
 import com.SixSense.data.commands.*;
 import com.SixSense.data.pipes.AbstractOutputPipe;
+import com.SixSense.io.Session;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,11 +112,10 @@ public class CommandUtils {
         return commandText;
     }
 
-    public static List<String> pipeCommandOutput(Command command, List<String> output){
-        List<String> outputCopy = new ArrayList<>(output);
-        for(AbstractOutputPipe outputPipe : command.getOutputPipes()){
-            outputCopy = outputPipe.pipe(outputCopy);
+    public static List<String> pipeCommandOutput(Session session, List<String> output){
+        for(AbstractOutputPipe outputPipe : session.getCurrentCommand().getOutputPipes()){
+            output = outputPipe.pipe(session, output);
         }
-        return outputCopy;
+        return output;
     }
 }

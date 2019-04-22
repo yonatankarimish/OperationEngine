@@ -27,9 +27,6 @@ public class Command extends AbstractCommand implements ICommand{
         this.commandText = "";
         this.minimalSecondsToResponse = 0;
         this.secondsToTimeout = 10;
-        this.expectedOutcomes = new ArrayList<>();
-        this.outcomeAggregation = LogicalCondition.OR;
-        this.aggregatedOutcomeMessage = "";
 
         this.useRawOutput = false;
         this.outputPipes = new LinkedHashSet<>();

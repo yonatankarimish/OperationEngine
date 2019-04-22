@@ -7,7 +7,7 @@ import org.apache.logging.log4j.ThreadContext;
 import java.util.concurrent.Callable;
 
 public class RetentionFileWriter implements Callable<Boolean> {
-    private static final Logger logger = LogManager.getLogger(RetentionFileWriter.class);
+    private static final Logger logger = LogManager.getLogger("FileLogger");
     private final String sessionId;
     private final String fileName;
     private final String contents;

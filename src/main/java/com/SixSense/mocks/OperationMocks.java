@@ -4,14 +4,10 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.*;
+import com.SixSense.data.pipes.DrainingPipe;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class OperationMocks {
     public static Operation simpleLocalOperation(){
@@ -47,6 +43,34 @@ public class OperationMocks {
                 ))
                 .withOperationName("Network Details - Planned failure")
                 .withExecutionBlock(localBlock);
+    }
+
+    public static Operation erroneousOperation(){
+        ICommand localBlock =  dockerInterface()
+                .chainCommands(invalidCommand())
+                .addExpectedOutcome(ExpectedOutcome.defaultOutcome().withMessage("Completed successfully"));
+
+        return new Operation()
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
+                .withOperationName("Network Details - Planned failure")
+                .withExecutionBlock(localBlock);
+    }
+
+    public static Operation drainingFileOperation(){
+        return new Operation()
+                .withDevice(new Device().withVpv(
+                        new VendorProductVersion()
+                                .withVendor("Linux")
+                                .withProduct("Generic")
+                                .withVersion("Centos 6")
+                ))
+                .withOperationName("Network Details - File parsing")
+                .withExecutionBlock(drainingFileCopy());
     }
 
     public static Operation nestedBlock() {
@@ -230,6 +254,43 @@ public class OperationMocks {
                         .withMessage("Docker interface should not be here")
                         .withExpectedValue("docker")
                         .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
+    }
+
+    private static ICommand invalidCommand(){
+        return new Command()
+                .withCommandType(CommandType.LOCAL)
+                .withCommandText("dsfhjk error on purpose")
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(10)
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withOutcome(ResultStatus.SUCCESS)
+                                .withMessage("Docker interface should not be here")
+                                .withExpectedValue("docker")
+                                .withBinaryRelation(BinaryRelation.CONTAINS)
+                );
+    }
+
+    private static ICommand drainingFileCopy(){
+        return new Command()
+                .withCommandType(CommandType.LOCAL)
+                //.withCommandText("cat /var/log/iptables.log-20190420")
+                .withCommandText("cat /var/log/BB_cluster.log")
+                .withMinimalSecondsToResponse(1)
+                .withSecondsToTimeout(45)
+                .withUseRawOutput(true)
+                .addOutputPipe(new DrainingPipe())
+                .addExpectedOutcome(
+                        new ExpectedOutcome()
+                                .withExpectedValue("\\n\\Q$sixsense.session.localPrompt\\E")
+                                .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
+                                .withOutcome(ResultStatus.SUCCESS)
+                )
+                .withSaveTo(
+                        new VariableRetention()
+                                .withResultRetention(ResultRetention.File)
+                                .withName("iptable.daily.log")
                 );
     }
 

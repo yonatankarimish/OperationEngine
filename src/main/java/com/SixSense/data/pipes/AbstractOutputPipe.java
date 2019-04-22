@@ -1,5 +1,7 @@
 package com.SixSense.data.pipes;
 
+import com.SixSense.io.Session;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -10,7 +12,7 @@ public abstract class AbstractOutputPipe {
         this.pipeType = this.getClass().getName();
     }
 
-    public abstract List<String> pipe(List<String> output);
+    public abstract List<String> pipe(Session session, List<String> output);
     public abstract boolean equals(Object obj);
 
     @Override
