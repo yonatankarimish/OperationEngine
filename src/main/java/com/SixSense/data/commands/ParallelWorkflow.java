@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow {
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private volatile int totalParentWorkflows;
     private volatile int completedParentWorkflows;
 

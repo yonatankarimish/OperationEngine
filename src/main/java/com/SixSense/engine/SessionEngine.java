@@ -6,7 +6,9 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
+import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
+import com.SixSense.io.ShellChannel;
 import com.SixSense.mocks.LocalhostConfig;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.ExpectedOutcomeResolver;
@@ -28,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
@@ -85,7 +88,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             return ExpectedOutcome.defaultOutcome();
         }
 
-        try (Session session = (Session)this.appContext.getBean("sixSenseSession")) {
+        try (Session session = (Session)this.appContext.getBean("sixSenseSession", engineOperation)) {
             this.runningSessions.put(engineOperation.getUUID(), session);
             ICommand executionBlock = engineOperation.getExecutionBlock();
             ExpectedOutcome sessionResult;
@@ -213,19 +216,25 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
     @Bean(value="sixSenseSession")
     @Scope("prototype")
-    private Session createSession() throws IOException{
-        net.schmizz.sshj.connection.channel.direct.Session localSession = sshClient.startSession();
-        net.schmizz.sshj.connection.channel.direct.Session remoteSession = sshClient.startSession();
+    private Session createSession(Operation engineOperation) throws IOException, NullPointerException{
+        if(engineOperation == null){
+            throw new NullPointerException();
+        }
 
-        Session session = new Session(localSession, remoteSession);
+        Session session = new Session(this.sshClient, engineOperation.getChannelNames());
         session.setApplicationContext(this.appContext);
         session.loadSessionVariables(this.sessionProperties);
 
         try {
-            Future<Boolean> sessionLocalOutput = this.workerQueue.submit(session.getLocalStreamWrapper());
-            Future<Boolean> sessionRemoteOutput = this.workerQueue.submit(session.getRemoteStreamWrapper());
+            List<ProcessStreamWrapper> wrappers = session.getShellChannels().values().stream()
+                    .map(ShellChannel::getChannelOutputWrapper)
+                    .collect(Collectors.toList());
+
+            for(ProcessStreamWrapper wrapper : wrappers){
+                this.workerQueue.submit(wrapper);
+            }
         }catch (Exception e){
-            String message = "Failed to create new session - could not submit IO streams to worker queue.";
+            String message = "Failed to create new session - could not submit channel IO streams to worker queue.";
             logger.error(message, e);
             session.close();
             throw new IOException(message, e);

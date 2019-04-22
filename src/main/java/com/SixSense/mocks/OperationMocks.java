@@ -26,7 +26,8 @@ public class OperationMocks {
                                 .withVersion("Centos 6")
                 ))
                 .withOperationName("Network Details - Simple")
-                .withExecutionBlock(localBlock);
+                .withExecutionBlock(localBlock)
+                .addChannel(ChannelType.LOCAL);
     }
 
     public static Operation simpleFailingOperation(){
@@ -42,7 +43,8 @@ public class OperationMocks {
                                 .withVersion("Centos 6")
                 ))
                 .withOperationName("Network Details - Planned failure")
-                .withExecutionBlock(localBlock);
+                .withExecutionBlock(localBlock)
+                .addChannel(ChannelType.LOCAL);
     }
 
     public static Operation erroneousOperation(){
@@ -58,7 +60,8 @@ public class OperationMocks {
                                 .withVersion("Centos 6")
                 ))
                 .withOperationName("Network Details - Planned failure")
-                .withExecutionBlock(localBlock);
+                .withExecutionBlock(localBlock)
+                .addChannel(ChannelType.LOCAL);
     }
 
     public static Operation drainingFileOperation(){
@@ -70,7 +73,9 @@ public class OperationMocks {
                                 .withVersion("Centos 6")
                 ))
                 .withOperationName("Network Details - File parsing")
-                .withExecutionBlock(drainingFileCopy());
+                .withExecutionBlock(drainingFileCopy())
+                .addChannel(ChannelType.LOCAL)
+                .addChannel(ChannelType.DOWNLOAD);
     }
 
     public static Operation nestedBlock() {
@@ -98,6 +103,7 @@ public class OperationMocks {
                 ))
                 .withOperationName("Block testing - three nested blocks, three commands each")
                 .withExecutionBlock(parentBlock)
+                .addChannel(ChannelType.LOCAL)
                 .addDynamicField("var.operation.name", "Three nested blocks")
                 .addDynamicField("var.operation.vendor", "Linux")
                 .addDynamicField("var.operation.product", "CentOS")
@@ -106,7 +112,7 @@ public class OperationMocks {
 
     public static Operation repeatingBlock(int repeatCount) {
         ICommand echoValue = new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("echo $var.block.counter")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(5)
@@ -135,13 +141,14 @@ public class OperationMocks {
                 ))
                 .withOperationName("Block testing - repeating block")
                 .withExecutionBlock(repeatingBlock)
+                .addChannel(ChannelType.LOCAL)
                 .addDynamicField("var.block.repeatCount", String.valueOf(repeatCount))
                 .addDynamicField("var.block.counter", "1");
     }
 
     public static Operation fileWriteOperation() {
         ICommand fileWrite = new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("cat /etc/hosts")
                 .withSecondsToTimeout(90)
                 .withUseRawOutput(true)
@@ -156,7 +163,7 @@ public class OperationMocks {
                                 .withName("hosts.txt")
                 );
 
-        return (Operation) new Operation()
+        return new Operation()
                 .withDevice(new Device().withVpv(
                         new VendorProductVersion()
                                 .withVendor("Linux")
@@ -164,12 +171,13 @@ public class OperationMocks {
                                 .withVersion("Centos 6")
                 ))
                 .withOperationName("Network details - Write to file")
-                .withExecutionBlock(fileWrite);
+                .withExecutionBlock(fileWrite)
+                .addChannel(ChannelType.LOCAL);
     }
 
     private static ICommand dockerInterface(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig | grep 'docker'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -184,7 +192,7 @@ public class OperationMocks {
 
     private static ICommand eth0Interface(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig | grep 'eth0'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -199,7 +207,7 @@ public class OperationMocks {
 
     private static ICommand localIp(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig | grep 'inet addr' | head -n 2 | tail -1")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -214,7 +222,7 @@ public class OperationMocks {
 
     private static ICommand rxBytes(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -229,7 +237,7 @@ public class OperationMocks {
 
     private static ICommand txBytes(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -244,7 +252,7 @@ public class OperationMocks {
 
     private static ICommand commandWithExpectedOutcomeNotReached(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("ifconfig eth0 | grep 'TX bytes'")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -259,7 +267,7 @@ public class OperationMocks {
 
     private static ICommand invalidCommand(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("dsfhjk error on purpose")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -274,7 +282,7 @@ public class OperationMocks {
 
     private static ICommand drainingFileCopy(){
         return new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 //.withCommandText("cat /var/log/iptables.log-20190420")
                 .withCommandText("cat /var/log/BB_cluster.log")
                 .withMinimalSecondsToResponse(1)
@@ -296,7 +304,7 @@ public class OperationMocks {
 
     private static Command blockPartCommand(String blockID, String commandID){
         return (Command)new Command()
-                .withCommandType(CommandType.LOCAL)
+                .withChannel(ChannelType.LOCAL)
                 .withCommandText("echo $var.block.id $var.command.id")
                 .withMinimalSecondsToResponse(1)
                 .withSecondsToTimeout(10)
@@ -319,5 +327,4 @@ public class OperationMocks {
                 .withOutcomeAggregation(LogicalCondition.AND)
                 .withAggregatedOutcomeMessage("Command params found in response");
     }
-
 }

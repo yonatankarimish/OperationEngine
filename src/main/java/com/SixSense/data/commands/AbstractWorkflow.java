@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class AbstractWorkflow extends AbstractCommand implements ICommand, IWorkflow {
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
+
     //Theoretically this could be a single workflow, but then we would need to aggregate the operations
     //and we could not use different outcomes for each sequential workflow
     private List<ParallelWorkflow> sequentialWorkflowUponSuccess;

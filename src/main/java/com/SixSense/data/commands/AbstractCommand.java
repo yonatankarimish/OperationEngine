@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class AbstractCommand implements ICommand{
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     protected final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
     protected boolean alreadyExecuted;
 

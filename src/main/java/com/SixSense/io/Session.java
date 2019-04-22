@@ -2,7 +2,6 @@ package com.SixSense.io;
 
 
 import com.SixSense.data.commands.ICommand;
-import com.SixSense.data.logic.CommandType;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.ResultStatus;
@@ -12,6 +11,7 @@ import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.ExpectedOutcomeResolver;
 import com.SixSense.util.MessageLiterals;
+import net.schmizz.sshj.SSHClient;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -24,7 +24,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.schmizz.sshj.connection.channel.direct.Session.Shell;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -36,50 +35,28 @@ public class Session implements Closeable, ApplicationContextAware {
     private WorkerQueue workerQueue;
 
     //Connection and synchronization
-    private final net.schmizz.sshj.connection.channel.direct.Session localSession;
-    private final net.schmizz.sshj.connection.channel.direct.Session remoteSession;
-    private final Shell localShell; //The operating system process to which we write local commands
-    private final Shell remoteShell; //The operating system process to which we write remote commands (ideally - after a connect block)
-    private final List<String> localOutput; //Line separated response from both the local process output stream and the process error stream.
-    private final List<String> remoteOutput; //Line separated response from both the remote process output stream and the process error stream.
-    private Lock commandLock =  new ReentrantLock();
+    private final Map<String, ShellChannel> channels;
+    private final Lock commandLock =  new ReentrantLock();
     private final Condition newChunkReceived = commandLock.newCondition();
 
     //Current command context
-    private boolean isClosed = false;
     private final UUID sessionShellId = UUID.randomUUID();
+    private boolean isClosed = false;
     private Command currentCommand;
     private int commandOrdinal = 0;
     private String evaluatedCommand = "";
-    private String currentPrompt;
-
-    //IO wrappers
-    private final BufferedWriter localProcessInput;
-    private final BufferedWriter remoteProcessInput;
-    private final ProcessStreamWrapper localStreamWrapper;
-    private final ProcessStreamWrapper remoteStreamWrapper;
+    private String currentPrompt = "";
 
     //Dynamic fields
-    private final Map<String, Deque<VariableRetention>> sessionVariables = new HashMap<>();
+    private final Map<String, Deque<VariableRetention>> sessionVariables;
 
-    public Session(net.schmizz.sshj.connection.channel.direct.Session localSession, net.schmizz.sshj.connection.channel.direct.Session remoteSession) throws IOException{
-        //SSH shell configurations
-        this.localSession = localSession;
-        this.remoteSession = remoteSession;
-        this.localSession.allocateDefaultPTY();
-        this.remoteSession.allocateDefaultPTY();
-        this.localShell = localSession.startShell();
-        this.remoteShell = remoteSession.startShell();
-
-        //Command IO configurations
-        /*Pseudo-terminals (PTY) do not allocate separate channels for output and errors.
-         *Therefore, we only listen to the shell output stream, as the errors will be written there as well*/
-        this.localOutput = new ArrayList<>();
-        this.remoteOutput = new ArrayList<>();
-        this.localProcessInput = new BufferedWriter(new OutputStreamWriter(this.localShell.getOutputStream()));
-        this.remoteProcessInput = new BufferedWriter(new OutputStreamWriter(this.remoteShell.getOutputStream()));
-        this.localStreamWrapper = new ProcessStreamWrapper(this.localShell.getInputStream(), this, this.localOutput);
-        this.remoteStreamWrapper = new ProcessStreamWrapper(this.remoteShell.getInputStream(), this, this.remoteOutput);
+    public Session(SSHClient connectedSSHClient, Set<String> channelNames) throws IOException{
+        this.sessionVariables = new HashMap<>();
+        this.channels = new HashMap<>();
+        for(String channelName : channelNames){
+            ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
+            this.channels.put(channelName, newChannel);
+        }
 
         //Logging configurations
         ThreadContext.put("sessionID", this.getSessionShellId());
@@ -87,21 +64,28 @@ public class Session implements Closeable, ApplicationContextAware {
     }
 
     public ExpectedOutcome executeCommand(Command command) throws IOException{
-        if(command.getCommandType().equals(CommandType.LOCAL)){
-            this.currentPrompt = this.getSessionVariableValue("sixsense.session.localPrompt");
-            return executeCommand(command, localProcessInput, localOutput);
-        }else if(command.getCommandType().equals(CommandType.REMOTE)){
-            this.currentPrompt = this.getSessionVariableValue("sixsense.session.remotePrompt");
-            return executeCommand(command, remoteProcessInput, remoteOutput);
-        }else{
+        ShellChannel channel = this.channels.get(command.getChannelName());
+        if(channel == null){
             return ExpectedOutcome.executionError(MessageLiterals.InvalidCommandParameters);
+        }else{
+            String promptReference = this.getPromptReference(channel.getName().toLowerCase());
+            String nonFinalPrompt = this.getSessionVariableValue(promptReference);
+            if(nonFinalPrompt == null || nonFinalPrompt.isEmpty()){
+                String defaultPromptReference = this.getPromptReference("default");
+                nonFinalPrompt = this.getSessionVariableValue(defaultPromptReference);
+                this.loadSessionVariables(Collections.singletonMap(promptReference, nonFinalPrompt));
+            }
+
+            this.currentPrompt = nonFinalPrompt;
+            return executeCommand(command, channel);
         }
     }
 
-    private ExpectedOutcome executeCommand(Command command, final BufferedWriter writeToProcess, final List<String> processOutput) throws IOException {
+    private ExpectedOutcome executeCommand(Command command, ShellChannel channel) throws IOException {
         this.commandOrdinal++;
         this.currentCommand = command;
         this.evaluatedCommand = CommandUtils.evaluateAgainstDynamicFields(command, this.getCurrentSessionVariables());
+        final List<String> processOutput = channel.getChannelOutput();
 
         /*Write our current command to the input stream,
         * Each command has a line break character appended to instruct the bash terminal to execute the command
@@ -110,9 +94,9 @@ public class Session implements Closeable, ApplicationContextAware {
         * Keep your commands short*/
         this.commandLock.lock();
         logger.debug(this.getTerminalIdentifier() + " session acquired lock");
-        logger.info(this.getSessionShellId() + " is writing " + command.getCommandType() +" command " + this.evaluatedCommand);
-        writeToProcess.write(this.evaluatedCommand + MessageLiterals.LineBreak);
-        writeToProcess.flush();
+        logger.info(this.getSessionShellId() + " is writing  command " + this.evaluatedCommand + " to channel " + command.getChannelName());
+        channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
+        channel.flush();
 
         String output = "";
         long elapsedSeconds = 0L;
@@ -315,6 +299,10 @@ public class Session implements Closeable, ApplicationContextAware {
         return this.currentPrompt;
     }
 
+    private String getPromptReference(String channelName){
+        return "sixsense.session.prompt."+channelName;
+    }
+
     Lock getCommandLock() {
         return commandLock;
     }
@@ -323,12 +311,8 @@ public class Session implements Closeable, ApplicationContextAware {
         return newChunkReceived;
     }
 
-    public ProcessStreamWrapper getLocalStreamWrapper() {
-        return localStreamWrapper;
-    }
-
-    public ProcessStreamWrapper getRemoteStreamWrapper() {
-        return remoteStreamWrapper;
+    public Map<String, ShellChannel> getShellChannels() {
+        return Collections.unmodifiableMap(this.channels);
     }
 
     public void loadSessionVariables(Map<String, String> properties){
@@ -382,15 +366,15 @@ public class Session implements Closeable, ApplicationContextAware {
         return "";
     }
 
-    public boolean isClosed() {
-        return isClosed;
-    }
-
     private WorkerQueue getWorkerQueue(){
         if(this.workerQueue == null && this.appContext != null){
             this.workerQueue = (WorkerQueue)appContext.getBean("workerQueue");
         }
         return this.workerQueue;
+    }
+
+    public boolean isClosed() {
+        return isClosed;
     }
 
     @Override
@@ -399,15 +383,23 @@ public class Session implements Closeable, ApplicationContextAware {
     }
 
     @Override
-    public void close() throws IOException {
-        this.localShell.close();
-        this.remoteShell.close();
-        this.localSession.close();
-        this.remoteSession.close();
-        this.localProcessInput.close();
-        this.remoteProcessInput.close();
+    public void close() throws IOException{
+        boolean partialClosure = false;
+        for(String channelName : this.channels.keySet()){
+            //Try to close each channel in it's own try block, so failure in one channel will not affect other channels
+            try {
+                this.channels.get(channelName).close();
+            }catch (IOException e){
+                partialClosure = true;
+                logger.error("Session " +  this.getSessionShellId() + " failed to close channel with name " + channelName, e);
+            }
+        }
         this.isClosed = true;
         logger.info("Session " +  this.getSessionShellId() + " has been closed");
         ThreadContext.clearAll();
+
+        if(partialClosure){
+            throw new IOException("Session " +  this.getSessionShellId() + " failed to close one or more of it's channels ");
+        }
     }
 }

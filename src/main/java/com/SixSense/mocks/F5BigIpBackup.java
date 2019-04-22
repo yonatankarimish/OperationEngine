@@ -6,7 +6,6 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
-import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.util.InternalCommands;
@@ -30,7 +29,10 @@ public class F5BigIpBackup {
                         .withVersion("11 and above")
                 ))
                 .withOperationName("Configuration Backup")
-                .withExecutionBlock(operationBlock);
+                .withExecutionBlock(operationBlock)
+                .addChannel(ChannelType.LOCAL)
+                .addChannel(ChannelType.REMOTE)
+                .addChannel(ChannelType.DOWNLOAD);
     }
 
     private static ICommand sshConnect(){
@@ -39,7 +41,7 @@ public class F5BigIpBackup {
                 .withOutcome(ResultStatus.SUCCESS);
 
         ICommand ssh = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("ssh $device.username@$device.host -p $device.port")
                 //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
@@ -72,7 +74,7 @@ public class F5BigIpBackup {
                 );
 
         ICommand rsaFirstTime = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("yes")
                 //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
@@ -118,7 +120,7 @@ public class F5BigIpBackup {
                 );
 
         ICommand typePassword = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("$device.password")
                 //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(60)
@@ -141,45 +143,45 @@ public class F5BigIpBackup {
                 );
 
         ICommand tmsh = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("tmsh modify cli preference pager disabled")
                 //.withMinimalSecondsToResponse(5)
                 .withSecondsToTimeout(30)
                 .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                        .withExpectedValue("tmsh.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                        .withExpectedValue("tmsh.*\\n\\Q$sixsense.session.prompt.remote\\E")
                         .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                         .withOutcome(ResultStatus.SUCCESS)
                 );
 
         return ssh.chainCommands(rsaFirstTime)
                 .chainCommands(typePassword)
-                .chainCommands(InternalCommands.invalidateCurrentPrompt())
+                .chainCommands(InternalCommands.invalidateCurrentPrompt(ChannelType.REMOTE.name()))
                 .chainCommands(tmsh);
     }
 
     private static ICommand rebuildSixSenseDirectory(){
         ICommand deleteOldDir = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("rm -rf /var/SixSense")
                 .withSecondsToTimeout(600)
                 .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                                .withExpectedValue("rm -rf.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                                .withExpectedValue("rm -rf.*\\n\\Q$sixsense.session.prompt.remote\\E")
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 );
 
         ICommand makeNewDir = new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("mkdir -p /var/SixSense")
                 .withSecondsToTimeout(15)
                 .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                                .withExpectedValue("mkdir -p.*\\n\\Q$sixsense.session.remotePrompt\\E")
+                                .withExpectedValue("mkdir -p.*\\n\\Q$sixsense.session.prompt.remote\\E")
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 );
@@ -189,13 +191,13 @@ public class F5BigIpBackup {
 
     private static ICommand etcHosts(){
         return new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("cat /etc/hosts")
                 .withSecondsToTimeout(15)
                 .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.remotePrompt\\E")
+                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.prompt.remote\\E")
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 ).withSaveTo(
@@ -207,7 +209,7 @@ public class F5BigIpBackup {
 
     private static ICommand exitCommand(){
         return new Command()
-                .withCommandType(CommandType.REMOTE)
+                .withChannel(ChannelType.REMOTE)
                 .withCommandText("exit")
                 .withSecondsToTimeout(10);
     }

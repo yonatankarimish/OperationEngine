@@ -1,29 +1,42 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.devices.Device;
+import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalCondition;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private String operationName;
     private Device device;
     private ICommand executionBlock;
 
+    private Set<String> channelNames;
+
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for conditions, results and channel names */
     public Operation() {
         super();
         this.operationName = "";
         this.device = new Device();
         this.executionBlock = new Block();
+        this.channelNames = new HashSet<>();
     }
 
-    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock) {
+    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock, Set<String> channelNames) {
         super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.operationName = operationName;
         this.device = device;
         this.executionBlock = executionBlock;
+        this.channelNames = channelNames;
     }
 
     public Device getDevice() {
@@ -69,6 +82,28 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
         return this;
     }
 
+    public Set<String> getChannelNames() {
+        return Collections.unmodifiableSet(channelNames);
+    }
+
+    public Operation addChannel(ChannelType commandType) {
+        return this.addChannelName(commandType.name());
+    }
+
+    public Operation addChannelName(String channelName) {
+        this.channelNames.add(channelName.toUpperCase());
+        return this;
+    }
+
+    public Operation addChannels(Set<ChannelType> outputPipes) {
+        return this.addChannelNames(outputPipes.stream().map(ChannelType::name).collect(Collectors.toSet()));
+    }
+
+    public Operation addChannelNames(Set<String> outputPipes) {
+        this.channelNames.addAll(outputPipes.stream().map(String::toUpperCase).collect(Collectors.toSet()));
+        return this;
+    }
+
     @Override
     public ICommand chainCommands(ICommand additional) {
         throw new UnsupportedOperationException("Not yet supported, but it should be...");
@@ -91,6 +126,7 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
                 .withOperationName(this.operationName)
                 .withDevice(this.device.deepClone())
                 .withExecutionBlock(this.executionBlock.deepClone())
+                .addChannelNames(this.channelNames)
                 .withSuperCloneState(this);
     }
 
@@ -100,6 +136,7 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
                 "operationName='" + operationName + '\'' +
                 ", device=" + device +
                 ", executionBlock=" + executionBlock +
+                ", channelNames=" + channelNames +
                 ", " + super.superToString() +
                 '}';
     }

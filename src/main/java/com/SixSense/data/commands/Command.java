@@ -1,6 +1,6 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.logic.CommandType;
+import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalCondition;
@@ -10,7 +10,8 @@ import com.SixSense.util.CommandUtils;
 import java.util.*;
 
 public class Command extends AbstractCommand implements ICommand{
-    private CommandType commandType;
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
+    private String channelName;
     private String commandText;
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
@@ -23,7 +24,7 @@ public class Command extends AbstractCommand implements ICommand{
      * The parameterized constructor is for conditions and results only */
     public Command() {
         super();
-        this.commandType = CommandType.REMOTE;
+        this.channelName = ChannelType.REMOTE.name();
         this.commandText = "";
         this.minimalSecondsToResponse = 0;
         this.secondsToTimeout = 10;
@@ -32,9 +33,9 @@ public class Command extends AbstractCommand implements ICommand{
         this.outputPipes = new LinkedHashSet<>();
     }
 
-    public Command(CommandType commandType, String commandText, int minimalSecondsToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, LinkedHashSet<AbstractOutputPipe> outputPipes) {
+    public Command(String channelName, String commandText, int minimalSecondsToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, LinkedHashSet<AbstractOutputPipe> outputPipes) {
         super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
-        this.commandType = commandType;
+        this.channelName = channelName;
         this.commandText = commandText;
         this.minimalSecondsToResponse = minimalSecondsToResponse;
         this.secondsToTimeout = secondsToTimeout;
@@ -47,16 +48,24 @@ public class Command extends AbstractCommand implements ICommand{
         return CommandUtils.chainCommands(this, additional);
     }
 
-    public CommandType getCommandType() {
-        return commandType;
+    public String getChannelName() {
+        return channelName;
     }
 
-    public void setCommandType(CommandType commandType) {
-        this.commandType = commandType;
+    public void setChannel(ChannelType commandType) {
+        this.setChannelName(commandType.name());
     }
 
-    public Command withCommandType(CommandType commandType) {
-        this.commandType = commandType;
+    public void setChannelName(String channelName) {
+        this.channelName = channelName.toUpperCase();
+    }
+
+    public Command withChannel(ChannelType commandType) {
+        return this.withChannelName(commandType.name());
+    }
+
+    public Command withChannelName(String channelName) {
+        this.channelName = channelName.toUpperCase();
         return this;
     }
 
@@ -140,7 +149,7 @@ public class Command extends AbstractCommand implements ICommand{
 
     private Command assignDefaults(Command command){
         return (Command)command
-                .withCommandType(this.commandType)
+                .withChannelName(this.channelName)
                 .withCommandText(this.commandText)
                 .withMinimalSecondsToResponse(this.minimalSecondsToResponse)
                 .withSecondsToTimeout(this.secondsToTimeout)
@@ -152,7 +161,7 @@ public class Command extends AbstractCommand implements ICommand{
     @Override
     public String toString() {
         return "Command{" +
-                "commandType=" + commandType +
+                "channelName=" + channelName +
                 ", commandText='" + commandText + '\'' +
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +

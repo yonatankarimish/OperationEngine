@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Block extends AbstractCommand implements ICommand {
+    //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<ICommand> childBlocks;
 
     private List<ExecutionCondition> repeatConditions;
