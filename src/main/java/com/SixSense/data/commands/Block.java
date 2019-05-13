@@ -39,14 +39,6 @@ public class Block extends AbstractCommand implements ICommand {
         this.repeatAggregation = repeatAggregation;
     }
 
-    public Block addCommand(Command childCommand){
-        return CommandUtils.addCommand(this, childCommand);
-    }
-
-    public Block addBlock(Block childCommand){
-        return CommandUtils.addBlock(this, childCommand);
-    }
-
     public ICommand chainCommands(ICommand additional){
         return CommandUtils.chainCommands(this, additional);
     }

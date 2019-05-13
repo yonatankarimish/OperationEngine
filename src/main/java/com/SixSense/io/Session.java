@@ -59,6 +59,7 @@ public class Session implements Closeable, ApplicationContextAware {
         }
 
         //Logging configurations
+        this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + this.getSessionShellId()));
         ThreadContext.put("sessionID", this.getSessionShellId());
         logger.info("Session " +  this.getSessionShellId() + " has been created");
     }

@@ -89,9 +89,9 @@ public class OperationMocks {
             for (int j = 1; j <= 3; j++) {
                 String commandID = "command-" + j;
                 Command blockPart = blockPartCommand(blockID, commandID);
-                commandBlock.addCommand(blockPart);
+                commandBlock.addChildBlock(blockPart);
             }
-            parentBlock.addBlock(commandBlock);
+            parentBlock.addChildBlock(commandBlock);
         }
 
         return (Operation) new Operation()
@@ -154,7 +154,7 @@ public class OperationMocks {
                 .withUseRawOutput(true)
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.localPrompt\\E")
+                                .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.prompt.local\\E")
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 ).withSaveTo(
@@ -174,6 +174,7 @@ public class OperationMocks {
                 .withExecutionBlock(fileWrite)
                 .addChannel(ChannelType.LOCAL);
     }
+
 
     private static ICommand dockerInterface(){
         return new Command()
@@ -291,7 +292,7 @@ public class OperationMocks {
                 .addOutputPipe(new DrainingPipe())
                 .addExpectedOutcome(
                         new ExpectedOutcome()
-                                .withExpectedValue("\\n\\Q$sixsense.session.localPrompt\\E")
+                                .withExpectedValue("\\n\\Q$sixsense.session.prompt.local\\E")
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 )

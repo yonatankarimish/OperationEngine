@@ -4,9 +4,10 @@ import com.SixSense.data.commands.*;
 import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.SixSense.io.Session;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CommandUtils {
     //Adds a new Command or Block to the current block's child blocks
@@ -104,7 +105,12 @@ public class CommandUtils {
             return commandText;
         }
         if(dynamicFields != null) {
-            for (String dynamicField : dynamicFields.keySet()) {
+            /*Consider the case of evaluating two dynamic fields: var.scope.field = 'foo' and var.scope.field_with_long_name = 'bar':
+            * If the command contains, say, 'echo $var.scope.field_with_long_name', and we evaluate var.scope.field first
+            * Then the command will return as 'foo_with_long_name'
+            * Therefore we order the dynamic fields by inverse lexicographical order to avoid this scenario*/
+            List<String> orderedKeys = dynamicFields.keySet().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+            for (String dynamicField : orderedKeys) {
                 commandText = commandText.replace(MessageLiterals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
             }
         }

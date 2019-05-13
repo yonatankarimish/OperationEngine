@@ -1,5 +1,6 @@
 package com.SixSense.mocks;
 
+import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
@@ -12,10 +13,12 @@ import com.SixSense.util.InternalCommands;
 
 public class F5BigIpBackup {
     public static Operation f5BigIpBackup(String host, String username, String password){
-        ICommand operationBlock = sshConnect()
-                .chainCommands(rebuildSixSenseDirectory())
-                .chainCommands(etcHosts())
-                .chainCommands(exitCommand())
+        ICommand executionBlock = new Block()
+                .addChildBlock(sshConnect())
+                .addChildBlock(rebuildSixSenseDirectory())
+                //.addChildBlock(etcHosts())
+                .addChildBlock(etcHosts(host, username, password))
+                .addChildBlock(exitCommand())
                 .addDynamicField("device.host", host)
                 .addDynamicField("device.username", username)
                 .addDynamicField("device.password", password)
@@ -29,7 +32,7 @@ public class F5BigIpBackup {
                         .withVersion("11 and above")
                 ))
                 .withOperationName("Configuration Backup")
-                .withExecutionBlock(operationBlock)
+                .withExecutionBlock(executionBlock)
                 .addChannel(ChannelType.LOCAL)
                 .addChannel(ChannelType.REMOTE)
                 .addChannel(ChannelType.DOWNLOAD);
@@ -189,7 +192,8 @@ public class F5BigIpBackup {
         return deleteOldDir.chainCommands(makeNewDir);
     }
 
-    private static ICommand etcHosts(){
+    //get file by using 'cat' command and saving to file
+    /*private static ICommand etcHosts(){
         return new Command()
                 .withChannel(ChannelType.REMOTE)
                 .withCommandText("cat /etc/hosts")
@@ -205,6 +209,18 @@ public class F5BigIpBackup {
                         .withResultRetention(ResultRetention.File)
                         .withName("hosts.txt")
                 );
+    }*/
+
+    //get file by running scp command using dedicated download channel
+    private static ICommand etcHosts(String host, String username, String password){
+        return InternalCommands.copyFile(
+                "/etc/hosts",
+                "hosts.txt",
+                host,
+                username,
+                password,
+                45
+            );
     }
 
     private static ICommand exitCommand(){

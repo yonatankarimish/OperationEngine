@@ -16,6 +16,7 @@ public class MessageLiterals {
 
 
     public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";
+    public static final String SessionExecutionDir = projectDirectory() + "/logs/sessions/";
 
     public static final String ExceptionEncountered = "The session engine encountered an error";
     public static final String ExpectedOutcomeNotNumeric = "Expected outcome is not a number";
