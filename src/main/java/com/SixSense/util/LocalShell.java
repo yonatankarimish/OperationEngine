@@ -65,7 +65,7 @@ public class LocalShell {
                 //This implementation currently writes the command and then flushes it. If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
                 //Keep your commands short
                 for(String command : scriptCommands){
-                    logger.info("Writing command "+command);
+                    logger.debug("Writing command "+command);
                     writer.write(command + MessageLiterals.LineBreak);
                     writer.flush();
                     Thread.sleep(3000);
@@ -111,7 +111,7 @@ public class LocalShell {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(processStream))){
                 do {
                     lastResponse = reader.readLine();
-                    logger.info("Just read " + lastResponse);
+                    logger.debug("Just read " + lastResponse);
                     if(lastResponse != null) {
                         result.add(lastResponse);
                     }

@@ -6,6 +6,7 @@ import com.SixSense.engine.SessionEngine;
 import com.SixSense.mocks.F5BigIpBackup;
 import com.SixSense.mocks.OperationMocks;
 import com.SixSense.queue.WorkerQueue;
+import com.SixSense.util.FileUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.boot.SpringApplication;
@@ -47,22 +48,19 @@ public class Main {
 
             //Operation operation = OperationMocks.drainingFileOperation();
 
+            //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
             Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
 
-
-            //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
-            // Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
-
             Future<ExpectedOutcome> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
-            System.out.println("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
-            System.out.println("Result Message: " + backupResult.get().getMessage());
+            logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
+            logger.info("Result Message: " + backupResult.get().getMessage());
 
             /*Future<ExpectedOutcome> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
             Future<ExpectedOutcome> backupResult2 = queueInstance.submit(() -> engineInstance.executeOperation(operation2));
-            System.out.println("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
-            System.out.println("Result Message: " + backupResult.get().getMessage());
-            System.out.println("Operation " + operation2.getFullOperationName() + " Completed with result " + backupResult2.get().getOutcome());
-            System.out.println("Result Message: " + backupResult2.get().getMessage());*/
+            logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
+            logger.info("Result Message: " + backupResult.get().getMessage());
+            logger.info("Operation " + operation2.getFullOperationName() + " Completed with result " + backupResult2.get().getOutcome());
+            logger.info("Result Message: " + backupResult2.get().getMessage());*/
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }

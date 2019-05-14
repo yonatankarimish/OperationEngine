@@ -14,7 +14,7 @@ public class MessageLiterals {
     public static final String LineBreak = System.lineSeparator();
     public static final String VariableMark = "$";
 
-
+    public static final String localPartitionName = "/dev/mapper/vg_root-lv_tmp";
     public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";
     public static final String SessionExecutionDir = projectDirectory() + "/logs/sessions/";
 

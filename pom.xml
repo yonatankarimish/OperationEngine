@@ -128,5 +128,13 @@
             <artifactId>sshj</artifactId>
             <version>0.27.0</version>
         </dependency>
+
+        <!-- File manipulation dependencies -->
+        <!-- xxhash64 and lz4 -->
+        <dependency>
+            <groupId>org.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
+            <version>1.5.1</version>
+        </dependency>
     </dependencies>
 </project>
