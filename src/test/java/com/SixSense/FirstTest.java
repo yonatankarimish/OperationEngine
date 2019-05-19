@@ -10,15 +10,6 @@ import java.util.Scanner;
 public class FirstTest {
     private static final Logger logger = LogManager.getLogger(FirstTest.class);
 
-    @BeforeSuite
-    public void initialize(){
-        logger.info("SixSense Session engine tests");
-        logger.info("Press any key to start tests");
-        Scanner scanner = new Scanner(System.in);
-        scanner.nextLine();
-        logger.info("Starting now");
-    }
-
     @Test
     public void FirstEngineTest(){
         logger.info("This is the first TestNG test for Operation Engine");
