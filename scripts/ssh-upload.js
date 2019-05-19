@@ -1,8 +1,6 @@
 /**
  * Created by Yonatan on 07/11/2017.
  */
-const os = require('os');
-const fs = require('fs');
 const path = require('path');
 const Promise = require('promise');
 const SSH2Utils = require('ssh2-utils');
@@ -13,8 +11,10 @@ const appRoot = path.join(__dirname, "/..");
 
 const sshUtils = new SSH2Utils();
 const uploadTasks = {
+    a: uploadAll, all: uploadAll,
     j: uploadJar, jar: uploadJar,
-    d: uploadJar, dependencies: uploadDependencies
+    t: uploadTests, tests: uploadTests,
+    d: uploadDependencies, dependencies: uploadDependencies
 };
 
 //Executes the proper upload task according to the value passed to the --task flag.
@@ -31,7 +31,12 @@ function init(){
     });
 }
 
-//Uploads the WAR file to the remote Backbox server
+//Uploads all required files to the remote SixSense server
+function uploadAll(){
+    return uploadJar().then(uploadTests).then(uploadDependencies);
+}
+
+//Uploads the main JAR file to the remote SixSense server
 function uploadJar(){
     let deployCommands = [
         'echo "finished running uploadJar"', //notify the developer's machine CLI that all commands have run successfully.
@@ -41,6 +46,17 @@ function uploadJar(){
     });
 }
 
+//Uploads the tests JAR file to the remote SixSense server
+function uploadTests(){
+    let deployCommands = [
+        'echo "finished running uploadTests"', //notify the developer's machine CLI that all commands have run successfully.
+    ];
+    return sftpTransferFile(appRoot+"/target/OperatingSystem-tests.jar", "/tmp/SixSense/OperatingSystem-tests.jar").then(() => {
+        return executeSsh(deployCommands);
+    });
+}
+
+//Uploads maven dependencies to the remote SixSense server
 function uploadDependencies(){
     let deployCommands = [
         'echo "finished running uploadDependencies"', //notify the developer's machine CLI that all commands have run successfully.
