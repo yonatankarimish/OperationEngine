@@ -2,10 +2,9 @@ package com.SixSense;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Optional;
-import org.testng.annotations.Parameters;
+import org.testng.annotations.*;
 
+import java.lang.reflect.Method;
 import java.util.Scanner;
 
 public class DebugConfig {

@@ -5,11 +5,26 @@
 <!--java -cp "/tmp/SixSense/dependency-jars/*:/tmp/SixSense/*" org.testng.TestNG -testjar /tmp/SixSense/OperatingSystem-tests.jar-->
 <!--To debug remotely, enter the following command in cli (parameter order matters!):-->
 <!--java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "/tmp/SixSense/dependency-jars/*:/tmp/SixSense/*" -Denvironment="debug" org.testng.TestNG -testjar /tmp/SixSense/OperatingSystem-tests.jar-->
-<suite name = "MainSuite">
+<suite name="MainSuite">
     <!--<parameter name="environment" value="tests" />-->
-    <test name = "all-tests">
+    <test name="engine-tests">
+        <groups>
+            <run>
+                <include name="engine" />
+            </run>
+        </groups>
         <packages>
-            <package name="com.SixSense"/>
+            <package name="com.SixSense.engine.*"/>
+        </packages>
+    </test>
+    <test name="data-tests">
+        <groups>
+            <run>
+                <include name="data" />
+            </run>
+        </groups>
+        <packages>
+            <package name="com.SixSense.data.*"/>
         </packages>
     </test>
 </suite>
