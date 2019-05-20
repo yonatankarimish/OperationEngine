@@ -79,8 +79,6 @@
         </plugins>
     </build>
 
-    <!-- tamut -->
-
     <dependencies>
         <!-- Spring boot dependencies -->
         <dependency>
