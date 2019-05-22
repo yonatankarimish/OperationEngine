@@ -2,11 +2,9 @@ package com.SixSense.engine;
 
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
-import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.ResultStatus;
-import com.SixSense.data.logic.WorkflowPolicy;
+import com.SixSense.data.logic.*;
 import com.SixSense.queue.WorkerQueue;
-import com.SixSense.util.ExpectedOutcomeResolver;
+import com.SixSense.util.LogicalExpressionResolver;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +26,11 @@ public class WorkflowManager {
     public void attemptToExecute(ParallelWorkflow workflow){
         workflow.incrementCompletedParentWorkflows();
         if(workflow.getTotalParentWorkflows() == workflow.getCompletedParentWorkflows()){
-            boolean executionConditionsMet = ExpectedOutcomeResolver.checkExecutionConditions(
+            boolean executionConditionsMet = LogicalExpressionResolver.resolveLogicalExpression(
                     workflow.getDynamicFields(),
-                    workflow.getExecutionConditions(),
-                    workflow.getConditionAggregation()
+                    workflow.getExecutionCondition()
             ).isResolved();
+
             if(executionConditionsMet) {
                 executeWorkflow(workflow);
             }
@@ -54,7 +52,7 @@ public class WorkflowManager {
         }
     }
 
-    public void notifyWorkflow(Operation operation, ExpectedOutcome resolvedOutcome){
+    public void notifyWorkflow(Operation operation, ExpressionResult resolvedOutcome){
         //Operations always use SELF_SEQUENCE_EAGER. Therefore, execute their sequential workflows
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)) {
             for (ParallelWorkflow sequence : operation.getSequentialWorkflowUponSuccess()) {
@@ -74,7 +72,7 @@ public class WorkflowManager {
         }
     }
 
-    public void notifyWorkflow(ParallelWorkflow workflow, ExpectedOutcome resolvedOutcome){
+    public void notifyWorkflow(ParallelWorkflow workflow, ExpressionResult resolvedOutcome){
         boolean successful = resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS);
         boolean allChildrenCompleted = workflow.getCompletedOperations() == workflow.getTotalOperations();
         Set<WorkflowPolicy> workflowPolicies = workflow.getWorkflowPolicies();

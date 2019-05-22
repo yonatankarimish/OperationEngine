@@ -1,43 +1,26 @@
 package com.SixSense.data.logic;
 
-import java.util.Objects;
+import com.SixSense.util.ExpressionUtils;
 
 public class ExecutionCondition implements IFlowConnector {
     private String variable;
     private BinaryRelation binaryRelation;
     private String expectedValue;
-    private boolean resolved;
+    private ExpressionResult expressionResult;
 
     //The default Execution condition wills search for the empty string in any session field, therefore always returning CommandResult.SUCCESS.
     public ExecutionCondition(){
         this.variable = "";
         this.binaryRelation = BinaryRelation.CONTAINS;
         this.expectedValue = "";
-        this.resolved = false;
+        this.expressionResult = new ExpressionResult();
     }
 
     public ExecutionCondition(String variable, BinaryRelation binaryRelation, String expectedValue) {
         this.variable = variable;
         this.binaryRelation = binaryRelation;
         this.expectedValue = expectedValue;
-        this.resolved = false;
-    }
-
-    public ExecutionCondition (ExecutionCondition clone){
-        this.variable = clone.variable;
-        this.binaryRelation = clone.binaryRelation;
-        this.expectedValue = clone.expectedValue;
-        this.resolved = clone.resolved;
-    }
-
-    public static ExecutionCondition matchingSuccess(){
-        return new ExecutionCondition()
-                .withBinaryRelation(BinaryRelation.NONE)
-                .withResolved(true);
-    }
-
-    public static ExecutionCondition matchingFailure(){
-        return new ExecutionCondition().withBinaryRelation(BinaryRelation.NONE);
+        this.expressionResult = new ExpressionResult();
     }
 
     public String getVariable() {
@@ -82,35 +65,27 @@ public class ExecutionCondition implements IFlowConnector {
     }
 
     @Override
-    public boolean isResolved() {
-        return resolved;
+    public ExpressionResult getExpressionResult() {
+        return expressionResult;
     }
 
     @Override
-    public void setResolved(boolean resolved) {
-        this.resolved = resolved;
+    public void setExpressionResult(ExpressionResult expressionResult) {
+        this.expressionResult = expressionResult;
     }
 
     @Override
-    public ExecutionCondition withResolved(boolean resolved) {
-        this.resolved = resolved;
+    public ExecutionCondition withExpressionResult(ExpressionResult expressionResult) {
+        this.expressionResult = expressionResult;
         return this;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        else if (other == null || getClass() != other.getClass()) {
-            return false;
-        }else {
-            ExecutionCondition otherCondition = (ExecutionCondition) other;
-            return resolved == otherCondition.resolved &&
-                    Objects.equals(variable, otherCondition.variable) &&
-                    binaryRelation == otherCondition.binaryRelation &&
-                    Objects.equals(expectedValue, otherCondition.expectedValue);
-        }
+    public LogicalExpression<ExecutionCondition> mergeResolvable(ExecutionCondition additional){
+        return ExpressionUtils.mergeExpressions(this, additional);
+    }
+
+    public LogicalExpression<ExecutionCondition> mergeExpression(LogicalExpression<ExecutionCondition> additional){
+        return ExpressionUtils.mergeExpressions(this, additional);
     }
 
     //Returns a new instance of the same execution condition in its pristine state. That is - as if the new state was never resolved
@@ -120,7 +95,7 @@ public class ExecutionCondition implements IFlowConnector {
                 .withVariable(this.variable)
                 .withBinaryRelation(this.binaryRelation)
                 .withExpectedValue(this.expectedValue)
-                .withResolved(false);
+                .withExpressionResult(this.expressionResult.deepClone());
     }
 
     @Override
@@ -129,7 +104,7 @@ public class ExecutionCondition implements IFlowConnector {
                 "variable='" + variable + '\'' +
                 ", binaryRelation=" + binaryRelation +
                 ", expectedValue='" + expectedValue + '\'' +
-                ", resolved=" + resolved +
+                ", expressionResult=" + expressionResult +
                 '}';
     }
 }

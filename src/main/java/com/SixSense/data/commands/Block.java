@@ -2,10 +2,10 @@ package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.io.Session;
 import com.SixSense.util.CommandUtils;
-import com.SixSense.util.ExpectedOutcomeResolver;
+import com.SixSense.util.LogicalExpressionResolver;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,8 +17,7 @@ public class Block extends AbstractCommand implements ICommand {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<ICommand> childBlocks;
 
-    private List<ExecutionCondition> repeatConditions;
-    private LogicalCondition repeatAggregation;
+    private LogicalExpression<ExecutionCondition> repeatCondition;
     private Iterator<ICommand> commandIterator;
     private ICommand currentCommand;
 
@@ -28,15 +27,13 @@ public class Block extends AbstractCommand implements ICommand {
     public Block() {
         super();
         this.childBlocks = new ArrayList<>();
-        this.repeatConditions = new ArrayList<>();
-        this.repeatAggregation = LogicalCondition.OR;
+        this.repeatCondition = new LogicalExpression<>();
     }
 
-    public Block(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ICommand> childBlocks, List<ExecutionCondition> repeatConditions, LogicalCondition repeatAggregation) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public Block(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ICommand> childBlocks, LogicalExpression<ExecutionCondition> repeatCondition) {
+        super(executionCondition, expectedOutcome);
         this.childBlocks = childBlocks;
-        this.repeatConditions = repeatConditions;
-        this.repeatAggregation = repeatAggregation;
+        this.repeatCondition = repeatCondition;
     }
 
     public ICommand chainCommands(ICommand additional){
@@ -69,9 +66,9 @@ public class Block extends AbstractCommand implements ICommand {
                 return true;
             }else if(!this.currentCommand.isAlreadyExecuted()){
                 return false;
-            }else if(this.repeatConditions.isEmpty()){
+            }else if(this.repeatCondition.getResolvableExpressions().isEmpty()){
                 return true;
-            }else if(ExpectedOutcomeResolver.checkExecutionConditions(context.getCurrentSessionVariables(), repeatConditions, repeatAggregation).isResolved()) {//as long as resolved, the halting condition is not met
+            }else if(LogicalExpressionResolver.resolveLogicalExpression(context.getCurrentSessionVariables(), repeatCondition).isResolved()) {//as long as resolved, the halting condition is not met
                 //If the passed block is a repeating block, which has not yet finished repeating, reset the current loop and return false
                 this.resetNextCommandLoop();
                 return false;
@@ -95,30 +92,16 @@ public class Block extends AbstractCommand implements ICommand {
         }
     }
 
-    public List<ExecutionCondition> getRepeatConditions() {
-        return Collections.unmodifiableList(repeatConditions);
+    public LogicalExpression getRepeatCondition() {
+        return repeatCondition;
     }
 
-    public Block addRepeatCondition(ExecutionCondition repeatCondition){
-        this.repeatConditions.add(repeatCondition);
-        return this;
+    public void setRepeatCondition(LogicalExpression<ExecutionCondition> repeatCondition) {
+        this.repeatCondition = repeatCondition;
     }
 
-    public Block addRepeatConditions(List<ExecutionCondition> repeatConditions){
-        this.repeatConditions.addAll(repeatConditions);
-        return this;
-    }
-
-    public LogicalCondition getRepeatAggregation() {
-        return repeatAggregation;
-    }
-
-    public void setRepeatAggregation(LogicalCondition repeatAggregation) {
-        this.repeatAggregation = repeatAggregation;
-    }
-
-    public Block withRepeatAggregation(LogicalCondition repeatAggregation) {
-        this.repeatAggregation = repeatAggregation;
+    public Block withRepeatCondition(LogicalExpression<ExecutionCondition> repeatCondition) {
+        this.repeatCondition = repeatCondition;
         return this;
     }
 
@@ -162,14 +145,13 @@ public class Block extends AbstractCommand implements ICommand {
 
     private Block assignDefaults(Block block){
         List<ICommand> clonedChildBlocks = this.childBlocks.stream().map(ICommand::deepClone).collect(Collectors.toList());
-        List<ExecutionCondition> repeatClone = this.repeatConditions.stream().map(ExecutionCondition::deepClone).collect(Collectors.toList());
-        this.childBlocks.clear();
-        this.repeatConditions.clear();
+        if(this == block) {
+            this.childBlocks.clear();
+        }
 
         return (Block)block
                 .addChildBlocks(clonedChildBlocks)
-                .addRepeatConditions(repeatClone)
-                .withRepeatAggregation(this.repeatAggregation)
+                .withRepeatCondition(block.repeatCondition.deepClone())
                 .withSuperCloneState(this);
     }
 
@@ -177,8 +159,7 @@ public class Block extends AbstractCommand implements ICommand {
     public String toString() {
         return "Block{" +
                 "childBlocks=" + childBlocks +
-                ", repeatConditions=" + repeatConditions +
-                ", repeatAggregation=" + repeatAggregation +
+                ", repeatCondition=" + repeatCondition +
                 ", commandIterator=" + commandIterator +
                 ", currentCommand=" + currentCommand +
                 ", " + super.superToString() +

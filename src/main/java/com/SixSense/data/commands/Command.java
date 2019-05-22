@@ -3,7 +3,7 @@ package com.SixSense.data.commands;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.SixSense.util.CommandUtils;
 
@@ -33,8 +33,8 @@ public class Command extends AbstractCommand implements ICommand{
         this.outputPipes = new LinkedHashSet<>();
     }
 
-    public Command(String channelName, String commandText, int minimalSecondsToResponse, int secondsToTimeout, List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, LinkedHashSet<AbstractOutputPipe> outputPipes) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public Command(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, String channelName, String commandText, int minimalSecondsToResponse, int secondsToTimeout, LinkedHashSet<AbstractOutputPipe> outputPipes) {
+        super(executionCondition, expectedOutcome);
         this.channelName = channelName;
         this.commandText = commandText;
         this.minimalSecondsToResponse = minimalSecondsToResponse;
