@@ -17,7 +17,7 @@
             <package name="com.SixSense.engine.*"/>
         </packages>
     </test>
-    <test name="data-tests">
+    <!--<test name="data-tests">
         <groups>
             <run>
                 <include name="data" />
@@ -26,5 +26,5 @@
         <packages>
             <package name="com.SixSense.data.*"/>
         </packages>
-    </test>
+    </test>-->
 </suite>

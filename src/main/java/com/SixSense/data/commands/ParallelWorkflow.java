@@ -1,8 +1,8 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.ExecutionCondition;
-import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.logic.WorkflowPolicy;
 
 import java.util.*;
@@ -16,7 +16,7 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
 
     private volatile int completedOperations;
     private List<Operation> parallelOperations;
-    private List<ExpectedOutcome> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations
+    private List<ExpressionResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations
     private Set<WorkflowPolicy> workflowPolicies;
 
     public ParallelWorkflow() {
@@ -35,8 +35,8 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         ).collect(Collectors.toCollection(HashSet::new));
     }
 
-    public ParallelWorkflow(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<Operation> parallelOperations, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, Set<WorkflowPolicy> workflowPolicies) {
-        super(executionConditions, conditionAggregation, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
+    public ParallelWorkflow(LogicalExpression<ExecutionCondition> executionCondition, List<Operation> parallelOperations, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, Set<WorkflowPolicy> workflowPolicies) {
+        super(executionCondition, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.totalParentWorkflows = 0;
         this.completedParentWorkflows = 0;
 
@@ -81,11 +81,11 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         return this;
     }
 
-    public synchronized List<ExpectedOutcome> getOperationOutcomes() {
+    public synchronized List<ExpressionResult> getOperationOutcomes() {
         return Collections.unmodifiableList(operationOutcomes);
     }
 
-    public synchronized ParallelWorkflow addOperationOutcomes(ExpectedOutcome operationOutcome) {
+    public synchronized ParallelWorkflow addOperationOutcomes(ExpressionResult operationOutcome) {
         this.operationOutcomes.add(operationOutcome);
         this.completedOperations++;
         return this;
@@ -124,7 +124,9 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
 
     private ParallelWorkflow assignDefaults(ParallelWorkflow workflow){
         List<Operation> clonedOperations = this.parallelOperations.stream().map(Operation::deepClone).collect(Collectors.toList());
-        this.parallelOperations.clear();
+        if(this == workflow) {
+            this.parallelOperations.clear();
+        }
 
         return (ParallelWorkflow)workflow
                 .addParallelOperations(clonedOperations)

@@ -2,7 +2,7 @@ package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.retention.VariableRetention;
 
 import java.util.List;
@@ -17,35 +17,17 @@ public interface ICommand {
 
     ICommand withAlreadyExecuted(boolean alreadyExecuted);
 
-    List<ExecutionCondition> getExecutionConditions();
+    LogicalExpression<ExecutionCondition> getExecutionCondition();
 
-    AbstractCommand addExecutionCondition(ExecutionCondition executionCondition);
+    void setExecutionCondition(LogicalExpression<ExecutionCondition> executionCondition);
 
-    AbstractCommand addExecutionConditions(List<ExecutionCondition> executionConditions);
+    AbstractCommand withExecutionCondition(LogicalExpression<ExecutionCondition> executionCondition);
 
-    LogicalCondition getConditionAggregation();
+    LogicalExpression<ExpectedOutcome> getExpectedOutcome();
 
-    void setConditionAggregation(LogicalCondition conditionAggregation);
+    void setExpectedOutcome(LogicalExpression<ExpectedOutcome> expectedOutcome);
 
-    AbstractCommand withConditionAggregation(LogicalCondition conditionAggregation);
-
-    List<ExpectedOutcome> getExpectedOutcomes();
-
-    ICommand addExpectedOutcome(ExpectedOutcome expectedOutcomes);
-
-    ICommand addExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes);
-
-    LogicalCondition getOutcomeAggregation();
-
-    void setOutcomeAggregation(LogicalCondition outcomeAggregation);
-
-    ICommand withOutcomeAggregation(LogicalCondition outcomeAggregation);
-
-    String getAggregatedOutcomeMessage();
-
-    void setAggregatedOutcomeMessage(String aggregatedOutcomeMessage);
-
-    ICommand withAggregatedOutcomeMessage(String aggregatedOutcomeMessage);
+    AbstractCommand withExpectedOutcome(LogicalExpression<ExpectedOutcome> expectedOutcome);
 
     ICommand chainCommands(ICommand additional);
 

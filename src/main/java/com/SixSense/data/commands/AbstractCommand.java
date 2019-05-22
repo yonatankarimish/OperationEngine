@@ -2,7 +2,7 @@ package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.retention.VariableRetention;
 
 import java.util.*;
@@ -13,12 +13,8 @@ public abstract class AbstractCommand implements ICommand{
     protected final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
     protected boolean alreadyExecuted;
 
-    protected List<ExecutionCondition> executionConditions;
-    protected LogicalCondition conditionAggregation;
-
-    protected List<ExpectedOutcome> expectedOutcomes;
-    protected LogicalCondition outcomeAggregation;
-    protected String aggregatedOutcomeMessage;
+    protected LogicalExpression<ExecutionCondition> executionCondition;
+    protected LogicalExpression<ExpectedOutcome> expectedOutcome;
 
     protected Map<String, String> dynamicFields;
     protected VariableRetention saveTo;
@@ -30,27 +26,19 @@ public abstract class AbstractCommand implements ICommand{
         this.uuid = UUID.randomUUID();
         this.alreadyExecuted = false;
 
-        this.executionConditions = new ArrayList<>();
-        this.conditionAggregation = LogicalCondition.OR;
-
-        this.expectedOutcomes = new ArrayList<>();
-        this.outcomeAggregation = LogicalCondition.OR;
-        this.aggregatedOutcomeMessage = "";
+        this.executionCondition = new LogicalExpression<>();
+        this.expectedOutcome = new LogicalExpression<>();
 
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
     }
 
-    public AbstractCommand(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage) {
+    public AbstractCommand(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome) {
         this.uuid = UUID.randomUUID();
         this.alreadyExecuted = false;
 
-        this.executionConditions = executionConditions;
-        this.conditionAggregation = conditionAggregation;
-
-        this.expectedOutcomes = expectedOutcomes;
-        this.outcomeAggregation = outcomeAggregation;
-        this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
+        this.executionCondition = executionCondition;
+        this.expectedOutcome = expectedOutcome;
 
         this.dynamicFields = new HashMap<>();
         this.saveTo = new VariableRetention();
@@ -78,84 +66,34 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     @Override
-    public List<ExecutionCondition> getExecutionConditions() {
-        return Collections.unmodifiableList(executionConditions);
+    public LogicalExpression<ExecutionCondition> getExecutionCondition() {
+        return executionCondition;
     }
 
     @Override
-    public AbstractCommand addExecutionCondition(ExecutionCondition executionCondition) {
-        this.executionConditions.add(executionCondition);
+    public void setExecutionCondition(LogicalExpression<ExecutionCondition> executionCondition) {
+        this.executionCondition = executionCondition;
+    }
+
+    @Override
+    public AbstractCommand withExecutionCondition(LogicalExpression<ExecutionCondition> executionCondition) {
+        this.executionCondition = executionCondition;
         return this;
     }
 
     @Override
-    public AbstractCommand addExecutionConditions(List<ExecutionCondition> executionConditions) {
-        this.executionConditions.addAll(executionConditions);
-        return this;
+    public LogicalExpression<ExpectedOutcome> getExpectedOutcome() {
+        return expectedOutcome;
     }
 
     @Override
-    public LogicalCondition getConditionAggregation() {
-        return conditionAggregation;
+    public void setExpectedOutcome(LogicalExpression<ExpectedOutcome> expectedOutcome) {
+        this.expectedOutcome = expectedOutcome;
     }
 
     @Override
-    public void setConditionAggregation(LogicalCondition conditionAggregation) {
-        this.conditionAggregation = conditionAggregation;
-    }
-
-    @Override
-    public AbstractCommand withConditionAggregation(LogicalCondition conditionAggregation) {
-        this.conditionAggregation = conditionAggregation;
-        return this;
-    }
-
-    @Override
-    public List<ExpectedOutcome> getExpectedOutcomes() {
-        return Collections.unmodifiableList(expectedOutcomes);
-    }
-
-    @Override
-    public AbstractCommand addExpectedOutcomes(List<ExpectedOutcome> expectedOutcomes) {
-        this.expectedOutcomes.addAll(expectedOutcomes);
-        return this;
-    }
-
-    @Override
-    public AbstractCommand addExpectedOutcome(ExpectedOutcome expectedOutcome) {
-        this.expectedOutcomes.add(expectedOutcome);
-        return this;
-    }
-
-    @Override
-    public LogicalCondition getOutcomeAggregation() {
-        return outcomeAggregation;
-    }
-
-    @Override
-    public void setOutcomeAggregation(LogicalCondition outcomeAggregation) {
-        this.outcomeAggregation = outcomeAggregation;
-    }
-
-    @Override
-    public AbstractCommand withOutcomeAggregation(LogicalCondition outcomeAggregation) {
-        this.outcomeAggregation = outcomeAggregation;
-        return this;
-    }
-
-    @Override
-    public String getAggregatedOutcomeMessage() {
-        return aggregatedOutcomeMessage;
-    }
-
-    @Override
-    public void setAggregatedOutcomeMessage(String aggregatedOutcomeMessage) {
-        this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
-    }
-
-    @Override
-    public AbstractCommand withAggregatedOutcomeMessage(String aggregatedOutcomeMessage) {
-        this.aggregatedOutcomeMessage = aggregatedOutcomeMessage;
+    public AbstractCommand withExpectedOutcome(LogicalExpression<ExpectedOutcome> expectedOutcome) {
+        this.expectedOutcome = expectedOutcome;
         return this;
     }
 
@@ -193,17 +131,9 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     protected AbstractCommand withSuperCloneState(AbstractCommand creator){
-        List<ExecutionCondition> conditionClone = creator.executionConditions.stream().map(ExecutionCondition::deepClone).collect(Collectors.toList());
-        List<ExpectedOutcome> outcomeClone = creator.expectedOutcomes.stream().map(ExpectedOutcome::deepClone).collect(Collectors.toList());
-        this.executionConditions.clear();
-        this.expectedOutcomes.clear();
-
         return this.withAlreadyExecuted(false)
-                .addExecutionConditions(conditionClone)
-                .withConditionAggregation(creator.conditionAggregation)
-                .addExpectedOutcomes(outcomeClone)
-                .withOutcomeAggregation(creator.outcomeAggregation)
-                .withAggregatedOutcomeMessage(creator.aggregatedOutcomeMessage)
+                .withExecutionCondition(creator.executionCondition.deepClone())
+                .withExpectedOutcome(creator.expectedOutcome.deepClone())
                 .addDynamicFields(creator.dynamicFields)
                 .withSaveTo(creator.saveTo.deepClone());
     }
@@ -211,11 +141,8 @@ public abstract class AbstractCommand implements ICommand{
     protected String superToString(){
         return  " uuid=" + uuid +
                 ", alreadyExecuted=" + alreadyExecuted +
-                ", executionConditions=" + executionConditions +
-                ", conditionAggregation=" + conditionAggregation +
-                ", expectedOutcomes=" + expectedOutcomes +
-                ", outcomeAggregation=" + outcomeAggregation +
-                ", aggregatedOutcomeMessage='" + aggregatedOutcomeMessage + '\'' +
+                ", executionCondition=" + executionCondition +
+                ", expectedOutcome=" + expectedOutcome +
                 ", dynamicFields=" + dynamicFields +
                 ", saveTo=" + saveTo;
     }

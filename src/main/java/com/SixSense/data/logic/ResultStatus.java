@@ -1,7 +1,7 @@
 package com.SixSense.data.logic;
 
 public enum ResultStatus {
-    SUCCESS, FAILURE;
+    SUCCESS, FAILURE, SKIP;
 
     public ResultStatus invert(){
         if(this.equals(SUCCESS)){

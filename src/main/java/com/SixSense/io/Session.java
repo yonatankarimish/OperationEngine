@@ -3,13 +3,13 @@ package com.SixSense.io;
 
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Command;
-import com.SixSense.data.logic.ExpectedOutcome;
+import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
-import com.SixSense.util.ExpectedOutcomeResolver;
+import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
 import net.schmizz.sshj.SSHClient;
 import org.apache.logging.log4j.Logger;
@@ -64,10 +64,10 @@ public class Session implements Closeable, ApplicationContextAware {
         logger.info("Session " +  this.getSessionShellId() + " has been created");
     }
 
-    public ExpectedOutcome executeCommand(Command command) throws IOException{
+    public ExpressionResult executeCommand(Command command) throws IOException{
         ShellChannel channel = this.channels.get(command.getChannelName());
         if(channel == null){
-            return ExpectedOutcome.executionError(MessageLiterals.InvalidCommandParameters);
+            return ExpressionResult.executionError(MessageLiterals.InvalidCommandParameters);
         }else{
             String promptReference = this.getPromptReference(channel.getName().toLowerCase());
             String nonFinalPrompt = this.getSessionVariableValue(promptReference);
@@ -82,7 +82,7 @@ public class Session implements Closeable, ApplicationContextAware {
         }
     }
 
-    private ExpectedOutcome executeCommand(Command command, ShellChannel channel) throws IOException {
+    private ExpressionResult executeCommand(Command command, ShellChannel channel) throws IOException {
         this.commandOrdinal++;
         this.currentCommand = command;
         this.evaluatedCommand = CommandUtils.evaluateAgainstDynamicFields(command, this.getCurrentSessionVariables());
@@ -102,8 +102,8 @@ public class Session implements Closeable, ApplicationContextAware {
         String output = "";
         long elapsedSeconds = 0L;
         boolean commandEndReached;
-        boolean hasWaitElapsed = command.getExpectedOutcomes().isEmpty();
-        ExpectedOutcome resolvedOutcome = ExpectedOutcome.defaultOutcome();
+        boolean hasWaitElapsed = command.getExpectedOutcome().getResolvableExpressions().isEmpty();
+        ExpressionResult resolvedOutcome = ExpressionResult.defaultOutcome();
         LocalDateTime commandStartTime = LocalDateTime.now();
         try {
             Thread.sleep(command.getMinimalSecondsToResponse() * 1000);
@@ -263,21 +263,15 @@ public class Session implements Closeable, ApplicationContextAware {
                 .trim();
     }
 
-    private ExpectedOutcome attemptToResolve(Command command, String outputAsString){
+    private ExpressionResult attemptToResolve(Command command, String outputAsString){
         /*Check if the command output matches any of our expected logic
          * If a match is found, return the corresponding result for that expected outcome.
          * If no expected outcome achieved (or none exist), return CommandResult.SUCCESS to progress to the next command*/
-        ExpectedOutcome resolvedOutcome = ExpectedOutcomeResolver.resolveExpectedOutcome(
+        return LogicalExpressionResolver.resolveLogicalExpression(
                 outputAsString,
                 this.getCurrentSessionVariables(),
-                command.getExpectedOutcomes(),
-                command.getOutcomeAggregation()
+                command.getExpectedOutcome()
         );
-        if(resolvedOutcome.weakEquals(ExpectedOutcome.defaultOutcome()) && command.getOutcomeAggregation().isAggregating()){
-            resolvedOutcome.setMessage(command.getAggregatedOutcomeMessage());
-        }
-
-        return resolvedOutcome;
     }
 
     public String getSessionShellId() {
@@ -362,7 +356,10 @@ public class Session implements Closeable, ApplicationContextAware {
 
     private String getSessionVariableValue(String sessionVar){
         if(this.sessionVariables.containsKey(sessionVar) && !this.sessionVariables.get(sessionVar).isEmpty()){
-            return this.sessionVariables.get(sessionVar).peek().getValue();
+            VariableRetention latestValue = this.sessionVariables.get(sessionVar).peek();
+            if(latestValue != null) {
+                return latestValue.getValue();
+            }
         }
         return "";
     }

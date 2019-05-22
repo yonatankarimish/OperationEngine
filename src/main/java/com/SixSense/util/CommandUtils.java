@@ -10,17 +10,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommandUtils {
-    //Adds a new Command or Block to the current block's child blocks
-    public static Block addCommand(Block parent, Command childCommand){
-        parent.addChildBlock(childCommand);
-        return parent;
-    }
-
-    public static Block addBlock(Block parent, Block childCommand){
-        parent.addChildBlock(childCommand);
-        return parent;
-    }
-
     //Merge an additional Block of commands to the current block of commands;
     // the new blocks child commands will be added to the current block, ignoring any settings on the chained block.
     public static ICommand chainCommands(ICommand original, ICommand additional){
@@ -48,7 +37,7 @@ public class CommandUtils {
                 return originalAsBlock.addChildBlocks(((Block) additional).getChildBlocks());
             }else{
                 Command additionalAsCommand = (Command)additional;
-                return addCommand(originalAsBlock, additionalAsCommand);
+                return originalAsBlock.addChildBlock(additionalAsCommand);
             }
         }else{
             if(additional instanceof Operation){

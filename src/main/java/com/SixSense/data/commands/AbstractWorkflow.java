@@ -2,7 +2,7 @@ package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,17 +26,16 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
     }
 
     //This constructor is for parallel workflows ("Proper" workflows)
-    public AbstractWorkflow(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
+    public AbstractWorkflow(LogicalExpression<ExecutionCondition> executionCondition, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
         super();
-        super.executionConditions = executionConditions;
-        super.conditionAggregation = conditionAggregation;
+        super.executionCondition = executionCondition;
         this.sequentialWorkflowUponSuccess = sequentialWorkflowUponSuccess;
         this.sequentialWorkflowUponFailure = sequentialWorkflowUponFailure;
     }
 
     //This constructor is for Operations, which extend the abstract Workflow class
-    public AbstractWorkflow(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage);
+    public AbstractWorkflow(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
+        super(executionCondition, expectedOutcome);
         this.sequentialWorkflowUponSuccess = sequentialWorkflowUponSuccess;
         this.sequentialWorkflowUponFailure = sequentialWorkflowUponFailure;
     }
@@ -78,8 +77,10 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
     protected AbstractWorkflow withSuperCloneState(AbstractWorkflow creator){
         List<ParallelWorkflow> successClone = creator.sequentialWorkflowUponSuccess.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
         List<ParallelWorkflow> failClone = creator.sequentialWorkflowUponFailure.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
-        this.sequentialWorkflowUponSuccess.clear();
-        this.sequentialWorkflowUponFailure.clear();
+        if(this == creator) {
+            this.sequentialWorkflowUponSuccess.clear();
+            this.sequentialWorkflowUponFailure.clear();
+        }
 
         return ((AbstractWorkflow)super.withSuperCloneState(creator))
                 .addSequentialWorkflowsUponSuccess(successClone)

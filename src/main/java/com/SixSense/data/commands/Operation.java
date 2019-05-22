@@ -4,7 +4,7 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.LogicalCondition;
+import com.SixSense.data.logic.LogicalExpression;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,8 +31,8 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
         this.channelNames = new HashSet<>();
     }
 
-    public Operation(List<ExecutionCondition> executionConditions, LogicalCondition conditionAggregation, List<ExpectedOutcome> expectedOutcomes, LogicalCondition outcomeAggregation, String aggregatedOutcomeMessage, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock, Set<String> channelNames) {
-        super(executionConditions, conditionAggregation, expectedOutcomes, outcomeAggregation, aggregatedOutcomeMessage, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
+    public Operation(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock, Set<String> channelNames) {
+        super(executionCondition, expectedOutcome, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.operationName = operationName;
         this.device = device;
         this.executionBlock = executionBlock;

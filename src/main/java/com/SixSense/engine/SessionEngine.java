@@ -1,7 +1,6 @@
 package com.SixSense.engine;
 
-import com.SixSense.data.logic.ExpectedOutcome;
-import com.SixSense.data.logic.ResultStatus;
+import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
@@ -11,7 +10,7 @@ import com.SixSense.io.Session;
 import com.SixSense.io.ShellChannel;
 import com.SixSense.mocks.LocalhostConfig;
 import com.SixSense.queue.WorkerQueue;
-import com.SixSense.util.ExpectedOutcomeResolver;
+import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
@@ -29,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
@@ -74,38 +72,38 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         logger.info("Session engine initialized");
     }
 
-    public ExpectedOutcome executeOperation(Operation engineOperation) {
+    public ExpressionResult executeOperation(Operation engineOperation) {
         if(this.isClosed){
-            return ExpectedOutcome.executionError("Session engine has been shut down");
+            return ExpressionResult.executionError("Session engine has been shut down");
         }
 
         boolean canceledPrematurely = this.canceledSessionIds.remove(engineOperation.getUUID());
         if(canceledPrematurely){
-            return ExpectedOutcome.executionError("Operation " + engineOperation.getUUID() + " has ben canceled before reaching session engine");
+            return ExpressionResult.executionError("Operation " + engineOperation.getUUID() + " has ben canceled before reaching session engine");
         }
 
         if(engineOperation == null || engineOperation.getExecutionBlock() == null){
-            return ExpectedOutcome.defaultOutcome();
+            return ExpressionResult.defaultOutcome();
         }
 
         try (Session session = (Session)this.appContext.getBean("sixSenseSession", engineOperation)) {
             this.runningSessions.put(engineOperation.getUUID(), session);
             ICommand executionBlock = engineOperation.getExecutionBlock();
-            ExpectedOutcome sessionResult;
+            ExpressionResult sessionResult;
 
             if(executionConditionsMet(session, executionBlock)) {
                 session.loadSessionDynamicFields(engineOperation);
                 sessionResult = this.executeBlock(session, executionBlock);
-                sessionResult = expectedResult(sessionResult, engineOperation);
+                sessionResult = expectedResult(sessionResult, engineOperation.getExpectedOutcome().getExpressionResult());
                 session.removeSessionDynamicFields(engineOperation);
             }else{
-                sessionResult = ExpectedOutcome.skip();
+                sessionResult = ExpressionResult.skip();
             }
 
             if(!session.isClosed()) {
                 engineOperation.setAlreadyExecuted(true);
             }else{
-                sessionResult = ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+                sessionResult = ExpressionResult.executionError(MessageLiterals.OperationTerminated);
             }
 
             this.runningSessions.remove(engineOperation.getUUID());
@@ -114,13 +112,13 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
         }catch (Exception e){
             logger.error("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: ", e);
-            return ExpectedOutcome.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
+            return ExpressionResult.executionError("SessionEngine - Failed to execute operation " + engineOperation.getFullOperationName() + ". Caused by: " + e.getMessage());
         }
     }
 
-    private ExpectedOutcome executeBlock(Session session, ICommand executionBlock) throws IOException{
+    private ExpressionResult executeBlock(Session session, ICommand executionBlock) throws IOException{
         if(session.isClosed()){
-            return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+            return ExpressionResult.executionError(MessageLiterals.OperationTerminated);
         }else if (executionBlock instanceof Command) {
             return this.executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
@@ -129,52 +127,52 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             * progressive + skip = progressive
             * progressive + success = success*/
             Block parentBlock = (Block)executionBlock;
-            ExpectedOutcome progressiveResult = ExpectedOutcome.defaultOutcome();
+            ExpressionResult progressiveResult = ExpressionResult.defaultOutcome();
 
             if(executionConditionsMet(session, parentBlock)) {
                 session.loadSessionDynamicFields(parentBlock);
                 while (!parentBlock.hasExhaustedCommands(session)) {
                     ICommand nextCommand = parentBlock.getNextCommand(session);
                     if (nextCommand != null) {
-                        ExpectedOutcome commandResult = this.executeBlock(session, nextCommand);
+                        ExpressionResult commandResult = this.executeBlock(session, nextCommand);
                         if (commandResult.getOutcome().equals(ResultStatus.FAILURE)) {
                             return commandResult;
-                        }else if(!commandResult.equals(ExpectedOutcome.skip())){
+                        }else if(!commandResult.getOutcome().equals(ResultStatus.SKIP)){
                             progressiveResult = commandResult;
                         }
                     }
                 }
                 session.removeSessionDynamicFields(parentBlock);
             }else{
-                progressiveResult = ExpectedOutcome.skip();
+                progressiveResult = ExpressionResult.skip();
             }
 
             parentBlock.setAlreadyExecuted(true);
-            return expectedResult(progressiveResult, executionBlock);
+            return expectedResult(progressiveResult, executionBlock.getExpectedOutcome().getExpressionResult());
         }else{
-            return ExpectedOutcome.executionError(MessageLiterals.InvalidExecutionBlock);
+            return ExpressionResult.executionError(MessageLiterals.InvalidExecutionBlock);
         }
     }
 
-    private ExpectedOutcome executeCommand(Session session, Command currentCommand) throws IOException{
+    private ExpressionResult executeCommand(Session session, Command currentCommand) throws IOException{
         if(session.isClosed()){
-            return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+            return ExpressionResult.executionError(MessageLiterals.OperationTerminated);
         }
 
-        ExpectedOutcome commandResult;
+        ExpressionResult commandResult;
         if(executionConditionsMet(session, currentCommand)) {
             session.loadSessionDynamicFields(currentCommand);
             commandResult = session.executeCommand(currentCommand);
             session.removeSessionDynamicFields(currentCommand);
         }else{
-            commandResult = ExpectedOutcome.skip();
+            commandResult = ExpressionResult.skip();
         }
 
         currentCommand.setAlreadyExecuted(true);
         return commandResult;
     }
 
-    public ExpectedOutcome terminateOperation(String operationID){
+    public ExpressionResult terminateOperation(String operationID){
         Session terminatingSession = this.runningSessions.remove(operationID);
         if(terminatingSession == null){
             logger.warn("Operation " + operationID + " has no running session, and therefore cannot be terminated");
@@ -184,34 +182,30 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 terminatingSession.close();
             } catch (IOException e) {
                 logger.error("Operation " + operationID + " failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: ", e);
-                return ExpectedOutcome.executionError(MessageLiterals.ExceptionEncountered);
+                return ExpressionResult.executionError(MessageLiterals.ExceptionEncountered);
             }
         }
 
-        return ExpectedOutcome.executionError(MessageLiterals.OperationTerminated);
+        return ExpressionResult.executionError(MessageLiterals.OperationTerminated);
     }
 
     private boolean executionConditionsMet(Session session, ICommand command){
-        return ExpectedOutcomeResolver.checkExecutionConditions(
+        return LogicalExpressionResolver.resolveLogicalExpression(
                 session.getCurrentSessionVariables(),
-                command.getExecutionConditions(),
-                command.getConditionAggregation()
+                command.getExecutionCondition()
         ).isResolved();
     }
 
-    private ExpectedOutcome expectedResult(ExpectedOutcome achievedResult, ICommand parent){
+    private ExpressionResult expectedResult(ExpressionResult achievedResult, ExpressionResult parentResult){
         /*If the result of executing the block was expected by the parent (i.e. they are equal in the weak sense), override it with the parent result
          * Otherwise, return the result as is was returned from the executeBlock() method*/
-        if(parent.getExpectedOutcomes() == null){
+        if(parentResult.strongEquals(ExpressionResult.defaultOutcome())){
+            return achievedResult;
+        } else if(achievedResult.equals(parentResult)){
+            return parentResult;
+        }else{
             return achievedResult;
         }
-
-        for(ExpectedOutcome expectedOutcome : parent.getExpectedOutcomes()){
-            if(expectedOutcome.equals(achievedResult)){
-                return expectedOutcome;
-            }
-        }
-        return achievedResult;
     }
 
     @Bean(value="sixSenseSession")
@@ -243,7 +237,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         return session;
     }
 
-    private void notifyWorkflowManager(Operation operation, ExpectedOutcome resolvedOutcome){
+    private void notifyWorkflowManager(Operation operation, ExpressionResult resolvedOutcome){
         /*We submit the notify request to the worker queue so that we can return the expected outcome without waiting for the next workflow to complete
         * Since workflows are lengthy operations, this is a major time and resource saver*/
         try {

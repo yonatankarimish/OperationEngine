@@ -1,15 +1,15 @@
 package com.SixSense.data.logic;
 
-public interface IFlowConnector {
+public interface IFlowConnector extends IResolvable{
     BinaryRelation getBinaryRelation();
 
     String getExpectedValue();
 
-    boolean isResolved();
+    ExpressionResult getExpressionResult();
 
-    void setResolved(boolean resolved);
+    void setExpressionResult(ExpressionResult expressionResult);
 
-    IFlowConnector withResolved(boolean resolved);
+    IFlowConnector withExpressionResult(ExpressionResult expressionResult);
 
     IFlowConnector deepClone(); //Returns a new instance of the same flow connector in its pristine state. That is - as if the new state was never executed
 }
