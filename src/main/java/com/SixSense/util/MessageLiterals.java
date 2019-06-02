@@ -28,7 +28,7 @@ public class MessageLiterals {
     public static final String UnsuportedBinaryRelation = "Expected outcome has an unsupported binary relation";
     public static final String TimeoutInCommand = "Command did not return within it's specified time limit";
 
-    private static String projectDirectory(){
+    public static String projectDirectory(){
         String projectDir;
         try {
             return new File(MessageLiterals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();

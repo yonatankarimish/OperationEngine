@@ -27,4 +27,14 @@
             <package name="com.SixSense.data.*"/>
         </packages>
     </test>
+    <test name="util-tests">
+        <groups>
+            <run>
+                <include name="util" />
+            </run>
+        </groups>
+        <packages>
+            <package name="com.SixSense.util.*"/>
+        </packages>
+    </test>
 </suite>

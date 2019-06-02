@@ -5,6 +5,7 @@ import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.util.Arrays;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -15,7 +16,7 @@ import java.nio.file.Paths;
 
 public class FileUtils {
     private static final Logger logger = LogManager.getLogger(FileUtils.class);
-    private static int localPartitionBlockSize;
+    static int localPartitionBlockSize;
 
     //obtain block size for local installation partition to optimize buffered reads
     static{
@@ -99,24 +100,11 @@ public class FileUtils {
                 readBytes = bufferedIn.read(buffer);
                 if(readBytes > 0) {
                     outStream.write(buffer, 0, readBytes);
+                    Arrays.clear(buffer);
                 }
             } while (readBytes != -1);
         }finally {
-            if(outStream != null) {
-                outStream.close();
-            }
-            if(bufferedOut != null) {
-                bufferedOut.close();
-            }
-            if(directOut != null) {
-                directOut.close();
-            }
-            if(bufferedIn != null) {
-                bufferedIn.close();
-            }
-            if(directIn != null) {
-                directIn.close();
-            }
+            finalizeCloseableResource(outStream, bufferedOut, directOut, bufferedIn, directIn);
         }
     }
 
@@ -144,24 +132,11 @@ public class FileUtils {
                 readBytes = inStream.read(buffer);
                 if(readBytes > 0) {
                     bufferedOut.write(buffer, 0, readBytes);
+                    Arrays.clear(buffer);
                 }
             } while (readBytes != -1);
         }finally {
-            if(bufferedOut != null) {
-                bufferedOut.close();
-            }
-            if(directOut != null) {
-                directOut.close();
-            }
-            if(inStream != null) {
-                inStream.close();
-            }
-            if(bufferedIn != null) {
-                bufferedIn.close();
-            }
-            if(directIn != null) {
-                directIn.close();
-            }
+            finalizeCloseableResource(bufferedOut, directOut, inStream, bufferedIn, directIn);
         }
     }
 
@@ -241,4 +216,15 @@ public class FileUtils {
             }
         }
     }*/
+
+   static void finalizeCloseableResource(Closeable... closeables){
+       for(Closeable resource : closeables) {
+           try {
+               resource.close();
+           } catch (Exception e) {
+               String resourceClassName = closeables.getClass().toString();
+               logger.error("Failed to close instance of " + resourceClassName, e);
+           }
+       }
+   }
 }
