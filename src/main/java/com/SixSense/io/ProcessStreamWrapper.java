@@ -18,7 +18,7 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
     /*ProcessStreamWrapper runs in a separate thread than the session that created it
     * If the process output/error stream fills it's own buffer, the process will get stuck and no new commands may be written to it
     * ProcessStreamWrapper will continuously read from the process stream it receives in the constructor, to avoid the process jamming and failing the session
-    * Each session has two wrappers - one for the local process and one for the remote process*/
+    * Each session has a map of open channels, through which it performs I/O with the required channel*/
     ProcessStreamWrapper(InputStream processStream, Session session, List<String> processOutput) {
         this.processStream = processStream;
         this.session = session;

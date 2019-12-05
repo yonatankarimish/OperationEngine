@@ -3,6 +3,7 @@ package com.SixSense;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.logic.*;
 import com.SixSense.engine.SessionEngine;
+import com.SixSense.mocks.TestingMocks;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.EncryptionUtils;
 import com.SixSense.util.FileUtils;
@@ -22,18 +23,18 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
 
     //To run remotely, enter the following command in cli (parameter order matters!):
-    //java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar /tmp/SixSense/OperatingSystem.jar
+    //java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar /sixsense/OperatingSystem.jar
     //logger will output messages above INFO level to system.out
     public static void main(String[] args) {
-        //ConfigurableApplicationContext appContext = SpringApplication.run(Main.class, args);
+        ConfigurableApplicationContext appContext = SpringApplication.run(Main.class, args);
         logger.info("SixSense Session engine demo");
         logger.info("Press any key to start tests");
         Scanner scanner = new Scanner(System.in);
         scanner.nextLine();
         logger.info("Starting now");
 
-        try {
-            /*for(int i=0; i<10; i++) {
+        /*try {
+            *//*for(int i=0; i<10; i++) {
                 String testMessage = "The quick encrypted brown fox jumps over the lazy decrypted dog";
                 logger.info("Original message: " + testMessage);
 
@@ -43,7 +44,7 @@ public class Main {
 
                 String decryptedMessage = EncryptionUtils.decryptString(encryptedMessage, encryptionKey);
                 logger.info("Decrypted message: " + decryptedMessage);
-            }*/
+            }*//*
 
             String rootDir = MessageLiterals.projectDirectory();
             SecretKey encryptionKey = EncryptionUtils.generateEncryptionKey();
@@ -59,22 +60,22 @@ public class Main {
             logger.info("decrypted hash = " + decryptedHash);
         }catch (Exception e){
             logger.error(e);
-        }
+        }*/
 
-        /*try {
+        try {
             SessionEngine engineInstance = (SessionEngine)appContext.getBean("sessionEngine");
             WorkerQueue queueInstance = (WorkerQueue)appContext.getBean("workerQueue");
 
-            //Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.254.66", "root", "password");
-            *//*Operation operation = F5BigIpBackup.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+            //Operation operation = TestingMocks.f5BigIpBackup("172.31.254.66", "root", "password");
+            Operation operation = TestingMocks.f5BigIpBackup("172.31.252.179", "root", "qwe123");
 
             Future<ExpressionResult> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
             logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
-            logger.info("Result Message: " + backupResult.get().getMessage());*//*
+            logger.info("Result Message: " + backupResult.get().getMessage());
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }
 
-        SpringApplication.exit(appContext);*/
+        SpringApplication.exit(appContext);
     }
 }

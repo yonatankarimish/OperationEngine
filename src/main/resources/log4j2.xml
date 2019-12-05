@@ -2,7 +2,7 @@
 <Configuration status="INFO" name="sixsense">
     <Properties>
         <!-- logging directory base, relative to file system root-->
-        <Property name="baseDir">/tmp/SixSense/logs</Property>
+        <Property name="baseDir">/sixsense/logs</Property>
         <!-- %logger for classpath, %m for message, %n for line break-->
         <Property name="consolePattern">%d{HH:mm:ss} %highlight{%logger:}{FATAL=red, ERROR=bright red, WARN=yellow, INFO=white, DEBUG=green, TRACE=bright blue} %m%n</Property>
         <!-- %d for date, %-5 for justified log level, p for priority, %m for message, %n for line break-->

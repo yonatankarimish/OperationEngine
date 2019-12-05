@@ -24,8 +24,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(LocalOperationTests.class);
 
     public void simpleLocalOperation() {
-        ICommand localBlock = dockerInterface()
-            .chainCommands(this.eth0Interface())
+        ICommand localBlock = loopbackInterface()
             .chainCommands(this.localIp())
             .chainCommands(this.rxBytes())
             .chainCommands(this.txBytes())
@@ -51,7 +50,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     }
 
     public void simpleFailingOperation() {
-        ICommand localBlock = dockerInterface()
+        ICommand localBlock = loopbackInterface()
             .chainCommands(commandWithExpectedOutcomeNotReached())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
@@ -75,7 +74,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     }
 
     public void invalidOperation() {
-        ICommand localBlock = dockerInterface()
+        ICommand localBlock = loopbackInterface()
             .chainCommands(invalidCommand())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
@@ -252,33 +251,17 @@ public class LocalOperationTests extends SixSenseBaseTest {
     }
 
     //TODO: find a way to generalize these tests for each qa machine
-    private ICommand dockerInterface() {
+    private ICommand loopbackInterface() {
         return new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("ifconfig | grep 'docker'")
+            .withCommandText("ifconfig | grep 'Loopback'")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(10)
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>().addResolvable(
                     new ExpectedOutcome()
                         .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("docker")
-                        .withExpressionResult(new ExpressionResult().withMessage("The correct interface name was found"))
-                )
-            );
-    }
-
-    private ICommand eth0Interface() {
-        return new Command()
-            .withChannel(ChannelType.LOCAL)
-            .withCommandText("ifconfig | grep 'eth0'")
-            .withMinimalSecondsToResponse(1)
-            .withSecondsToTimeout(10)
-            .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("eth0")
+                        .withExpectedValue("Loopback")
                         .withExpressionResult(new ExpressionResult().withMessage("The correct interface name was found"))
                 )
             );
@@ -294,7 +277,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                 new LogicalExpression<ExpectedOutcome>().addResolvable(
                     new ExpectedOutcome()
                         .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("172.31.254.65")
+                        .withExpectedValue("127.0.0.1")
                         .withExpressionResult(new ExpressionResult().withMessage("The correct IP address is defined for the interface"))
                 )
             );
@@ -303,7 +286,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     private ICommand rxBytes() {
         return new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("ifconfig eth0 | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
+            .withCommandText("ifconfig lo | grep 'RX bytes' | awk '{print $2}' | sed 's/bytes://g'")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(10)
             .withExpectedOutcome(
@@ -319,7 +302,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     private ICommand txBytes() {
         return new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("ifconfig eth0 | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
+            .withCommandText("ifconfig lo | grep 'TX bytes' | awk '{print $2}' | sed 's/bytes://g'")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(10)
             .withExpectedOutcome(
@@ -335,14 +318,14 @@ public class LocalOperationTests extends SixSenseBaseTest {
     private ICommand commandWithExpectedOutcomeNotReached() {
         return new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("ifconfig eth0 | grep 'TX bytes'")
+            .withCommandText("ifconfig lo | grep 'TX bytes'")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(10)
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>().addResolvable(
                     new ExpectedOutcome()
                         .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("docker")
+                        .withExpectedValue("notPartOfCat")
                         .withExpressionResult(new ExpressionResult().withMessage("no byte count should not be here"))
                 )
             );
