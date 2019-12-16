@@ -8,7 +8,6 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
 import com.SixSense.io.ShellChannel;
-import com.SixSense.mocks.LocalhostConfig;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
@@ -22,6 +21,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -47,8 +47,8 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private final Map<String, String> sessionProperties = new HashMap<>();
 
     private SessionEngine() throws Exception{
-        Path path = Paths.get(SessionPropertiesPath);
-        try (BufferedReader reader = Files.newBufferedReader(path)) {
+        Path sessionProps = Paths.get(SessionPropertiesPath);
+        try (BufferedReader reader = Files.newBufferedReader(sessionProps)) {
             Properties sessionProperties = new Properties();
             sessionProperties.load(reader);
 
@@ -60,10 +60,17 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             throw e;
         }
 
-        try{
+        try (InputStream stream = ClassLoader.getSystemClassLoader().getResource("localhost.properties").openStream()){
+            Properties localhostProperties = new Properties();
+            localhostProperties.load(stream);
+
+            logger.info("enumerating localhost.properties");
+            for(String field: localhostProperties.stringPropertyNames()){
+                logger.info("enumerated localhost property " + field + ": " + localhostProperties.getProperty(field));
+            }
             this.sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-            this.sshClient.connect(LocalhostConfig.host);
-            this.sshClient.authPassword(LocalhostConfig.username, LocalhostConfig.password);
+            this.sshClient.connect(localhostProperties.getProperty("local.host"), Integer.valueOf(localhostProperties.getProperty("local.port")));
+            this.sshClient.authPassword(localhostProperties.getProperty("local.username"), localhostProperties.getProperty("local.password"));
         } catch (IOException e) {
             logger.error("Session engine failed to initialize - failed to initialize ssh client. Caused by: ", e);
             throw e;

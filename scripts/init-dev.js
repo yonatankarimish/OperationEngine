@@ -9,18 +9,19 @@ const fs = require('graceful-fs');
 
 const appRoot = path.join(__dirname, "\\..");
 const resources = appRoot + "\\src\\main\\resources";
-const devEnvFolder = resources + "\\dev_env";
-const devEnvDestination = appRoot + "\\dev_env";
+const configTemplateFolder = resources + "\\dev_env";
+const remoteConfigFolder = appRoot + "\\dev_env";
 
-const remoteConfigPath = appRoot + "\\dev_env\\remote.config.js";
-const remoteConfig = require(remoteConfigPath);
+const localhostPropsPath = resources + "\\localhost.properties";
+const configTemplatePath = configTemplateFolder + "\\remote.config.js";
+const remoteConfigPath = remoteConfigFolder + "\\remote.config.js";
 
 const remoteUtils = require(appRoot + '\\scripts\\remote-utils.js');
 
 init();
 function init(){
     initDevEnv()
-        .then(() => configureRemoteVM("dev"))
+        .then(configureDevEnv)
         .then(() => configureRemoteVM("ansible"))
         .then(uploadConfigToAnsibleHost)
         .catch(error => {
@@ -33,7 +34,7 @@ function initDevEnv(){
     return new Promise((resolve, reject) => {
         ncp.limit = 4;
 
-        ncp(devEnvFolder, devEnvDestination, error => {
+        ncp(configTemplateFolder, remoteConfigFolder, error => {
             if (error) {
                 reject(error);
             } else {
@@ -46,6 +47,7 @@ function initDevEnv(){
 
 async function configureRemoteVM(remoteVMKey){
     let prettyKey = remoteVMKey.replace("_", " ");
+    const remoteConfig = require(remoteConfigPath);
     const prompt = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -68,7 +70,7 @@ async function configureRemoteVM(remoteVMKey){
             if(error){
                 reject(error);
             }else{
-                resolve();
+                resolve(vmConfig);
             }
         });
     });
@@ -80,7 +82,28 @@ function askQuestion(prompt, questionText){
     });
 }
 
+function configureDevEnv(){
+    return configureRemoteVM("dev").then(vmConfig => {
+        let localhostProps = [
+            "local.host=localhost",
+            "local.username=" + vmConfig.username,
+            "local.password=" + vmConfig.password,
+            "local.port=22"
+        ];
+        return new Promise((resolve, reject) => {
+            fs.writeFile(localhostPropsPath, localhostProps.join("\n"), error => {
+                if(error){
+                    reject(error);
+                }else{
+                    resolve();
+                }
+            });
+        });
+    });
+}
+
 function uploadConfigToAnsibleHost(){
+    const remoteConfig = require(remoteConfigPath);
     let deployCommands = [
         'echo "Remote config uploaded to Ansible host"',
     ];

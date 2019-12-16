@@ -5,16 +5,14 @@ import com.SixSense.data.logic.*;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.mocks.TestingMocks;
 import com.SixSense.queue.WorkerQueue;
-import com.SixSense.util.EncryptionUtils;
-import com.SixSense.util.FileUtils;
-import com.SixSense.util.MessageLiterals;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import javax.crypto.SecretKey;
 import java.util.Scanner;
 import java.util.concurrent.Future;
 
@@ -33,41 +31,17 @@ public class Main {
         scanner.nextLine();
         logger.info("Starting now");
 
-        /*try {
-            *//*for(int i=0; i<10; i++) {
-                String testMessage = "The quick encrypted brown fox jumps over the lazy decrypted dog";
-                logger.info("Original message: " + testMessage);
-
-                SecretKey encryptionKey = EncryptionUtils.generateEncryptionKey();
-                String encryptedMessage = EncryptionUtils.encryptString(testMessage, encryptionKey);
-                logger.info("Encrypted message: " + encryptedMessage);
-
-                String decryptedMessage = EncryptionUtils.decryptString(encryptedMessage, encryptionKey);
-                logger.info("Decrypted message: " + decryptedMessage);
-            }*//*
-
-            String rootDir = MessageLiterals.projectDirectory();
-            SecretKey encryptionKey = EncryptionUtils.generateEncryptionKey();
-            EncryptionUtils.encryptFile(rootDir + "/lorem_large.txt", rootDir + "/lorem_encrypted", encryptionKey);
-            logger.info("File has been encrypted");
-
-            EncryptionUtils.decryptFile(rootDir + "/lorem_encrypted", rootDir + "/lorem_decrypted.txt", encryptionKey);
-            logger.info("File has been decrypted");
-
-            String originalHash = FileUtils.nonCryptoHash(rootDir + "/lorem_large.txt");
-            String decryptedHash = FileUtils.nonCryptoHash(rootDir + "/lorem_decrypted.txt");
-            logger.info("original hash = " + originalHash);
-            logger.info("decrypted hash = " + decryptedHash);
-        }catch (Exception e){
-            logger.error(e);
-        }*/
-
         try {
             SessionEngine engineInstance = (SessionEngine)appContext.getBean("sessionEngine");
             WorkerQueue queueInstance = (WorkerQueue)appContext.getBean("workerQueue");
 
             //Operation operation = TestingMocks.f5BigIpBackup("172.31.254.66", "root", "password");
             Operation operation = TestingMocks.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+
+            /*ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            String serializedOperation = objectMapper.writeValueAsString(operation);
+            logger.info(serializedOperation);*/
 
             Future<ExpressionResult> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
             logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());

@@ -31,3 +31,4 @@ hs_err_pid*
 # Intellij files
 *.iml
 /.idea/
+/src/main/resources/localhost.properties
