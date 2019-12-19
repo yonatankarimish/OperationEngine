@@ -21,7 +21,7 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
 
     //To run remotely, enter the following command in cli (parameter order matters!):
-    //java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar /sixsense/OperatingSystem.jar
+    //java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -jar /sixsense/OperatingSystem.jar
     //logger will output messages above INFO level to system.out
     public static void main(String[] args) {
         ConfigurableApplicationContext appContext = SpringApplication.run(Main.class, args);
