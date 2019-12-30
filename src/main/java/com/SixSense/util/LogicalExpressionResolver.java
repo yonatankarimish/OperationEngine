@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.SixSense.util.MessageLiterals.CommandDidNotReachOutcome;
-import static com.SixSense.util.MessageLiterals.UnsuportedBinaryRelation;
-
 public class LogicalExpressionResolver {
     //resolves logical expressions composed of execution conditions
     public static ExpressionResult resolveLogicalExpression(Map<String, String> sessionFields, LogicalExpression<? extends IResolvable> logicalExpression){
@@ -30,13 +27,13 @@ public class LogicalExpressionResolver {
                         return expressionResult;
                     }
                 }
-                return ExpressionResult.executionError(CommandDidNotReachOutcome);
+                return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
             }
             case NOR: {
                 for (IResolvable resolvable : logicalExpression.getResolvableExpressions()) {
                     expressionResult = resolve(commandOutput, sessionFields, resolvable);
                     if (expressionResult.isResolved()) {
-                        return ExpressionResult.executionError(CommandDidNotReachOutcome);
+                        return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
                     }
                 }
                 return ExpressionResult.defaultOutcome();
@@ -45,7 +42,7 @@ public class LogicalExpressionResolver {
                 for (IResolvable resolvable : logicalExpression.getResolvableExpressions()) {
                     expressionResult = resolve(commandOutput, sessionFields, resolvable);
                     if (!expressionResult.isResolved()) {
-                        return ExpressionResult.executionError(CommandDidNotReachOutcome);
+                        return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
                     }
                 }
                 return ExpressionResult.defaultOutcome();
@@ -57,10 +54,10 @@ public class LogicalExpressionResolver {
                         return expressionResult;
                     }
                 }
-                return ExpressionResult.executionError(CommandDidNotReachOutcome);
+                return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
             }
             default: {
-                return ExpressionResult.executionError(UnsuportedBinaryRelation);
+                return ExpressionResult.executionError(MessageLiterals.UnsuportedBinaryRelation);
             }
         }
     }
@@ -106,7 +103,7 @@ public class LogicalExpressionResolver {
                 case GREATER_THAN: evaluation = expectGreaterThan(output, expectedOutcome); break;
                 case GREATER_OR_EQUAL_TO: evaluation = expectGreaterThanOrEqual(output, expectedOutcome); break;
                 case MATCHES_REGEX: evaluation = expectMatchesRegex(output, expectedOutcome); break;
-                default: return ExpressionResult.executionError(UnsuportedBinaryRelation);
+                default: return ExpressionResult.executionError(MessageLiterals.UnsuportedBinaryRelation);
             }
 
             return expectedOutcome.getExpressionResult().withResolved(evaluation);

@@ -2,6 +2,10 @@ package com.SixSense.engine;
 
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
+import com.SixSense.data.events.AbstractEngineEvent;
+import com.SixSense.data.events.EngineEventType;
+import com.SixSense.data.events.IEngineEventHandler;
+import com.SixSense.data.events.OperationEndEvent;
 import com.SixSense.data.logic.*;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.LogicalExpressionResolver;
@@ -11,16 +15,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class WorkflowManager {
+public class WorkflowManager implements IEngineEventHandler {
     private static final Logger logger = LogManager.getLogger(WorkflowManager.class);
-    @Autowired private SessionEngine sessionEngine;
-    @Autowired private WorkerQueue workerQueue;
+    private SessionEngine sessionEngine;
+    private DiagnosticManager diagnosticManager;
+    private WorkerQueue workerQueue;
     private final Map<String, ParallelWorkflow> parentWorkflows;
 
-    private WorkflowManager() {
-        this.parentWorkflows = Collections.synchronizedMap(new HashMap<>());
+    @Autowired
+    private WorkflowManager(SessionEngine sessionEngine, DiagnosticManager diagnosticManager, WorkerQueue workerQueue) {
+        this.sessionEngine = sessionEngine;
+        this.diagnosticManager = diagnosticManager;
+        this.workerQueue = workerQueue;
+        this.parentWorkflows = new ConcurrentHashMap<>();
+
+        this.diagnosticManager.registerHandler(this, EnumSet.of(EngineEventType.OperationEnd));
     }
 
     public void attemptToExecute(ParallelWorkflow workflow){
@@ -49,6 +61,18 @@ public class WorkflowManager {
             workerQueue.submit(() -> sessionEngine.executeOperation(operation));
         }catch (Exception e){
             logger.error("Failed to submit operation " + operation.getUUID() + " to worker queue. Caused by: ", e);
+        }
+    }
+
+    @Override
+    public void handleEngineEvent(AbstractEngineEvent event) {
+        /*We listen to the diagnostic manager operation end events without waiting for the next workflow to complete
+         * Since workflows are lengthy operations, this is a major time and resource saver*/
+        try {
+            OperationEndEvent operationEndEvent = (OperationEndEvent)event;
+            notifyWorkflow(operationEndEvent.getOperation(), operationEndEvent.getResult());
+        }catch (ClassCastException e){
+            logger.error("Failed to notify workflow manager that an operation has completed. Caused by: ", e);
         }
     }
 

@@ -27,12 +27,12 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         this.completedOperations = 0;
         this.parallelOperations = new ArrayList<>();
         this.operationOutcomes = new ArrayList<>();
-        this.workflowPolicies = Stream.of(
-                WorkflowPolicy.OPERATIONS_INDEPENDENT,
-                WorkflowPolicy.SELF_SEQUENCE_LAZY/*,
-                WorkflowPolicy.PARENT_NOTIFICATION_LAZY,
-                WorkflowPolicy.OPERATION_SEQUENCE_AGNOSTIC*/
-        ).collect(Collectors.toCollection(HashSet::new));
+        this.workflowPolicies = EnumSet.of(
+            WorkflowPolicy.OPERATIONS_INDEPENDENT,
+            WorkflowPolicy.SELF_SEQUENCE_LAZY/*,
+            WorkflowPolicy.PARENT_NOTIFICATION_LAZY,
+            WorkflowPolicy.OPERATION_SEQUENCE_AGNOSTIC*/
+        );
     }
 
     public ParallelWorkflow(LogicalExpression<ExecutionCondition> executionCondition, List<Operation> parallelOperations, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, Set<WorkflowPolicy> workflowPolicies) {

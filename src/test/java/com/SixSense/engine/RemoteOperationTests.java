@@ -18,23 +18,8 @@ public class RemoteOperationTests extends SixSenseBaseTest {
     @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
     public void f5BigIpBackup(String host, String username, String password){
         Operation executionBlock = TestingMocks.f5BigIpBackup(host, username, password);
-        ExpressionResult resolvedOutcome = executeOperation(executionBlock);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(executionBlock);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
-    }
-
-    private ExpressionResult executeOperation(Operation operation) throws AssertionError {
-        ExpressionResult resolvedOutcome = null;
-        try {
-            Future<ExpressionResult> backupResult = EngineTestUtils.getQueueInstance().submit(() -> EngineTestUtils.getEngineInstance().executeOperation(operation));
-            resolvedOutcome = backupResult.get();
-
-            logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + resolvedOutcome.getOutcome());
-            logger.info("Result Message: " + resolvedOutcome.getMessage());
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
-        return resolvedOutcome;
     }
 }

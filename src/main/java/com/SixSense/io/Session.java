@@ -3,10 +3,13 @@ package com.SixSense.io;
 
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Command;
+import com.SixSense.data.events.InputSentEvent;
+import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.engine.DiagnosticManager;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.LogicalExpressionResolver;
@@ -25,14 +28,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.ThreadContext;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.factory.annotation.Autowired;
 
-public class Session implements Closeable, ApplicationContextAware {
+public class Session implements Closeable{
     //Static members and injected beans
     private static final Logger logger = LogManager.getLogger("SessionLogger");
-    private ApplicationContext appContext;
-    private WorkerQueue workerQueue;
+    @Autowired private WorkerQueue workerQueue;
+    @Autowired private DiagnosticManager diagnosticManager;
 
     //Connection and synchronization
     private final Map<String, ShellChannel> channels;
@@ -98,6 +100,7 @@ public class Session implements Closeable, ApplicationContextAware {
         logger.info(this.getSessionShellId() + " is writing  command " + this.evaluatedCommand + " to channel " + command.getChannelName());
         channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
         channel.flush();
+        diagnosticManager.emit(new InputSentEvent(this, command, this.evaluatedCommand));
 
         String output = "";
         long elapsedSeconds = 0L;
@@ -142,13 +145,13 @@ public class Session implements Closeable, ApplicationContextAware {
                     this.newChunkReceived.await(command.getSecondsToTimeout() - elapsedSeconds, TimeUnit.SECONDS);
                 }
             }
-
         } catch (InterruptedException e) {
             logger.warn("Session " + this.getSessionShellId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
         }
         logger.debug(this.getTerminalIdentifier() + " session finished command wait");
         logger.info("command output was " + output);
         logger.info("resolved outcome is " + resolvedOutcome);
+        diagnosticManager.emit(new OutputReceivedEvent(this, command, output));
         this.commandLock.unlock();
         logger.debug(this.getTerminalIdentifier() + " session released lock");
 
@@ -172,7 +175,7 @@ public class Session implements Closeable, ApplicationContextAware {
                 clonedRetention.setValue(this.filterFileOutput(clonedRetention.getValue()));
                 RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
                 try {
-                    this.getWorkerQueue().submit(fileWriter);
+                    this.workerQueue.submit(fileWriter);
                 } catch (Exception e) {
                     logger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
                 }
@@ -364,20 +367,8 @@ public class Session implements Closeable, ApplicationContextAware {
         return "";
     }
 
-    private WorkerQueue getWorkerQueue(){
-        if(this.workerQueue == null && this.appContext != null){
-            this.workerQueue = (WorkerQueue)appContext.getBean("workerQueue");
-        }
-        return this.workerQueue;
-    }
-
     public boolean isClosed() {
         return isClosed;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.appContext = applicationContext;
     }
 
     @Override

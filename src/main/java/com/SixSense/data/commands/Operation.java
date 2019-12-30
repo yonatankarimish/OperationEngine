@@ -86,8 +86,8 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
         return Collections.unmodifiableSet(channelNames);
     }
 
-    public Operation addChannel(ChannelType commandType) {
-        return this.addChannelName(commandType.name());
+    public Operation addChannel(ChannelType channelName) {
+        return this.addChannelName(channelName.name());
     }
 
     public Operation addChannelName(String channelName) {
@@ -95,12 +95,12 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
         return this;
     }
 
-    public Operation addChannels(Set<ChannelType> outputPipes) {
-        return this.addChannelNames(outputPipes.stream().map(ChannelType::name).collect(Collectors.toSet()));
+    public Operation addChannels(Set<ChannelType> channelNames) {
+        return this.addChannelNames(channelNames.stream().map(ChannelType::name).collect(Collectors.toSet()));
     }
 
-    public Operation addChannelNames(Set<String> outputPipes) {
-        this.channelNames.addAll(outputPipes.stream().map(String::toUpperCase).collect(Collectors.toSet()));
+    public Operation addChannelNames(Set<String> channelNames) {
+        this.channelNames.addAll(channelNames.stream().map(String::toUpperCase).collect(Collectors.toSet()));
         return this;
     }
 

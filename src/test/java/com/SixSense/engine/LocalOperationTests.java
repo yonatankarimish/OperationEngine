@@ -7,16 +7,23 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.VendorProductVersion;
+import com.SixSense.data.events.AbstractEngineEvent;
+import com.SixSense.data.events.EngineEventType;
+import com.SixSense.data.events.InputSentEvent;
+import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.DrainingPipe;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.io.Session;
 import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 
 @Test(groups = {"engine"})
@@ -44,7 +51,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = executeOperation(simpleOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(simpleOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
     }
@@ -68,7 +75,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = executeOperation(failingOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(failingOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.FAILURE);
         Assert.assertFalse(resolvedOutcome.isResolved());
     }
@@ -92,7 +99,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = executeOperation(invalidOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(invalidOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.FAILURE);
         Assert.assertFalse(resolvedOutcome.isResolved());
     }
@@ -135,7 +142,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.operation.product", "CentOS")
             .addDynamicField("var.operation.version", "6");
 
-        ExpressionResult resolvedOutcome = executeOperation(blockOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(blockOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
     }
@@ -178,7 +185,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.block.repeatCount", "5")
             .addDynamicField("var.block.counter", "1");
 
-        ExpressionResult resolvedOutcome = executeOperation(repeatingOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(repeatingOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
     }
@@ -212,7 +219,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(fileWrite)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = executeOperation(writeOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
     }
@@ -230,25 +237,179 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addChannel(ChannelType.LOCAL)
             .addChannel(ChannelType.DOWNLOAD);
 
-        ExpressionResult resolvedOutcome = executeOperation(writeOperation);
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
         Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(resolvedOutcome.isResolved());
     }
 
-    private ExpressionResult executeOperation(Operation operation) throws AssertionError {
-        ExpressionResult resolvedOutcome = null;
-        try {
-            Future<ExpressionResult> backupResult = EngineTestUtils.getQueueInstance().submit(() -> EngineTestUtils.getEngineInstance().executeOperation(operation));
-            resolvedOutcome = backupResult.get();
+    public void executeIfConditionsAreMet() {
+        LogicalExpression<ExecutionCondition> reallyComplexCondition = new LogicalExpression<ExecutionCondition>()
+            .withLogicalCondition(LogicalCondition.AND)
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.phrase")
+                .withBinaryRelation(BinaryRelation.CONTAINS)
+                .withExpectedValue("$var.operation.brownFox")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.phrase")
+                .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                .withExpectedValue("$var.operation.greenMantis")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.brownFox")
+                .withBinaryRelation(BinaryRelation.CONTAINED_BY)
+                .withExpectedValue("$var.operation.phrase")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.greenMantis")
+                .withBinaryRelation(BinaryRelation.NOT_CONTAINED_BY)
+                .withExpectedValue("$var.operation.phrase")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.smallNumber")
+                .withBinaryRelation(BinaryRelation.LESSER_THAN)
+                .withExpectedValue("$var.operation.bigNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.bigNumber")
+                .withBinaryRelation(BinaryRelation.LESSER_OR_EQUAL_TO)
+                .withExpectedValue("$var.operation.bigNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.bigNumber")
+                .withBinaryRelation(BinaryRelation.EQUALS)
+                .withExpectedValue("$var.operation.bigNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.bigNumber")
+                .withBinaryRelation(BinaryRelation.NOT_EQUALS)
+                .withExpectedValue("$var.operation.smallNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.smallNumber")
+                .withBinaryRelation(BinaryRelation.GREATER_OR_EQUAL_TO)
+                .withExpectedValue("$var.operation.smallNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.bigNumber")
+                .withBinaryRelation(BinaryRelation.GREATER_THAN)
+                .withExpectedValue("$var.operation.smallNumber")
+            )
+            .addResolvable(new ExecutionCondition()
+                .withVariable("$var.operation.bigNumber")
+                .withBinaryRelation(BinaryRelation.GREATER_THAN)
+                .withExpectedValue("$var.operation.smallNumber")
+            );
 
-            logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + resolvedOutcome.getOutcome());
-            logger.info("Result Message: " + resolvedOutcome.getMessage());
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        Operation writeOperation = (Operation)new Operation()
+            .withDevice(new Device().withVpv(
+                new VendorProductVersion()
+                    .withVendor("Linux")
+                    .withProduct("Generic")
+                    .withVersion("Centos 6")
+            ))
+            .withOperationName("Execute operation - conditions are met")
+            .withExecutionBlock(
+                new Block()
+                .addChildBlock(
+                    new Command()
+                    .withCommandText("echo condition stack finished!")
+                    .withChannel(ChannelType.LOCAL)
+                    .withExecutionCondition(reallyComplexCondition)
+                        .addDynamicField("var.operation.phrase", "the slow brown fox misses the fast lucky rabbit")
+                        .addDynamicField("var.operation.brownFox", "brown fox")
+                        .addDynamicField("var.operation.greenMantis", "green mantis")
+                        .addDynamicField("var.operation.smallNumber", "75")
+                        .addDynamicField("var.operation.bigNumber", "85")
+                    .withExpectedOutcome(
+                        new LogicalExpression<ExpectedOutcome>()
+                        .addResolvable(
+                            new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("condition stack finished!")
+                        )
+                    )
+                    .withSaveTo(
+                        new VariableRetention()
+                        .withResultRetention(ResultRetention.Variable)
+                        .withName("var.command.finished")
+                    )
+                )
+                .withExecutionCondition(reallyComplexCondition)
+                .addDynamicField("var.operation.phrase", "the fierce brown fox eats the poor little rabbit")
+                .addDynamicField("var.operation.brownFox", "brown fox")
+                .addDynamicField("var.operation.greenMantis", "green mantis")
+                .addDynamicField("var.operation.smallNumber", "4")
+                .addDynamicField("var.operation.bigNumber", "5")
+            )
+            .addChannel(ChannelType.LOCAL)
+            .addDynamicField("var.operation.phrase", "the quick brown fox jumps over the lazy dog")
+            .addDynamicField("var.operation.brownFox", "brown fox")
+            .addDynamicField("var.operation.greenMantis", "green mantis")
+            .addDynamicField("var.operation.smallNumber", "1")
+            .addDynamicField("var.operation.bigNumber", "999")
+            .withExecutionCondition(reallyComplexCondition);
 
-        return resolvedOutcome;
+        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
+        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(resolvedOutcome.isResolved());
     }
+
+    public void dynamicFieldLoading(){
+        Command command = (Command)new Command()
+            .withChannel(ChannelType.LOCAL)
+            .withCommandText("echo $var.cmd.text $var.stack.text")
+            .addDynamicField("var.cmd.text", "command")
+            .addDynamicField("var.stack.text", "command")
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                .addResolvable(new ExpectedOutcome()
+                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                    .withExpectedValue("command command")
+                )
+            );
+
+        Block block = (Block)new Block()
+            .addChildBlock(command)
+            .addDynamicField("var.stack.text", "block");
+
+        Operation operation = (Operation)new Operation()
+            .withDevice(new Device().withVpv(
+                new VendorProductVersion()
+                    .withVendor("Linux")
+                    .withProduct("Generic")
+                    .withVersion("Centos 6")
+            ))
+            .withOperationName("Dynamic field loading")
+            .withExecutionBlock(block)
+            .addChannel(ChannelType.LOCAL)
+            .addDynamicField("var.stack.text", "operation");
+
+        Session session = EngineTestUtils.submitOperation(operation);
+        try{
+            Future<AbstractEngineEvent> textWrapper = EngineTestUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.InputSent);
+            InputSentEvent sentRightText = (InputSentEvent)EngineTestUtils.resolveWithin(textWrapper, 5);
+            Assert.assertEquals(sentRightText.getInputSent(), "echo command command");
+
+            Future<AbstractEngineEvent> outputWrapper = EngineTestUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.OutputReceived);
+            OutputReceivedEvent receivedRightText = (OutputReceivedEvent)EngineTestUtils.resolveWithin(outputWrapper, 5);
+            Assert.assertEquals(receivedRightText.getOutputReceived(), "command command");
+        }catch (ClassCastException e){
+            Assert.fail("Failed to cast engine event. Caused by: ", e);
+        }catch (NullPointerException e){
+            Assert.fail("NullPointerException encountered. Caused by: ", e);
+        }
+        ExpressionResult resolvedOutcome = EngineTestUtils.awaitOperation(session);
+
+        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(resolvedOutcome.isResolved());
+    }
+
+    @AfterMethod(groups = "engine")
+    public void engineTestCleanup(){
+        EngineTestUtils.engineTestCleanup();
+    }
+
 
     //TODO: find a way to generalize these tests for each qa machine
     private ICommand loopbackInterface() {
