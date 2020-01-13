@@ -511,8 +511,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     private ICommand drainingFileCopy() {
         return new Command()
             .withChannel(ChannelType.LOCAL)
-            //.withCommandText("cat /var/log/iptables.log-20190420")
-            .withCommandText("cat /var/log/BB_cluster.log")
+            .withCommandText("cat /var/log/syslog")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(45)
             .withUseRawOutput(true)

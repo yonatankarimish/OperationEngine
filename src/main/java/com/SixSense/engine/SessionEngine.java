@@ -16,6 +16,7 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -35,16 +36,17 @@ import java.util.stream.Collectors;
 import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
 
 @Service
+/*Creates sessions and executes operations*/
 public class SessionEngine implements Closeable, ApplicationContextAware {
     private static final Logger logger = LogManager.getLogger(SessionEngine.class);
     private ApplicationContext appContext;
-    private WorkerQueue workerQueue;
-    private DiagnosticManager diagnosticManager;
+    private final WorkerQueue workerQueue;
+    private final DiagnosticManager diagnosticManager;
 
     private final SSHClient sshClient = new SSHClient();
     private boolean isClosed = false;
 
-    private final Map<String, String> sessionProperties = new HashMap<>();
+    private static final Map<String, String> sessionProperties = new HashMap<>();
     private final Map<String, Session> runningSessions = new ConcurrentHashMap<>(); //key: session id, value: session
     private final Map<String, String> operationsToSessions = new ConcurrentHashMap<>(); //key: operation id, value: session id
 
@@ -265,6 +267,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
         Session session = new Session(this.sshClient, operation.getChannelNames());
         session.loadSessionVariables(this.sessionProperties);
+        ThreadContext.put("sessionID", session.getSessionShellId());
 
         try {
             List<ProcessStreamWrapper> wrappers = session.getShellChannels().values().stream()
@@ -292,6 +295,8 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         } catch (IOException e) {
             logger.error("SessionEngine - Failed to finalize session with id " + session.getSessionShellId() + ". Caused by: ", e);
             throw e;
+        } finally {
+            ThreadContext.remove("sessionID");
         }
     }
 
@@ -324,6 +329,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
     public boolean isClosed() {
         return isClosed;
+    }
+
+    public static Map<String, String> getSessionProperties(){
+        return Collections.unmodifiableMap(sessionProperties);
     }
 
     @Override

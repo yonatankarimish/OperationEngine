@@ -8,7 +8,7 @@ public class OperationStartEvent extends AbstractEngineEvent {
 
     public OperationStartEvent(Session session, Operation operation) {
         super(EngineEventType.OperationStart, session);
-        this.operation = operation.deepClone();
+        this.operation = operation;
     }
 
     public Operation getOperation() {

@@ -49,6 +49,10 @@ public abstract class AbstractCommand implements ICommand{
         return uuid.toString();
     }
 
+    public String getShortUUID() {
+        return uuid.toString().substring(0,8);
+    }
+
     @Override
     public boolean isAlreadyExecuted() {
         return alreadyExecuted;

@@ -8,7 +8,7 @@ public class BlockStartEvent extends AbstractEngineEvent {
 
     public BlockStartEvent(Session session, Block block) {
         super(EngineEventType.BlockStart, session);
-        this.block = block.deepClone();
+        this.block = block;
     }
 
     public Block getBlock() {

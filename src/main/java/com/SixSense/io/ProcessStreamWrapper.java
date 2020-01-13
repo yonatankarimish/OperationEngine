@@ -1,8 +1,11 @@
 package com.SixSense.io;
 
+import com.SixSense.data.logging.Loggers;
 import com.SixSense.util.MessageLiterals;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -10,6 +13,7 @@ import java.util.concurrent.Callable;
 
 public class ProcessStreamWrapper implements Callable<Boolean> {
     private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
+    private static final Logger terminalLogger = LogManager.getLogger(Loggers.TerminalLogger.name());
 
     private Session session;
     private InputStream processStream;
@@ -28,6 +32,7 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
     @Override
     public Boolean call() throws IOException{
         try {
+            ThreadContext.put("sessionID", this.session.getSessionShellId());
             logger.debug("started reading from stream for session " + this.session.getSessionShellId());
             byte[] rawData = new byte[1024];
             int bytesRead;
@@ -36,11 +41,12 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
                 if(bytesRead != -1) {
                     String currentChunk = new String(rawData, 0, bytesRead);
                     logger.debug("read chunk " + currentChunk + " directly from stream");
+                    terminalLogger.info(currentChunk);
                     synchronized (this.processOutput) {
                         //splitChunk will always have at least one entry (if no line break was read)
                         String[] splitChunk = (" "  + currentChunk  //pad the current chunk with whitespace to split on leading line breaks
-                                .replaceAll(" *"+MessageLiterals.CarriageReturn+" *", "") //trim all space characters around carriage returns
-                                .replaceAll(" *"+MessageLiterals.CarriageReturn+MessageLiterals.LineBreak+" *", MessageLiterals.LineBreak) //while retaining the line breaks
+                                .replaceAll(" *" + MessageLiterals.CarriageReturn + " *", "") //trim all space characters around carriage returns
+                                .replaceAll(" *" + MessageLiterals.LineBreak + " *", MessageLiterals.LineBreak) //while retaining the line breaks
                                 + " ")// then pad the current chunk with whitespace to split on trailing line breaks
                                 .split(MessageLiterals.LineBreak); //so we can split on them here
 
@@ -74,11 +80,13 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
             } while (bytesRead != -1);
 
             logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
-        } catch (Exception e){
+        } catch (Exception e) {
             if(!this.session.isClosed()) {
                 logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: ", e);
                 throw new IOException(e);
             }
+        } finally {
+            ThreadContext.remove("sessionID");
         }
         return true;
     }

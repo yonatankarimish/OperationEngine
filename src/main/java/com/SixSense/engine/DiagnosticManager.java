@@ -19,7 +19,8 @@ import java.util.concurrent.Future;
  * but the main purpose of DiagnosticManager is to better understand engine internals, and not to randomly propagate events all around the place */
 public class DiagnosticManager{
     private static final Logger logger = LogManager.getLogger(DiagnosticManager.class);
-    private WorkerQueue workerQueue;
+    private final LoggingManager loggingManager;
+    private final WorkerQueue workerQueue;
 
     /* EnumMap<EngineEventType, HashSet<IEngineEventHandler>> allows for constant time lookup, register, unregister (O(1) time complexity)
      * while maintaining linear time emit (O(n) time complexity) where n denotes # of event listeners 
@@ -32,7 +33,8 @@ public class DiagnosticManager{
     private final EventQueue eventQueue = new EventQueue();
 
     @Autowired
-    private DiagnosticManager(WorkerQueue workerQueue){
+    private DiagnosticManager(LoggingManager loggingManager, WorkerQueue workerQueue){
+        this.loggingManager = loggingManager;
         this.workerQueue = workerQueue;
 
         for(EngineEventType eventType : EnumSet.allOf(EngineEventType.class)){
@@ -112,6 +114,8 @@ public class DiagnosticManager{
     }
 
     public void emit(AbstractEngineEvent event){
+        this.loggingManager.logEngineEvent(event);
+
         if(event.getSession() != null) {
             String sessionId = event.getSession().getSessionShellId();
             synchronized (this.eventQueue) {

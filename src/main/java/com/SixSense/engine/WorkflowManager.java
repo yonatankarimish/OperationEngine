@@ -20,9 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class WorkflowManager implements IEngineEventHandler {
     private static final Logger logger = LogManager.getLogger(WorkflowManager.class);
-    private SessionEngine sessionEngine;
-    private DiagnosticManager diagnosticManager;
-    private WorkerQueue workerQueue;
+    private final SessionEngine sessionEngine;
+    private final DiagnosticManager diagnosticManager;
+    private final WorkerQueue workerQueue;
     private final Map<String, ParallelWorkflow> parentWorkflows;
 
     @Autowired

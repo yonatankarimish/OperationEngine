@@ -8,7 +8,7 @@ public class ExecutionAnomalyEvent extends AbstractEngineEvent {
 
     public ExecutionAnomalyEvent(Session session, ExpressionResult result) {
         super(EngineEventType.ExecutionAnomaly, session);
-        this.result = result.deepClone();
+        this.result = result;
     }
 
     public ExpressionResult getResult() {

@@ -1,5 +1,6 @@
 package com.SixSense.data.pipes;
 
+import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.io.Session;
@@ -11,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class DrainingPipe extends AbstractOutputPipe  {
-    private static final Logger logger = LogManager.getLogger("FileLogger");
+    private static final Logger logger = LogManager.getLogger(Loggers.FileLogger.name());
     private final String DEFAULT_DRAIN_FILE = "current_file.txt";
 
     public DrainingPipe(){}

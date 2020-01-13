@@ -4,9 +4,13 @@
         <!-- logging directory base, relative to file system root-->
         <Property name="baseDir">/sixsense/logs</Property>
         <!-- %logger for classpath, %m for message, %n for line break-->
-        <Property name="consolePattern">%d{HH:mm:ss} %highlight{%logger:}{FATAL=red, ERROR=bright red, WARN=yellow, INFO=white, DEBUG=green, TRACE=bright blue} %m%n</Property>
+        <Property name="consolePattern">%d{HH:mm:ss} %highlight{%p}{FATAL=red, ERROR=bright red, WARN=yellow, INFO=green, DEBUG=bright blue, TRACE=cyan} %m%n</Property>
         <!-- %d for date, %-5 for justified log level, p for priority, %m for message, %n for line break-->
-        <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss} %-5p %m%n</Property>
+        <Property name="logPattern">%d{dd-MM-yyyy HH:mm:ss} %-5p %m%n</Property>
+        <!-- %d for date, %-5 for justified log level, %m for message, %n for line break-->
+        <Property name="commandPattern">[%d{HH:mm:ss}] %m%n</Property>
+        <!-- %m for message-->
+        <Property name="terminalPattern">%m</Property>
         <!-- %m for message, %n for line break-->
         <Property name="defaultPattern">%m%n</Property>
     </Properties>
@@ -53,6 +57,34 @@
             </Routes>
         </Routing>
 
+        <Routing name="command_log" ignoreExceptions="false">
+            <Routes pattern="${ctx:sessionID}">
+                <Route>
+                    <File name="trail-${ctx:sessionID}"
+                          fileName="${baseDir}/sessions/${ctx:sessionID}/command.log">
+                        <PatternLayout>
+                            <Pattern>${commandPattern}</Pattern>
+                        </PatternLayout>
+                    </File>
+                </Route>
+                <Route key="${ctx:sessionID}" ref="general_log" /><!-- If no sessionID defined in ThreadContext map, output to general log-->
+            </Routes>
+        </Routing>
+
+        <Routing name="terminal_log" ignoreExceptions="false">
+            <Routes pattern="${ctx:sessionID}">
+                <Route>
+                    <File name="trail-${ctx:sessionID}"
+                          fileName="${baseDir}/sessions/${ctx:sessionID}/terminal.log">
+                        <PatternLayout>
+                            <Pattern>${terminalPattern}</Pattern>
+                        </PatternLayout>
+                    </File>
+                </Route>
+                <Route key="${ctx:sessionID}" ref="general_log" /><!-- If no sessionID defined in ThreadContext map, output to general log-->
+            </Routes>
+        </Routing>
+
         <Routing name="session_file_log" ignoreExceptions="false">
             <Routes pattern="${ctx:sessionID}/${ctx:logFile}">
                 <Route>
@@ -68,14 +100,25 @@
     </Appenders>
     <Loggers>
         <!-- Logger name contains part of a classpath in most examples in documentation.
-             However, you can write any string instead, and call LogManager.getLogger("logName") with that name-->
+             However, you can write any string instead, and call LogManager.getLogger("logName") with that name
+             Each logger name should also have a matching enum constant in Loggers.java-->
         <Root level="info">
             <AppenderRef ref="std_out" level="info"/>
             <AppenderRef ref="general_log" level="debug"/>
         </Root>
         <Logger name="SessionLogger" level="info" additivity="false">
-            <AppenderRef ref="std_out" level="info"/>
+            <AppenderRef ref="std_out" level="warn"/>
             <AppenderRef ref="session_log" level="info"/>
+            <AppenderRef ref="general_log" level="error"/>
+        </Logger>
+        <Logger name="CommandLogger" level="info" additivity="false">
+            <AppenderRef ref="std_out" level="warn"/>
+            <AppenderRef ref="command_log" level="info"/>
+            <AppenderRef ref="general_log" level="error"/>
+        </Logger>
+        <Logger name="TerminalLogger" level="info" additivity="false">
+            <AppenderRef ref="std_out" level="warn"/>
+            <AppenderRef ref="terminal_log" level="info"/>
             <AppenderRef ref="general_log" level="error"/>
         </Logger>
         <Logger name="FileLogger" level="info" additivity="false">

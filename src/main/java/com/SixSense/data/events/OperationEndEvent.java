@@ -10,8 +10,8 @@ public class OperationEndEvent extends AbstractEngineEvent {
 
     public OperationEndEvent(Session session, Operation operation, ExpressionResult result) {
         super(EngineEventType.OperationEnd, session);
-        this.operation = operation.deepClone();
-        this.result = result.deepClone();
+        this.operation = operation;
+        this.result = result;
     }
 
     public Operation getOperation() {

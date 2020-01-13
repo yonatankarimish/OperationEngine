@@ -8,7 +8,7 @@ public enum EngineEventType {
     CommandStart,
     InputSent,
     OutputReceived,
-    CommandEndEvent,
+    CommandEnd,
     BlockEnd,
     OperationEnd,
     SessionClosed,

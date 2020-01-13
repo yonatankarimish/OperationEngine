@@ -9,9 +9,9 @@ public class CommandEndEvent extends AbstractEngineEvent {
     private ExpressionResult result;
 
     public CommandEndEvent(Session session, Command command, ExpressionResult result) {
-        super(EngineEventType.CommandEndEvent, session);
-        this.command = command.deepClone();
-        this.result = result.deepClone();
+        super(EngineEventType.CommandEnd, session);
+        this.command = command;
+        this.result = result;
     }
 
     public Command getCommand() {

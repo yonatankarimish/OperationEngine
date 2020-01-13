@@ -10,8 +10,8 @@ public class BlockEndEvent extends AbstractEngineEvent {
 
     public BlockEndEvent(Session session, Block block, ExpressionResult result) {
         super(EngineEventType.BlockEnd, session);
-        this.block = block.deepClone();
-        this.result = result.deepClone();
+        this.block = block;
+        this.result = result;
     }
 
     public Block getBlock() {

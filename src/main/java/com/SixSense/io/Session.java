@@ -5,6 +5,7 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.events.InputSentEvent;
 import com.SixSense.data.events.OutputReceivedEvent;
+import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.ResultRetention;
@@ -27,12 +28,11 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class Session implements Closeable{
     //Static members and injected beans
-    private static final Logger logger = LogManager.getLogger("SessionLogger");
+    private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
     @Autowired private WorkerQueue workerQueue;
     @Autowired private DiagnosticManager diagnosticManager;
 
@@ -62,8 +62,6 @@ public class Session implements Closeable{
 
         //Logging configurations
         this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + this.getSessionShellId()));
-        ThreadContext.put("sessionID", this.getSessionShellId());
-        logger.info("Session " +  this.getSessionShellId() + " has been created");
     }
 
     public ExpressionResult executeCommand(Command command) throws IOException{
@@ -96,11 +94,9 @@ public class Session implements Closeable{
         * If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
         * Keep your commands short*/
         this.commandLock.lock();
-        logger.debug(this.getTerminalIdentifier() + " session acquired lock");
-        logger.info(this.getSessionShellId() + " is writing  command " + this.evaluatedCommand + " to channel " + command.getChannelName());
         channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
         channel.flush();
-        diagnosticManager.emit(new InputSentEvent(this, command, this.evaluatedCommand));
+        diagnosticManager.emit(new InputSentEvent(this, command, this.commandOrdinal, this.evaluatedCommand));
 
         String output = "";
         long elapsedSeconds = 0L;
@@ -146,14 +142,10 @@ public class Session implements Closeable{
                 }
             }
         } catch (InterruptedException e) {
-            logger.warn("Session " + this.getSessionShellId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
+            sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
         }
-        logger.debug(this.getTerminalIdentifier() + " session finished command wait");
-        logger.info("command output was " + output);
-        logger.info("resolved outcome is " + resolvedOutcome);
-        diagnosticManager.emit(new OutputReceivedEvent(this, command, output));
+        diagnosticManager.emit(new OutputReceivedEvent(this, command, this.commandOrdinal, output));
         this.commandLock.unlock();
-        logger.debug(this.getTerminalIdentifier() + " session released lock");
 
         //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
@@ -177,7 +169,7 @@ public class Session implements Closeable{
                 try {
                     this.workerQueue.submit(fileWriter);
                 } catch (Exception e) {
-                    logger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
+                    sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
                 }
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
@@ -281,8 +273,12 @@ public class Session implements Closeable{
         return this.sessionShellId.toString();
     }
 
-    String getTerminalIdentifier(){
-        return this.getSessionShellId()+"-cmd-"+this.commandOrdinal;
+    public String getShortSessionId() {
+        return this.sessionShellId.toString().substring(0,8);
+    }
+
+    public String getTerminalIdentifier(){
+        return this.getShortSessionId()+"-cmd-"+this.commandOrdinal;
     }
 
     public Command getCurrentCommand(){
@@ -380,15 +376,13 @@ public class Session implements Closeable{
                 this.channels.get(channelName).close();
             }catch (IOException e){
                 partialClosure = true;
-                logger.error("Session " +  this.getSessionShellId() + " failed to close channel with name " + channelName, e);
+                sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channelName, e);
             }
         }
         this.isClosed = true;
-        logger.info("Session " +  this.getSessionShellId() + " has been closed");
-        ThreadContext.clearAll();
 
         if(partialClosure){
-            throw new IOException("Session " +  this.getSessionShellId() + " failed to close one or more of it's channels ");
+            throw new IOException("Session " +  this.getShortSessionId() + " failed to close one or more of it's channels ");
         }
     }
 }
