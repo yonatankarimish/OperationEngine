@@ -19,6 +19,9 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
     private List<ExpressionResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations
     private Set<WorkflowPolicy> workflowPolicies;
 
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for conditions, policies and sequential workflows*/
     public ParallelWorkflow() {
         super();
         this.totalParentWorkflows = 0;

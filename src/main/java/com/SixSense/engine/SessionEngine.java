@@ -107,13 +107,13 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         ExpressionResult operationResult;
 
         if(this.isClosed){
-            operationResult = this.handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
+            operationResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
         }else if(session.isClosed()){
-            operationResult = this.handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
+            operationResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
         }else if(operation == null){
-            operationResult = this.handleExecutionAnomaly(session, "Session engine cannot execute a null operation!");
+            operationResult = handleExecutionAnomaly(session, "Session engine cannot execute a null operation!");
         }else if(operation.getExecutionBlock() == null){
-            operationResult = this.handleExecutionAnomaly(session, "Operation " + operation.getUUID() + " has incomplete configuration");
+            operationResult = handleExecutionAnomaly(session, "Operation " + operation.getUUID() + " has incomplete configuration");
         }else{
             this.runningSessions.put(session.getSessionShellId(), session);
             this.operationsToSessions.put(operation.getUUID(), session.getSessionShellId());
@@ -124,7 +124,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 session.loadSessionDynamicFields(operation);
 
                 if (executionConditionsMet(session, operation)) {
-                    operationResult = this.executeBlock(session, executionBlock);
+                    operationResult = executeBlock(session, executionBlock);
                     operationResult = expectedResult(operationResult, operation.getExpectedOutcome().getExpressionResult());
                 } else {
                     operationResult = ExpressionResult.skip();
@@ -135,7 +135,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             } catch (Exception e) {
                 String errorMessage = "SessionEngine - Failed to execute operation " + operation.getFullOperationName() + ". Caused by: ";
                 logger.error(errorMessage, e);
-                operationResult = this.handleExecutionAnomaly(session, errorMessage + e.getMessage());
+                operationResult = handleExecutionAnomaly(session, errorMessage + e.getMessage());
             }
 
             diagnosticManager.emit(new OperationEndEvent(session, operation, operationResult));
@@ -149,11 +149,11 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private ExpressionResult executeBlock(Session session, ICommand executionBlock) throws IOException{
         ExpressionResult blockResult = null;
         if(this.isClosed){
-            blockResult = this.handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
+            blockResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
         }else if(session.isClosed()){
-            blockResult = this.handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
+            blockResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
         }else if (executionBlock instanceof Command) {
-            blockResult = this.executeCommand(session, (Command)executionBlock);
+            blockResult = executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
             /*the progressive result updates for each of the blocks child commands/blocks
             * progressive + failure = immediate return
@@ -168,7 +168,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 while (!parentBlock.hasExhaustedCommands(session)) {
                     ICommand nextCommand = parentBlock.getNextCommand(session);
                     if (nextCommand != null) {
-                        ExpressionResult commandResult = this.executeBlock(session, nextCommand);
+                        ExpressionResult commandResult = executeBlock(session, nextCommand);
                         if (commandResult.getOutcome().equals(ResultStatus.FAILURE)){
                             blockResult = commandResult;
                             break;
@@ -189,7 +189,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
             diagnosticManager.emit(new BlockEndEvent(session, parentBlock, blockResult));
         }else{
-            blockResult = this.handleExecutionAnomaly(session, MessageLiterals.InvalidExecutionBlock);
+            blockResult = handleExecutionAnomaly(session, MessageLiterals.InvalidExecutionBlock);
         }
         return blockResult;
     }
@@ -198,9 +198,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         ExpressionResult commandResult;
 
         if(this.isClosed){
-            commandResult = this.handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
+            commandResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
         }else if(session.isClosed()){
-            commandResult = this.handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
+            commandResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
         }else{
             diagnosticManager.emit(new CommandStartEvent(session, currentCommand));
             session.loadSessionDynamicFields(currentCommand);
@@ -266,7 +266,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         }
 
         Session session = new Session(this.sshClient, operation.getChannelNames());
-        session.loadSessionVariables(this.sessionProperties);
+        session.loadSessionVariables(sessionProperties);
         ThreadContext.put("sessionID", session.getSessionShellId());
 
         try {
@@ -314,7 +314,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                     finalizeSession(terminatingSession);
                 } catch (IOException e) {
                     logger.error("Failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: ", e);
-                    return this.handleExecutionAnomaly(terminatingSession, MessageLiterals.ExceptionEncountered);
+                    return handleExecutionAnomaly(terminatingSession, MessageLiterals.ExceptionEncountered);
                 }
             }
         }
