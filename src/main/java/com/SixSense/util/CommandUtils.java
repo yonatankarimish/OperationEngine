@@ -1,6 +1,8 @@
 package com.SixSense.util;
 
 import com.SixSense.data.commands.*;
+import com.SixSense.data.devices.Device;
+import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.SixSense.io.Session;
 
@@ -54,6 +56,22 @@ public class CommandUtils {
                         .addChildBlock(additional);
             }
         }
+    }
+
+    public static ParallelWorkflow composeWorkflow(RawExecutionConfig rawConfig){
+        ParallelWorkflow parallelNode = new ParallelWorkflow();
+        for(Device device : rawConfig.getDevices()){
+            parallelNode.addParallelOperation(
+                (Operation)rawConfig.getOperation().deepClone()
+                    .addDynamicFields(device.getDynamicFields())
+                    .addDynamicField("device.host", device.getCredentials().getHost())
+                    .addDynamicField("device.username", device.getCredentials().getUsername())
+                    .addDynamicField("device.password", device.getCredentials().getPassword())
+                    .addDynamicField("device.port", String.valueOf(device.getCredentials().getPort()))
+            );
+        }
+
+        return parallelNode;
     }
 
     public static AbstractWorkflow mergeWorkflows(AbstractWorkflow original, AbstractWorkflow additional){

@@ -7,6 +7,11 @@
 <!--java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -cp "/sixsense/dependency-jars/*:/sixsense/*" -Denvironment="debug" org.testng.TestNG -testjar /sixsense/OperatingSystem-tests.jar-->
 <suite name="MainSuite">
     <!--<parameter name="environment" value="tests" />-->
+
+    <listeners>
+        <listener class-name="com.SixSense.TestListener" />
+    </listeners>
+
     <test name="engine-tests">
         <groups>
             <run>

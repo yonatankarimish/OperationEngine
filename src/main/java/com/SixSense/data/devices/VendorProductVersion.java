@@ -5,6 +5,9 @@ public class VendorProductVersion {
     private String product;
     private String version;
 
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for complete constructors - where all arguments are known */
     public VendorProductVersion() {
         this.vendor = "";
         this.product = "";

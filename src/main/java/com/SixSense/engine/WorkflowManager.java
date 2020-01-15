@@ -1,5 +1,6 @@
 package com.SixSense.engine;
 
+import com.SixSense.data.commands.IWorkflow;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.events.AbstractEngineEvent;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -23,44 +25,61 @@ public class WorkflowManager implements IEngineEventHandler {
     private final SessionEngine sessionEngine;
     private final DiagnosticManager diagnosticManager;
     private final WorkerQueue workerQueue;
-    private final Map<String, ParallelWorkflow> parentWorkflows;
+
+    private final Map<String, ParallelWorkflow> parentWorkflows = new ConcurrentHashMap<>(); //key: operation id, value: parent workflow
 
     @Autowired
     private WorkflowManager(SessionEngine sessionEngine, DiagnosticManager diagnosticManager, WorkerQueue workerQueue) {
         this.sessionEngine = sessionEngine;
         this.diagnosticManager = diagnosticManager;
         this.workerQueue = workerQueue;
-        this.parentWorkflows = new ConcurrentHashMap<>();
 
         this.diagnosticManager.registerHandler(this, EnumSet.of(EngineEventType.OperationEnd));
     }
 
-    public void attemptToExecute(ParallelWorkflow workflow){
-        workflow.incrementCompletedParentWorkflows();
-        if(workflow.getTotalParentWorkflows() == workflow.getCompletedParentWorkflows()){
-            boolean executionConditionsMet = LogicalExpressionResolver.resolveLogicalExpression(
-                    workflow.getDynamicFields(),
-                    workflow.getExecutionCondition()
-            ).isResolved();
+    //TODO: currently returns a list of operations and their expression result. Shouldn't we return the workflow result instead?
+    public CompletableFuture<Map<String, ExpressionResult>> executeWorkflow(ParallelWorkflow workflow){
+        //First, verify the parallel node matches it's execution conditions
+        boolean executionConditionsMet = LogicalExpressionResolver.resolveLogicalExpression(
+            workflow.getDynamicFields(),
+            workflow.getExecutionCondition()
+        ).isResolved();
 
-            if(executionConditionsMet) {
-                executeWorkflow(workflow);
+        if(executionConditionsMet) {
+            //If conditions are met, submit the operations for execution
+            Map<String, CompletableFuture<ExpressionResult>> runningOperations = new HashMap<>();
+            for(Operation operation : workflow.getParallelOperations()){
+                runningOperations.put(operation.getUUID(), this.executeParallelOperation(operation));
             }
+
+            return CompletableFuture.allOf(
+                //Then wait for all operations to finish asynchronously
+                runningOperations.values().toArray(CompletableFuture[]::new)
+            ).thenApply(voidStub -> {
+                //and map each operation id to the operation result
+                Map<String, ExpressionResult> resultMap = new HashMap<>();
+                for(String operationId : runningOperations.keySet()){
+                    resultMap.put(operationId, runningOperations.get(operationId).join());
+                }
+                return resultMap;
+            });
+        }else{
+            //Otherwise, skip the execution of the operations
+            Map<String, ExpressionResult> emptyResult = new HashMap<>();
+            for(Operation operation : workflow.getParallelOperations()){
+                emptyResult.put(operation.getUUID(), ExpressionResult.skip());
+            }
+
+            return CompletableFuture.completedFuture(emptyResult);
         }
     }
 
-    private void executeWorkflow(ParallelWorkflow workflow){
-        for(Operation operation : workflow.getParallelOperations()){
-            this.parentWorkflows.put(operation.getUUID(), workflow);
-            executeWorkflow(operation);
-        }
-    }
-
-    private void executeWorkflow(Operation operation){
+    private CompletableFuture<ExpressionResult> executeParallelOperation(Operation operation){
         try {
-            workerQueue.submit(() -> sessionEngine.executeOperation(operation));
+            return workerQueue.submit(() -> sessionEngine.executeOperation(operation));
         }catch (Exception e){
             logger.error("Failed to submit operation " + operation.getUUID() + " to worker queue. Caused by: ", e);
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -76,57 +95,66 @@ public class WorkflowManager implements IEngineEventHandler {
         }
     }
 
-    public void notifyWorkflow(Operation operation, ExpressionResult resolvedOutcome){
+    private void notifyWorkflow(Operation resolvedOperation, ExpressionResult operationOutcome){
         //Operations always use SELF_SEQUENCE_EAGER. Therefore, execute their sequential workflows
-        if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)) {
-            for (ParallelWorkflow sequence : operation.getSequentialWorkflowUponSuccess()) {
-                attemptToExecute(sequence);
+        resolvedOperation.setSequenceExecutionStarted(true);
+        if(operationOutcome.getOutcome().equals(ResultStatus.SUCCESS)) {
+            for (ParallelWorkflow sequence : resolvedOperation.getSequentialWorkflowUponSuccess()) {
+                executeWorkflow(sequence);
             }
         }else{
-            for (ParallelWorkflow sequence : operation.getSequentialWorkflowUponFailure()) {
-                attemptToExecute(sequence);
+            for (ParallelWorkflow sequence : resolvedOperation.getSequentialWorkflowUponFailure()) {
+                executeWorkflow(sequence);
             }
         }
 
         //Operations always use PARENT_NOTIFICATION_EAGER. Therefore, if the operation is part of a parallel workflow, notify it's parent
         //Note that the container workflow will not be null only if the resolved operation was executed as part of a parallel workflow
-        ParallelWorkflow container = this.parentWorkflows.get(operation.getUUID());
+        ParallelWorkflow container = this.parentWorkflows.get(resolvedOperation.getUUID());
         if (container != null) {
-            notifyWorkflow(container, resolvedOutcome);
+            notifyWorkflow(container, resolvedOperation, operationOutcome);
         }
     }
 
-    public void notifyWorkflow(ParallelWorkflow workflow, ExpressionResult resolvedOutcome){
-        boolean successful = resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS);
-        boolean allChildrenCompleted = workflow.getCompletedOperations() == workflow.getTotalOperations();
-        Set<WorkflowPolicy> workflowPolicies = workflow.getWorkflowPolicies();
+    private void notifyWorkflow(ParallelWorkflow parentWorkflow, Operation resolvedOperation, ExpressionResult operationOutcome){
+        Set<WorkflowPolicy> workflowPolicies = parentWorkflow.getWorkflowPolicies();
+        parentWorkflow.addOperationOutcome(resolvedOperation.getUUID(), operationOutcome);
+        boolean operationSuccessful = operationOutcome.getOutcome().equals(ResultStatus.SUCCESS);
+        boolean allChildrenCompleted = parentWorkflow.getCompletedOperations() == parentWorkflow.getTotalOperations();
 
-        workflow.addOperationOutcomes(resolvedOutcome);
+        if(!parentWorkflow.isSequenceExecutionStarted()) { //to avoid executing the same sequence more than once per workflow
+            if (operationSuccessful) {
+                if (workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
+                    executeSequence(parentWorkflow, parentWorkflow.getSequentialWorkflowUponSuccess());
+                }
+            } else {
+                if (workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
+                    executeSequence(parentWorkflow, parentWorkflow.getSequentialWorkflowUponFailure());
+                }
 
-        if(successful) {
-            if(workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
-                for (ParallelWorkflow sequence : workflow.getSequentialWorkflowUponSuccess()) {
-                    attemptToExecute(sequence);
+                if (workflowPolicies.contains(WorkflowPolicy.OPERATIONS_DEPENDENT)) {
+                    terminateParallelOperations(parentWorkflow);
                 }
             }
-        }else{
-            if(workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
-                for (ParallelWorkflow sequence : workflow.getSequentialWorkflowUponFailure()) {
-                    attemptToExecute(sequence);
-                }
-            }
+        }
+    }
 
-            if(workflowPolicies.contains(WorkflowPolicy.OPERATIONS_DEPENDENT)){
-                try {
-                    for (Operation operation : workflow.getParallelOperations()) {
-                        if (!operation.isAlreadyExecuted()) {
-                            workerQueue.submit(() -> sessionEngine.terminateOperation(operation.getUUID()));
-                        }
-                    }
-                }catch (Exception e){
-                    logger.error("Failed to remove running operations from worker queue. Caused by: ", e);
+    private void executeSequence(ParallelWorkflow parentWorkflow, List<ParallelWorkflow> sequence){
+        parentWorkflow.setSequenceExecutionStarted(true);
+        for (ParallelWorkflow child : sequence) {
+            executeWorkflow(child);
+        }
+    }
+
+    private void terminateParallelOperations(ParallelWorkflow parentWorkflow){
+        try {
+            for (Operation dependentOperation : parentWorkflow.getParallelOperations()) {
+                if (!dependentOperation.isAlreadyExecuted()) {
+                    workerQueue.submit(() -> sessionEngine.terminateOperation(dependentOperation.getUUID()));
                 }
             }
+        } catch (Exception e) {
+            logger.error("Failed to remove running operations from worker queue. Caused by: ", e);
         }
     }
 }

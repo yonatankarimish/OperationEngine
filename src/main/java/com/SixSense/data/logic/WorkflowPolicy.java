@@ -7,7 +7,8 @@ public enum WorkflowPolicy {
     SELF_SEQUENCE_EAGER, //If an expected outcome has been achieved, run the sequential workflows immediately
     SELF_SEQUENCE_LAZY, //Wait until all parallel workflows have finished before running any sequential workflows
 
-    /*PARENT_NOTIFICATION_EAGER, //If one of the parallel workflows fails, immediately notify the parent workflow
+    /* //(?) if a workflow spawns multiple sequential workflows, do actions in one child affect the others? current working assumption is NO;
+    PARENT_NOTIFICATION_EAGER, //If one of the parallel workflows fails, immediately notify the parent workflow
     PARENT_NOTIFICATION_LAZY, //Wait until all parallel workflows have finished before notifying the parent workflow*/
 
     /*OPERATION_SEQUENCE_EAGER, //Override parallel operation SELF_SEQUENCE policy with SELF_SEQUENCE_EAGER

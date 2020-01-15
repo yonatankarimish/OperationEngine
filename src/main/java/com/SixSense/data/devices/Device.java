@@ -6,15 +6,21 @@ import java.util.Map;
 
 public class Device {
     private VendorProductVersion vpv;
+    private Credentials credentials; //In a sense, just another set of dynamic fields; Acts as a convenience parameter
     private Map<String, String> dynamicFields;
 
+    /*Try not to pollute with additional constructors
+     * The empty constructor is for using the 'with' design pattern
+     * The parameterized constructor is for conditions, results and channel names */
     public Device() {
         this.vpv = new VendorProductVersion();
+        this.credentials = new Credentials();
         this.dynamicFields = new HashMap<>();
     }
 
-    public Device(VendorProductVersion vpv, Map<String, String> dynamicFields) {
+    public Device(VendorProductVersion vpv, Credentials credentials, Map<String, String> dynamicFields) {
         this.vpv = vpv;
+        this.credentials = credentials;
         this.dynamicFields = dynamicFields;
     }
 
@@ -28,6 +34,19 @@ public class Device {
 
     public Device withVpv(VendorProductVersion vpv) {
         this.vpv = vpv;
+        return this;
+    }
+
+    public Credentials getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(Credentials credentials) {
+        this.credentials = credentials;
+    }
+
+    public Device withCredentials(Credentials credentials) {
+        this.credentials = credentials;
         return this;
     }
 
@@ -49,6 +68,7 @@ public class Device {
     public Device deepClone(){
         return new Device()
                 .withVpv(this.vpv.deepClone())
+                .withCredentials(this.credentials.deepClone())
                 .addDynamicFields(this.dynamicFields);
     }
 
@@ -56,6 +76,7 @@ public class Device {
     public String toString() {
         return "Device{" +
                 "vpv=" + vpv +
+                ", credentials=" + credentials +
                 ", dynamicFields=" + dynamicFields +
                 '}';
     }

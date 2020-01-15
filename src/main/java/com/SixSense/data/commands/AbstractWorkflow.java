@@ -16,6 +16,7 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
     //and we could not use different outcomes for each sequential workflow
     private List<ParallelWorkflow> sequentialWorkflowUponSuccess;
     private List<ParallelWorkflow> sequentialWorkflowUponFailure;
+    private volatile boolean sequenceExecutionStarted;
 
     /*Try not to pollute with additional constructors
      * The empty constructor is for using the 'with' design pattern*/
@@ -23,60 +24,70 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
         super();
         this.sequentialWorkflowUponSuccess = new ArrayList<>();
         this.sequentialWorkflowUponFailure = new ArrayList<>();
+        this.sequenceExecutionStarted = false;
     }
 
-    //This constructor is for parallel workflows ("Proper" workflows)
-    public AbstractWorkflow(LogicalExpression<ExecutionCondition> executionCondition, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
-        super();
-        super.executionCondition = executionCondition;
-        this.sequentialWorkflowUponSuccess = sequentialWorkflowUponSuccess;
-        this.sequentialWorkflowUponFailure = sequentialWorkflowUponFailure;
-    }
-
-    //This constructor is for Operations, which extend the abstract Workflow class
     public AbstractWorkflow(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure) {
         super(executionCondition, expectedOutcome);
         this.sequentialWorkflowUponSuccess = sequentialWorkflowUponSuccess;
         this.sequentialWorkflowUponFailure = sequentialWorkflowUponFailure;
+        this.sequenceExecutionStarted = false;
     }
 
     @Override
-    public List<ParallelWorkflow> getSequentialWorkflowUponSuccess() {
+    public synchronized List<ParallelWorkflow> getSequentialWorkflowUponSuccess() {
         return Collections.unmodifiableList(sequentialWorkflowUponSuccess);
     }
 
     @Override
-    public AbstractWorkflow addSequentialWorkflowUponSuccess(ParallelWorkflow sequentialWorkflow) {
+    public synchronized AbstractWorkflow addSequentialWorkflowUponSuccess(ParallelWorkflow sequentialWorkflow) {
         this.sequentialWorkflowUponSuccess.add(sequentialWorkflow);
         return this;
     }
 
     @Override
-    public AbstractWorkflow addSequentialWorkflowsUponSuccess(List<ParallelWorkflow> sequentialWorkflow) {
+    public synchronized AbstractWorkflow addSequentialWorkflowsUponSuccess(List<ParallelWorkflow> sequentialWorkflow) {
         this.sequentialWorkflowUponSuccess.addAll(sequentialWorkflow);
         return this;
     }
 
     @Override
-    public List<ParallelWorkflow> getSequentialWorkflowUponFailure() {
+    public synchronized List<ParallelWorkflow> getSequentialWorkflowUponFailure() {
         return Collections.unmodifiableList(sequentialWorkflowUponFailure);
     }
 
     @Override
-    public AbstractWorkflow addSequentialWorkflowUponFailure(ParallelWorkflow sequentialWorkflow) {
+    public synchronized AbstractWorkflow addSequentialWorkflowUponFailure(ParallelWorkflow sequentialWorkflow) {
         this.sequentialWorkflowUponFailure.add(sequentialWorkflow);
         return this;
     }
 
     @Override
-    public AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow) {
+    public synchronized AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow) {
         this.sequentialWorkflowUponFailure.addAll(sequentialWorkflow);
+        return this;
+    }
+
+    @Override
+    public boolean isSequenceExecutionStarted() {
+        return sequenceExecutionStarted;
+    }
+
+    @Override
+    public void setSequenceExecutionStarted(boolean sequenceExecutionStarted) {
+        this.sequenceExecutionStarted = sequenceExecutionStarted;
+    }
+
+    @Override
+    public AbstractWorkflow withSequenceExecutionStarted(boolean sequenceExecutionStarted) {
+        this.sequenceExecutionStarted = sequenceExecutionStarted;
         return this;
     }
 
     protected AbstractWorkflow withSuperCloneState(AbstractWorkflow creator){
         List<ParallelWorkflow> successClone = creator.sequentialWorkflowUponSuccess.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
         List<ParallelWorkflow> failClone = creator.sequentialWorkflowUponFailure.stream().map(ParallelWorkflow::deepClone).collect(Collectors.toList());
+
         if(this == creator) {
             this.sequentialWorkflowUponSuccess.clear();
             this.sequentialWorkflowUponFailure.clear();
@@ -84,11 +95,14 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
 
         return ((AbstractWorkflow)super.withSuperCloneState(creator))
                 .addSequentialWorkflowsUponSuccess(successClone)
-                .addSequentialWorkflowsUponFailure(failClone);
+                .addSequentialWorkflowsUponFailure(failClone)
+                .withSequenceExecutionStarted(false);
     }
+
     public String superToString() {
         return " sequentialWorkflowUponSuccess=" + sequentialWorkflowUponSuccess +
                 ", sequentialWorkflowUponFailure=" + sequentialWorkflowUponFailure +
+                ", sequenceExecutionStarted=" + sequenceExecutionStarted +
                 ", " + super.superToString();
     }
 }

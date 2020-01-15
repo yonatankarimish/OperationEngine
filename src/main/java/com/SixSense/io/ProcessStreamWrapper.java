@@ -6,12 +6,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
-public class ProcessStreamWrapper implements Callable<Boolean> {
+public class ProcessStreamWrapper implements Supplier<Boolean> {
     private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
     private static final Logger terminalLogger = LogManager.getLogger(Loggers.TerminalLogger.name());
 
@@ -30,7 +29,7 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() throws IOException{
+    public Boolean get(){
         try {
             ThreadContext.put("sessionID", this.session.getSessionShellId());
             logger.debug("started reading from stream for session " + this.session.getSessionShellId());
@@ -83,7 +82,6 @@ public class ProcessStreamWrapper implements Callable<Boolean> {
         } catch (Exception e) {
             if(!this.session.isClosed()) {
                 logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: ", e);
-                throw new IOException(e);
             }
         } finally {
             ThreadContext.remove("sessionID");

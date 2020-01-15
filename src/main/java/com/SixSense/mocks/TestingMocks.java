@@ -4,7 +4,9 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
+import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.Device;
+import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.ResultRetention;
@@ -13,6 +15,9 @@ import com.SixSense.util.FileUtils;
 import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TestingMocks {
     private static final Logger logger = LogManager.getLogger(TestingMocks.class);
@@ -37,30 +42,36 @@ public class TestingMocks {
         }
     }
 
-    public static Operation f5BigIpBackup(String host, String username, String password){
-        ICommand executionBlock = new Block()
-            .addChildBlock(sshConnect())
-            .addChildBlock(rebuildSixSenseDirectory())
-            //.addChildBlock(etcHosts())
-            .addChildBlock(etcHosts(host, username, password))
-            .addChildBlock(exitCommand())
-            .addDynamicField("device.host", host)
-            .addDynamicField("device.username", username)
-            .addDynamicField("device.password", password)
-            .addDynamicField("device.port", "22");
+    public static RawExecutionConfig f5BigIpBackup(List<Credentials> credentialList){
+        VendorProductVersion f5BigIp = new VendorProductVersion()
+            .withVendor("F5")
+            .withProduct("BigIP")
+            .withVersion("11 and above");
 
-        return new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("F5")
-                    .withProduct("BigIP")
-                    .withVersion("11 and above")
-            ))
-            .withOperationName("Configuration Backup")
-            .withExecutionBlock(executionBlock)
-            .addChannel(ChannelType.LOCAL)
-            .addChannel(ChannelType.REMOTE)
-            .addChannel(ChannelType.DOWNLOAD);
+        return new RawExecutionConfig()
+            .withOperation(
+                new Operation()
+                    .withOperationName("Configuration Backup")
+                    .withExecutionBlock(
+                        new Block()
+                            .addChildBlock(sshConnect())
+                            .addChildBlock(rebuildSixSenseDirectory())
+                            .addChildBlock(etcHosts())
+                            .addChildBlock(exitCommand())
+                    )
+                    .addChannel(ChannelType.LOCAL)
+                    .addChannel(ChannelType.REMOTE)
+                    .addChannel(ChannelType.DOWNLOAD)
+            )
+            .withDevices(
+                credentialList.stream()
+                    .map(
+                        credentials -> new Device()
+                            .withCredentials(credentials)
+                            .withVpv(f5BigIp.deepClone())
+                    )
+                    .collect(Collectors.toList())
+            );
     }
 
     private static ICommand sshConnect(){
@@ -304,13 +315,10 @@ public class TestingMocks {
     }*/
 
     //get file by running scp command using dedicated download channel
-    private static ICommand etcHosts(String host, String username, String password){
+    private static ICommand etcHosts(){
         return InternalCommands.copyFile(
             "/etc/hosts",
             "hosts.txt",
-            host,
-            username,
-            password,
             45
         );
     }

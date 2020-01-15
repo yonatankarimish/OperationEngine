@@ -1,22 +1,14 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.logic.ExecutionCondition;
-import com.SixSense.data.logic.ExpressionResult;
-import com.SixSense.data.logic.LogicalExpression;
-import com.SixSense.data.logic.WorkflowPolicy;
+import com.SixSense.data.logic.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
-    private volatile int totalParentWorkflows;
-    private volatile int completedParentWorkflows;
-
-    private volatile int completedOperations;
     private List<Operation> parallelOperations;
-    private List<ExpressionResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations
+    private Map<String, ExpressionResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations. //key: operation id, value: operation result
     private Set<WorkflowPolicy> workflowPolicies;
 
     /*Try not to pollute with additional constructors
@@ -24,12 +16,8 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
      * The parameterized constructor is for conditions, policies and sequential workflows*/
     public ParallelWorkflow() {
         super();
-        this.totalParentWorkflows = 0;
-        this.completedParentWorkflows = 0;
-
-        this.completedOperations = 0;
         this.parallelOperations = new ArrayList<>();
-        this.operationOutcomes = new ArrayList<>();
+        this.operationOutcomes = new HashMap<>();
         this.workflowPolicies = EnumSet.of(
             WorkflowPolicy.OPERATIONS_INDEPENDENT,
             WorkflowPolicy.SELF_SEQUENCE_LAZY/*,
@@ -38,28 +26,11 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         );
     }
 
-    public ParallelWorkflow(LogicalExpression<ExecutionCondition> executionCondition, List<Operation> parallelOperations, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, Set<WorkflowPolicy> workflowPolicies) {
-        super(executionCondition, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
-        this.totalParentWorkflows = 0;
-        this.completedParentWorkflows = 0;
-
-        this.completedOperations = 0;
+    public ParallelWorkflow(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<Operation> parallelOperations, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, Set<WorkflowPolicy> workflowPolicies) {
+        super(executionCondition, expectedOutcome, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.parallelOperations = parallelOperations;
-        this.operationOutcomes = new ArrayList<>();
+        this.operationOutcomes = new HashMap<>();
         this.workflowPolicies = workflowPolicies;
-    }
-
-    public synchronized int getTotalParentWorkflows() {
-        return totalParentWorkflows;
-    }
-
-    public synchronized int getCompletedParentWorkflows() {
-        return completedParentWorkflows;
-    }
-
-    public synchronized ParallelWorkflow incrementCompletedParentWorkflows() {
-        completedParentWorkflows++;
-        return this;
     }
 
     public synchronized int getTotalOperations() {
@@ -67,7 +38,7 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
     }
 
     public synchronized int getCompletedOperations() {
-        return completedOperations;
+        return operationOutcomes.size();
     }
 
     public synchronized List<Operation> getParallelOperations() {
@@ -84,13 +55,17 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         return this;
     }
 
-    public synchronized List<ExpressionResult> getOperationOutcomes() {
-        return Collections.unmodifiableList(operationOutcomes);
+    public synchronized Map<String, ExpressionResult> getOperationOutcomes() {
+        return Collections.unmodifiableMap(operationOutcomes);
     }
 
-    public synchronized ParallelWorkflow addOperationOutcomes(ExpressionResult operationOutcome) {
-        this.operationOutcomes.add(operationOutcome);
-        this.completedOperations++;
+    public synchronized ParallelWorkflow addOperationOutcome(String operationId, ExpressionResult operationOutcome) {
+        this.operationOutcomes.put(operationId, operationOutcome);
+        return this;
+    }
+
+    public synchronized ParallelWorkflow addOperationOutcomes(Map<String, ExpressionResult> operationOutcomes) {
+        this.operationOutcomes.putAll(operationOutcomes);
         return this;
     }
 
@@ -140,13 +115,10 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
     @Override
     public String toString() {
         return "ParallelWorkflow{" +
-                "totalParentWorkflows=" + totalParentWorkflows +
-                ", completedParentWorkflows=" + completedParentWorkflows +
-                ", completedOperations=" + completedOperations +
-                ", parallelOperations=" + parallelOperations +
-                ", operationOutcomes=" + operationOutcomes +
-                ", workflowPolicies=" + workflowPolicies +
-                ", " + super.superToString() +
-                '}';
+            "parallelOperations=" + parallelOperations +
+            ", operationOutcomes=" + operationOutcomes +
+            ", workflowPolicies=" + workflowPolicies +
+            ", " + super.superToString() +
+            '}';
     }
 }

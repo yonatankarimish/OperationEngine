@@ -15,4 +15,10 @@ public interface IWorkflow {
     AbstractWorkflow addSequentialWorkflowUponFailure(ParallelWorkflow sequentialWorkflow);
 
     AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow);
+
+    boolean isSequenceExecutionStarted();
+
+    void setSequenceExecutionStarted(boolean sequenceExecutionStarted);
+
+    AbstractWorkflow withSequenceExecutionStarted(boolean sequenceExecutionStarted);
 }

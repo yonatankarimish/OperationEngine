@@ -75,10 +75,11 @@ public class InternalCommands {
             );
     }
 
-    public static ICommand copyFile(String sourceFile, String destFile, String host, String user, String password, int secondsToTimeout) {
+    //Note this internal command depends on the implied presence of the credential dynamic fields for the relevant device
+    public static ICommand copyFile(String sourceFile, String destFile, int secondsToTimeout) {
         ICommand scpInit = new Command()
             .withChannel(ChannelType.DOWNLOAD)
-            .withCommandText("scp $var.scp.user@$var.scp.host:$var.scp.source $sixsense.session.workingDir/$var.scp.destination")
+            .withCommandText("scp $device.username@$device.host:$var.scp.source $sixsense.session.workingDir/$var.scp.destination")
             .withSecondsToTimeout(10)
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>().addResolvable(
@@ -90,7 +91,7 @@ public class InternalCommands {
 
         ICommand typePassword = new Command()
             .withChannel(ChannelType.DOWNLOAD)
-            .withCommandText("$var.scp.password")
+            .withCommandText("$device.password")
             .withSecondsToTimeout(secondsToTimeout)
             .withUseRawOutput(true)
             .withExpectedOutcome(
@@ -122,11 +123,8 @@ public class InternalCommands {
 
         String[] splitSourceFileName = sourceFile.split("/");
         return scpInit.chainCommands(typePassword)
-            .addDynamicField("var.scp.host", host)
-            .addDynamicField("var.scp.user", user)
             .addDynamicField("var.scp.source", sourceFile)
             .addDynamicField("var.scp.source_file_name", splitSourceFileName[splitSourceFileName.length - 1])
-            .addDynamicField("var.scp.destination", destFile)
-            .addDynamicField("var.scp.password", password);
+            .addDynamicField("var.scp.destination", destFile);
     }
 }

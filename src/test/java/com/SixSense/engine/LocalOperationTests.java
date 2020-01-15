@@ -41,12 +41,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation simpleOperation = new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Network Details - Simple")
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
@@ -65,12 +59,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation failingOperation = new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Network Details - Planned failure")
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
@@ -89,12 +77,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation invalidOperation = new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Network Details - Planned failure")
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
@@ -128,12 +110,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
         }
 
         Operation blockOperation = (Operation) new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Block testing - three nested blocks, three commands each")
             .withExecutionBlock(parentBlock)
             .addChannel(ChannelType.LOCAL)
@@ -173,12 +149,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation repeatingOperation = (Operation) new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Block testing - repeating block")
             .withExecutionBlock(repeatingBlock)
             .addChannel(ChannelType.LOCAL)
@@ -209,12 +179,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation writeOperation = new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Network details - Write to file")
             .withExecutionBlock(fileWrite)
             .addChannel(ChannelType.LOCAL);
@@ -226,12 +190,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
 
     public void drainingFileOperation() {
         Operation writeOperation = new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Network Details - File parsing")
             .withExecutionBlock(drainingFileCopy())
             .addChannel(ChannelType.LOCAL)
@@ -302,12 +260,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             );
 
         Operation writeOperation = (Operation)new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Execute operation - conditions are met")
             .withExecutionBlock(
                 new Block()
@@ -374,12 +326,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.stack.text", "block");
 
         Operation operation = (Operation)new Operation()
-            .withDevice(new Device().withVpv(
-                new VendorProductVersion()
-                    .withVendor("Linux")
-                    .withProduct("Generic")
-                    .withVersion("Centos 6")
-            ))
             .withOperationName("Dynamic field loading")
             .withExecutionBlock(block)
             .addChannel(ChannelType.LOCAL)

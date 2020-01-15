@@ -1,10 +1,13 @@
 package com.SixSense;
 
 import com.SixSense.data.commands.Operation;
+import com.SixSense.data.commands.ParallelWorkflow;
+import com.SixSense.data.devices.Credentials;
+import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.logic.*;
-import com.SixSense.engine.SessionEngine;
+import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.util.CommandUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.logging.log4j.Logger;
@@ -13,8 +16,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.Future;
 
 @SpringBootApplication
 public class Main {
@@ -32,20 +36,30 @@ public class Main {
         logger.info("Starting now");
 
         try {
-            SessionEngine engineInstance = (SessionEngine)appContext.getBean("sessionEngine");
-            WorkerQueue queueInstance = (WorkerQueue)appContext.getBean("workerQueue");
+            WorkflowManager wfManager = (WorkflowManager)appContext.getBean("workflowManager");
 
-            //Operation operation = TestingMocks.f5BigIpBackup("172.31.254.66", "root", "password");
-            Operation operation = TestingMocks.f5BigIpBackup("172.31.252.179", "root", "qwe123");
+            RawExecutionConfig rawExecutionConfig = TestingMocks.f5BigIpBackup(
+                Collections.singletonList(
+                    new Credentials()
+                        .withHost("172.31.252.179")
+                        .withUsername("root")
+                        .withPassword("qwe123")
+                )
+            );
+
+            ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
 
             /*ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-            String serializedOperation = objectMapper.writeValueAsString(operation);
+            String serializedOperation = objectMapper.writeValueAsString(workflow);
             logger.info(serializedOperation);*/
 
-            Future<ExpressionResult> backupResult = queueInstance.submit(() -> engineInstance.executeOperation(operation));
-            logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + backupResult.get().getOutcome());
-            logger.info("Result Message: " + backupResult.get().getMessage());
+            Map<String, ExpressionResult> workflowResult = wfManager.executeWorkflow(workflow).join();
+            for(Operation operation : workflow.getParallelOperations()) {
+                ExpressionResult result = workflowResult.get(operation.getUUID());
+                logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getOutcome());
+                logger.info("Result Message: " + result.getMessage());
+            }
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }

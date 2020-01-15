@@ -6,18 +6,17 @@ import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.retention.VariableRetention;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class AbstractCommand implements ICommand{
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
-    protected final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
-    protected boolean alreadyExecuted;
+    private final UUID uuid; //This is not the database id of the command, but a uuid for use by components like the session engine
+    private boolean alreadyExecuted;
 
-    protected LogicalExpression<ExecutionCondition> executionCondition;
-    protected LogicalExpression<ExpectedOutcome> expectedOutcome;
+    private LogicalExpression<ExecutionCondition> executionCondition;
+    private LogicalExpression<ExpectedOutcome> expectedOutcome;
 
-    protected Map<String, String> dynamicFields;
-    protected VariableRetention saveTo;
+    private Map<String, String> dynamicFields;
+    private VariableRetention saveTo;
 
     /*Try not to pollute with additional constructors
     * The empty constructor is for using the 'with' design pattern

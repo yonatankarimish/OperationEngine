@@ -74,7 +74,7 @@ public class EngineTestUtils {
         Session session = submitOperation(operation);
         ExpressionResult resolvedOutcome = awaitOperation(session);
 
-        logger.info("Operation " + operation.getFullOperationName() + " Completed with result " + resolvedOutcome.getOutcome());
+        logger.info("Operation " + operation.getOperationName() + " Completed with result " + resolvedOutcome.getOutcome());
         logger.info("Result Message: " + resolvedOutcome.getMessage());
         return resolvedOutcome;
     }

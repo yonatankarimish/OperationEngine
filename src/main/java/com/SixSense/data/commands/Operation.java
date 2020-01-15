@@ -15,9 +15,7 @@ import java.util.stream.Collectors;
 public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private String operationName;
-    private Device device;
     private ICommand executionBlock;
-
     private Set<String> channelNames;
 
     /*Try not to pollute with additional constructors
@@ -26,38 +24,19 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     public Operation() {
         super();
         this.operationName = "";
-        this.device = new Device();
         this.executionBlock = new Block();
         this.channelNames = new HashSet<>();
     }
 
-    public Operation(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, Device device, ICommand executionBlock, Set<String> channelNames) {
+    public Operation(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, List<ParallelWorkflow> sequentialWorkflowUponSuccess, List<ParallelWorkflow> sequentialWorkflowUponFailure, String operationName, ICommand executionBlock, Set<String> channelNames) {
         super(executionCondition, expectedOutcome, sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure);
         this.operationName = operationName;
-        this.device = device;
         this.executionBlock = executionBlock;
         this.channelNames = channelNames;
     }
 
-    public Device getDevice() {
-        return device;
-    }
-
-    public void setDevice(Device device) {
-        this.device = device;
-    }
-
-    public Operation withDevice(Device device) {
-        this.device = device;
-        return this;
-    }
-
     public String getOperationName() {
         return operationName;
-    }
-
-    public String getFullOperationName() {
-        return device.getVpv().getName() + " " + operationName;
     }
 
     public void setOperationName(String operationName) {
@@ -124,7 +103,6 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     private Operation assignDefaults(Operation operation){
         return (Operation)operation
                 .withOperationName(this.operationName)
-                .withDevice(this.device.deepClone())
                 .withExecutionBlock(this.executionBlock.deepClone())
                 .addChannelNames(this.channelNames)
                 .withSuperCloneState(this);
@@ -134,7 +112,6 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow {
     public String toString() {
         return "Operation{" +
                 "operationName='" + operationName + '\'' +
-                ", device=" + device +
                 ", executionBlock=" + executionBlock +
                 ", channelNames=" + channelNames +
                 ", " + super.superToString() +
