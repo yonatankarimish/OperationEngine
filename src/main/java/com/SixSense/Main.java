@@ -4,12 +4,11 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.RawExecutionConfig;
-import com.SixSense.data.logic.*;
+import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
 import com.SixSense.util.CommandUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.SixSense.util.PolymorphicJsonMapper;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.boot.SpringApplication;
@@ -36,23 +35,18 @@ public class Main {
         logger.info("Starting now");
 
         try {
-            WorkflowManager wfManager = (WorkflowManager)appContext.getBean("workflowManager");
-
-            RawExecutionConfig rawExecutionConfig = TestingMocks.f5BigIpBackup(
+            /*logger.info(PolymorphicJsonMapper.serialize(TestingMocks.f5BigIpBackup(
                 Collections.singletonList(
                     new Credentials()
                         .withHost("172.31.252.179")
                         .withUsername("root")
                         .withPassword("qwe123")
                 )
-            );
+            )));*/
 
+            WorkflowManager wfManager = (WorkflowManager)appContext.getBean("workflowManager");
+            RawExecutionConfig rawExecutionConfig = PolymorphicJsonMapper.deserialize(TestingMocks.rawExecutionConfigJsonString(), RawExecutionConfig.class);
             ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
-
-            /*ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-            String serializedOperation = objectMapper.writeValueAsString(workflow);
-            logger.info(serializedOperation);*/
 
             Map<String, ExpressionResult> workflowResult = wfManager.executeWorkflow(workflow).join();
             for(Operation operation : workflow.getParallelOperations()) {

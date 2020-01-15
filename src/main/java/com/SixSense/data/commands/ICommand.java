@@ -4,10 +4,19 @@ import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.retention.VariableRetention;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.List;
 import java.util.Map;
 
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="@class")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value=Command.class, name = "Command"),
+    @JsonSubTypes.Type(value=Block.class, name = "Block"),
+    @JsonSubTypes.Type(value=Operation.class, name = "Operation"),
+    @JsonSubTypes.Type(value=ParallelWorkflow.class, name = "ParallelWorkflow")
+})
 public interface ICommand {
     String getUUID();
 

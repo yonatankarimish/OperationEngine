@@ -1,6 +1,5 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.devices.Device;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;

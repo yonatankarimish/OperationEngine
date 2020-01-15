@@ -4,6 +4,7 @@ import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
 import com.SixSense.data.retention.VariableRetention;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.*;
 
@@ -44,10 +45,12 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     @Override
+    @JsonIgnore
     public String getUUID() {
         return uuid.toString();
     }
 
+    @JsonIgnore
     public String getShortUUID() {
         return uuid.toString().substring(0,8);
     }

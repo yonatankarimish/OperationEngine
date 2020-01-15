@@ -1,5 +1,7 @@
 package com.SixSense.data.devices;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class VendorProductVersion {
     private String vendor;
     private String product;
@@ -59,6 +61,7 @@ public class VendorProductVersion {
         return this;
     }
 
+    @JsonIgnore
     public String getName(){
         return vendor + " " + product + " " + version;
     }

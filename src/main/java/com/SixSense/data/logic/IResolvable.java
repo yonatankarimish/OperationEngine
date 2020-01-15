@@ -1,5 +1,14 @@
 package com.SixSense.data.logic;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="@class")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value=LogicalExpression.class, name = "LogicalExpression"),
+    @JsonSubTypes.Type(value=ExecutionCondition.class, name = "ExecutionCondition"),
+    @JsonSubTypes.Type(value=ExpectedOutcome.class, name = "ExpectedOutcome")
+})
 public interface IResolvable {
     ExpressionResult getExpressionResult();
 

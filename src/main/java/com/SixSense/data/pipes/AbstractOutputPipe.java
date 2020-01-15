@@ -1,10 +1,18 @@
 package com.SixSense.data.pipes;
 
 import com.SixSense.io.Session;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.List;
 import java.util.Objects;
 
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="@class")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value=DrainingPipe.class, name = "DrainingPipe"),
+    @JsonSubTypes.Type(value=FirstLinePipe.class, name = "FirstLinePipe"),
+    @JsonSubTypes.Type(value=LastLinePipe.class, name = "LastLinePipe")
+})
 public abstract class AbstractOutputPipe {
     private String pipeType;
 
