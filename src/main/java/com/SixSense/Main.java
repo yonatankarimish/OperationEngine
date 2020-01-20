@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -48,12 +49,16 @@ public class Main {
             RawExecutionConfig rawExecutionConfig = PolymorphicJsonMapper.deserialize(TestingMocks.rawExecutionConfigJsonString(), RawExecutionConfig.class);
             ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
 
-            Map<String, ExpressionResult> workflowResult = wfManager.executeWorkflow(workflow).join();
+            Map<String, ExpressionResult> workflowResult = wfManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
             for(Operation operation : workflow.getParallelOperations()) {
                 ExpressionResult result = workflowResult.get(operation.getUUID());
+                rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
                 logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getOutcome());
                 logger.info("Result Message: " + result.getMessage());
             }
+
+
+            logger.info("Results added to serializable configuration");
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);
         }

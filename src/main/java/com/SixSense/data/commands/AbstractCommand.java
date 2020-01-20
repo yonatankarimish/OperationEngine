@@ -137,6 +137,10 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     protected AbstractCommand withSuperCloneState(AbstractCommand creator){
+        if(this == creator) {
+            this.dynamicFields.clear();
+        }
+
         return this.withAlreadyExecuted(false)
                 .withExecutionCondition(creator.executionCondition.deepClone())
                 .withExpectedOutcome(creator.expectedOutcome.deepClone())

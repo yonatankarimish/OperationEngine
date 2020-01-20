@@ -64,6 +64,7 @@ public class CommandUtils {
             parallelNode.addParallelOperation(
                 (Operation)rawConfig.getOperation().deepClone()
                     .addDynamicFields(device.getDynamicFields())
+                    .addDynamicField("device.internal.id", device.getShortUUID())
                     .addDynamicField("device.host", device.getCredentials().getHost())
                     .addDynamicField("device.username", device.getCredentials().getUsername())
                     .addDynamicField("device.password", device.getCredentials().getPassword())

@@ -67,7 +67,7 @@ public class TestingMocks {
                     .addChannel(ChannelType.REMOTE)
                     .addChannel(ChannelType.DOWNLOAD)
             )
-            .withDevices(
+            .addDevices(
                 credentialList.stream()
                     .map(
                         credentials -> new Device()

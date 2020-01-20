@@ -1,10 +1,14 @@
 package com.SixSense.data.devices;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Device {
+    private final UUID uuid;
     private VendorProductVersion vpv;
     private Credentials credentials; //In a sense, just another set of dynamic fields; Acts as a convenience parameter
     private Map<String, String> dynamicFields;
@@ -13,15 +17,27 @@ public class Device {
      * The empty constructor is for using the 'with' design pattern
      * The parameterized constructor is for conditions, results and channel names */
     public Device() {
+        this.uuid = UUID.randomUUID();
         this.vpv = new VendorProductVersion();
         this.credentials = new Credentials();
         this.dynamicFields = new HashMap<>();
     }
 
     public Device(VendorProductVersion vpv, Credentials credentials, Map<String, String> dynamicFields) {
+        this.uuid = UUID.randomUUID();
         this.vpv = vpv;
         this.credentials = credentials;
         this.dynamicFields = dynamicFields;
+    }
+
+    @JsonIgnore
+    public String getUUID() {
+        return uuid.toString();
+    }
+
+    @JsonIgnore
+    public String getShortUUID() {
+        return uuid.toString().substring(0,8);
     }
 
     public VendorProductVersion getVpv() {
@@ -75,9 +91,10 @@ public class Device {
     @Override
     public String toString() {
         return "Device{" +
-                "vpv=" + vpv +
-                ", credentials=" + credentials +
-                ", dynamicFields=" + dynamicFields +
-                '}';
+            "uuid=" + uuid +
+            ", vpv=" + vpv +
+            ", credentials=" + credentials +
+            ", dynamicFields=" + dynamicFields +
+            '}';
     }
 }
