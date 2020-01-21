@@ -12,5 +12,7 @@ public enum EngineEventType {
     BlockEnd,
     OperationEnd,
     SessionClosed,
+    ConditionEvaluation,
+    OutcomeEvaluation,
     ExecutionAnomaly
 }

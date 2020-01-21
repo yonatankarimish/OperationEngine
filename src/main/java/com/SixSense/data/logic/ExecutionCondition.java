@@ -99,6 +99,12 @@ public class ExecutionCondition implements IFlowConnector {
     }
 
     @Override
+    public String toPrettyString(){
+        String expectedValOrEmpty = expectedValue.isBlank()? "{Empty}" : expectedValue;
+        return variable + " " + binaryRelation.name().toLowerCase() + " " + expectedValOrEmpty + " => " + expressionResult.getOutcome().name().toLowerCase();
+    }
+
+    @Override
     public String toString() {
         return "ExecutionCondition{" +
                 "variable='" + variable + '\'' +

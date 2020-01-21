@@ -109,6 +109,16 @@ public class LogicalExpression<E extends IFlowConnector> implements IResolvable{
     }
 
     @Override
+    public String toPrettyString(){
+        if(resolvableExpressions.isEmpty()){
+            return "LogicalExpression<Empty>";
+        }else {
+            String typeName = resolvableExpressions.iterator().next().getClass().getSimpleName();
+            return "LogicalExpression<" + typeName + "> with aggregation " + logicalCondition.name();
+        }
+    }
+
+    @Override
     public String toString() {
         return "LogicalExpression{" +
                 "resolvableExpressions=" + resolvableExpressions +

@@ -4,6 +4,7 @@ package com.SixSense.io;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.events.InputSentEvent;
+import com.SixSense.data.events.OutcomeEvaluationEvent;
 import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
@@ -43,6 +44,7 @@ public class Session implements Closeable{
 
     //Current command context
     private final UUID sessionShellId = UUID.randomUUID();
+    private int drilldownRank = 0;
     private boolean isClosed = false;
     private Command currentCommand;
     private int commandOrdinal = 0;
@@ -85,7 +87,7 @@ public class Session implements Closeable{
     private ExpressionResult executeCommand(Command command, ShellChannel channel) throws IOException {
         this.commandOrdinal++;
         this.currentCommand = command;
-        this.evaluatedCommand = CommandUtils.evaluateAgainstDynamicFields(command, this.getCurrentSessionVariables());
+        this.evaluatedCommand = CommandUtils.evaluateAgainstDynamicFields(command.getCommandText(), this.getCurrentSessionVariables());
         final List<String> processOutput = channel.getChannelOutput();
 
         /*Write our current command to the input stream,
@@ -145,6 +147,7 @@ public class Session implements Closeable{
             sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
         }
         diagnosticManager.emit(new OutputReceivedEvent(this, command, this.commandOrdinal, output));
+        diagnosticManager.emit(new OutcomeEvaluationEvent(this, output, command.getExpectedOutcome()));
         this.commandLock.unlock();
 
         //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
@@ -275,6 +278,18 @@ public class Session implements Closeable{
 
     public String getShortSessionId() {
         return this.sessionShellId.toString().substring(0,8);
+    }
+
+    public int getDrilldownRank(){
+        return drilldownRank;
+    }
+
+    public void incrementDrilldownRank(){
+        drilldownRank++;
+    }
+
+    public void decrementDrilldownRank(){
+        drilldownRank--;
     }
 
     public String getTerminalIdentifier(){

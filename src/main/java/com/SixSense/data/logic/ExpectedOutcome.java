@@ -82,6 +82,12 @@ public class ExpectedOutcome implements IFlowConnector {
     }
 
     @Override
+    public String toPrettyString(){
+        String expectedValOrEmpty = expectedValue.isBlank()? "{Empty}" : expectedValue;
+        return "$sixsense.result.mark " + binaryRelation.name().toLowerCase() + " " + expectedValOrEmpty + " => " + expressionResult.getOutcome().name().toLowerCase();
+    }
+
+    @Override
     public String toString() {
         return "ExpectedOutcome{" +
                 "expectedValue='" + expectedValue + '\'' +

@@ -49,7 +49,7 @@
                     <File name="trail-${ctx:sessionID}"
                           fileName="${baseDir}/sessions/${ctx:sessionID}/session.log">
                         <PatternLayout>
-                            <Pattern>${logPattern}</Pattern>
+                            <Pattern>${defaultPattern}</Pattern>
                         </PatternLayout>
                     </File>
                 </Route>

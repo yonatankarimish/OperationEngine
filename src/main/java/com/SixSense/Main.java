@@ -16,7 +16,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -56,8 +55,6 @@ public class Main {
                 logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getOutcome());
                 logger.info("Result Message: " + result.getMessage());
             }
-
-
             logger.info("Results added to serializable configuration");
         } catch (Exception e) {
             logger.error("A fatal exception was encountered - applications is closing now", e);

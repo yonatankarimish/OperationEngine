@@ -96,16 +96,8 @@ public class CommandUtils {
         }
     }
 
-    public static String evaluateAgainstDynamicFields(Command command){
-        return evaluateAgainstDynamicFields(command, null);
-    }
-
-    public static String evaluateAgainstDynamicFields(Command command, Map<String, String> additionalFields){
-        Map<String, String> dynamicFields = command.getDynamicFields();
-        String commandText = command.getCommandText();
-        commandText = evaluateAgainstDynamicFields(commandText, command.getDynamicFields());
-        commandText = evaluateAgainstDynamicFields(commandText, additionalFields);
-        return commandText;
+    public static String evaluateAgainstDynamicFields(String commandText){
+        return evaluateAgainstDynamicFields(commandText, null);
     }
 
     public static String evaluateAgainstDynamicFields(String commandText, Map<String, String> dynamicFields){

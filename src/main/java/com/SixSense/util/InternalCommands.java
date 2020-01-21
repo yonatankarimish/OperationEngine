@@ -25,7 +25,7 @@ public class InternalCommands {
             )
             .withSaveTo(new VariableRetention()
                 .withResultRetention(ResultRetention.Variable)
-                .withName("sixsense.vars.lastLine")
+                .withName("sixsense.session.lastLine")
             );
 
         ICommand currentChunk = new Command()

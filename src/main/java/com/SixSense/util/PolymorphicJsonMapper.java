@@ -2,6 +2,7 @@ package com.SixSense.util;
 
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.IResolvable;
+import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -16,6 +17,7 @@ public class PolymorphicJsonMapper {
         PolymorphicTypeValidator baseTypeValidator = BasicPolymorphicTypeValidator.builder()
             .allowIfBaseType(ICommand.class)
             .allowIfBaseType(IResolvable.class)
+            .allowIfBaseType(AbstractOutputPipe.class)
             .build();
 
         mapper = JsonMapper.builder()

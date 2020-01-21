@@ -115,6 +115,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         }else if(operation.getExecutionBlock() == null){
             operationResult = handleExecutionAnomaly(session, "Operation " + operation.getUUID() + " has incomplete configuration");
         }else{
+            session.incrementDrilldownRank();
             this.runningSessions.put(session.getSessionShellId(), session);
             this.operationsToSessions.put(operation.getUUID(), session.getSessionShellId());
             diagnosticManager.emit(new OperationStartEvent(session, operation));
@@ -123,6 +124,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 ICommand executionBlock = operation.getExecutionBlock();
                 session.loadSessionDynamicFields(operation);
 
+                diagnosticManager.emit(new ConditionEvaluationEvent(session, operation.getExecutionCondition()));
                 if (executionConditionsMet(session, operation)) {
                     operationResult = executeBlock(session, executionBlock);
                     operationResult = expectedResult(operationResult, operation.getExpectedOutcome().getExpressionResult());
@@ -130,6 +132,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                     operationResult = ExpressionResult.skip();
                 }
 
+                diagnosticManager.emit(new OutcomeEvaluationEvent(session, "", operation.getExpectedOutcome()));
                 session.removeSessionDynamicFields(operation);
                 operation.setAlreadyExecuted(true);
             } catch (Exception e) {
@@ -141,6 +144,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             diagnosticManager.emit(new OperationEndEvent(session, operation, operationResult));
             this.operationsToSessions.remove(operation.getUUID());
             this.runningSessions.remove(session.getSessionShellId());
+            session.decrementDrilldownRank();
         }
 
         return operationResult;
@@ -162,8 +166,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             Block parentBlock = (Block)executionBlock;
             ExpressionResult progressiveResult = ExpressionResult.defaultOutcome();
             diagnosticManager.emit(new BlockStartEvent(session, parentBlock));
-            session.loadSessionDynamicFields(parentBlock);
 
+            session.incrementDrilldownRank();
+            session.loadSessionDynamicFields(parentBlock);
+            diagnosticManager.emit(new ConditionEvaluationEvent(session, parentBlock.getExecutionCondition()));
             if(executionConditionsMet(session, parentBlock)) {
                 while (!parentBlock.hasExhaustedCommands(session)) {
                     ICommand nextCommand = parentBlock.getNextCommand(session);
@@ -182,11 +188,13 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             }
 
             session.removeSessionDynamicFields(parentBlock);
+            session.decrementDrilldownRank();
             parentBlock.setAlreadyExecuted(true);
             if(blockResult == null) {// which (before this line) can only be assigned if commandResult has ResultStatus.FAILURE
-                blockResult = expectedResult(progressiveResult, executionBlock.getExpectedOutcome().getExpressionResult());
+                blockResult = expectedResult(progressiveResult, parentBlock.getExpectedOutcome().getExpressionResult());
             }
 
+            diagnosticManager.emit(new OutcomeEvaluationEvent(session, "", parentBlock.getExpectedOutcome()));
             diagnosticManager.emit(new BlockEndEvent(session, parentBlock, blockResult));
         }else{
             blockResult = handleExecutionAnomaly(session, MessageLiterals.InvalidExecutionBlock);
@@ -203,7 +211,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             commandResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
         }else{
             diagnosticManager.emit(new CommandStartEvent(session, currentCommand));
+
+            session.incrementDrilldownRank();
             session.loadSessionDynamicFields(currentCommand);
+            diagnosticManager.emit(new ConditionEvaluationEvent(session, currentCommand.getExecutionCondition()));
             if (executionConditionsMet(session, currentCommand)) {
                 commandResult = session.executeCommand(currentCommand);
             } else {
@@ -211,6 +222,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             }
 
             session.removeSessionDynamicFields(currentCommand);
+            session.decrementDrilldownRank();
             currentCommand.setAlreadyExecuted(true);
             diagnosticManager.emit(new CommandEndEvent(session, currentCommand, commandResult));
         }

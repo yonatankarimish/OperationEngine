@@ -3,7 +3,9 @@ package com.SixSense.util;
 import com.SixSense.data.logic.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ExpressionUtils {
     //wraps both resolvables with a single logical expression;
@@ -44,5 +46,26 @@ public class ExpressionUtils {
             }
         }
         return flattened;
+    }
+
+    public static String toPrintableString(IResolvable expression){
+        return toPrintableString(expression, new StringBuilder(), "").replaceAll("\n$", ""); //remove last line break from result
+    }
+
+    private static String toPrintableString(IResolvable expression, StringBuilder builder, String indenter){
+        String vertical = "| ";
+        String arrow = "o ";
+
+        builder.append(indenter).append(arrow).append(expression.toPrettyString()).append(MessageLiterals.LineBreak);
+        if(expression instanceof LogicalExpression){
+            LogicalExpression asLogical = ((LogicalExpression) expression);
+            Set<IResolvable> childExpressions = asLogical.getResolvableExpressions();
+
+            for(IResolvable child : childExpressions){
+                toPrintableString(child, builder, indenter + vertical);
+            }
+        }
+
+        return builder.toString();
     }
 }
