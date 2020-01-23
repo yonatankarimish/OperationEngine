@@ -1,7 +1,6 @@
 package com.SixSense;
 
-import com.SixSense.data.commands.Operation;
-import com.SixSense.data.commands.ParallelWorkflow;
+import com.SixSense.data.commands.*;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.logic.ExpressionResult;
@@ -15,9 +14,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 @SpringBootApplication
 public class Main {

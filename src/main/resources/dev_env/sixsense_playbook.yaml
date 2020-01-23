@@ -17,6 +17,7 @@
 
   vars:
     ssh_key_path: /root/.ssh/id_rsa
+    tomcat_service_file: /ansible/tomcat.service
     dir_skeleton: /ansible/dir_skeleton/
     node_sixsense_base: /sixsense/
 
@@ -41,6 +42,24 @@
       state: present
     loop:
     - "ppa:openjdk-r/ppa"
+
+  - name: Register Java Home environment variable
+    tags:
+    - register-vars
+    lineinfile:
+      path: /etc/environment
+      insertbefore: BOF
+      line: JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+      create: yes
+
+  - name: Add Java Home to Path variable
+    tags:
+    - register-vars
+    replace:
+      path: /etc/environment
+      regexp: 'PATH="(\$JAVA_HOME\/bin:)?'
+      replace: 'PATH="$JAVA_HOME/bin:'
+
   - name: Add cassandra repository
     tags:
     - add-repos
@@ -64,6 +83,61 @@
       - openssh-server
       - openjdk-11-jdk
       - cassandra
+
+  # Using :
+  # https://linuxize.com/post/how-to-install-tomcat-9-on-ubuntu-18-04/,
+  # https://www.bogotobogo.com/DevOps/Ansible/Ansible-Tomcat9-Ubuntu18-Playbook.php
+  # and https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+  # All were rough guides, small modifications were made
+  - name: Add Tomcat group
+    tags:
+    - tomcat
+    group:
+      name: tomcat
+
+  - name: Add Tomcat user
+    tags:
+    - tomcat
+    user:
+      name: tomcat
+      group: tomcat
+      home: /usr/share/tomcat
+
+  - name: Create /opt/tomcat directory
+    tags:
+    - tomcat
+    file:
+      path: /opt/tomcat
+      state: directory
+      mode: 075
+
+  - name: Download and extract Tomcat binaries
+    tags:
+    - tomcat
+    unarchive:
+      src: http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.30/bin/apache-tomcat-9.0.30.tar.gz
+      dest: /opt/tomcat
+      remote_src: yes
+      extra_opts: [--strip-components=1]
+
+  - name: Set Tomcat user as owner of /opt/tomcat directory
+    tags:
+    - tomcat
+    file:
+      path: /opt/tomcat
+      owner: tomcat
+      group: tomcat
+      mode: "u+rwx,g+rx,o=rx"
+      recurse: yes
+      state: directory
+
+  - name: Copy Tomcat service file to remote host
+    tags:
+    - tomcat
+    copy:
+      src: "{{tomcat_service_file}}"
+      dest: /etc/systemd/system/
+      mode: 0755
 
   - name: Init directory tree
     tags:
