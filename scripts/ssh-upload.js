@@ -42,7 +42,7 @@ function uploadJar(){
     let deployCommands = [
         'echo "finished running uploadJar"' //notify the developer's machine CLI that all commands have run successfully.
     ];
-    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperatingSystem.jar", remoteDestination + "/OperatingSystem.jar", remoteConfig.dev.remotes).then(() => {
+    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine.jar", remoteDestination + "/OperationEngine.jar", remoteConfig.dev.remotes).then(() => {
         return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
     });
 }
@@ -52,7 +52,7 @@ function uploadTests(){
     let deployCommands = [
         'echo "finished running uploadTests"' //notify the developer's machine CLI that all commands have run successfully.
     ];
-    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperatingSystem-tests.jar", remoteDestination + "/OperatingSystem-tests.jar", remoteConfig.dev.remotes).then(() => {
+    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine-tests.jar", remoteDestination + "/OperationEngine-tests.jar", remoteConfig.dev.remotes).then(() => {
         return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
     });
 }

@@ -2,9 +2,9 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
 <!--To run remotely, enter the following command in cli (parameter order matters!):-->
-<!--java -cp "/sixsense/dependency-jars/*:/sixsense/*" org.testng.TestNG -testjar /sixsense/OperatingSystem-tests.jar-->
+<!--java -cp "/sixsense/dependency-jars/*:/sixsense/*" org.testng.TestNG -testjar /sixsense/OperationEngine-tests.jar-->
 <!--To debug remotely, enter the following command in cli (parameter order matters!):-->
-<!--java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -cp "/sixsense/dependency-jars/*:/sixsense/*" -Denvironment="debug" org.testng.TestNG -testjar /sixsense/OperatingSystem-tests.jar-->
+<!--java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -cp "/sixsense/dependency-jars/*:/sixsense/*" -Denvironment="debug" org.testng.TestNG -testjar /sixsense/OperationEngine-tests.jar-->
 <suite name="MainSuite">
     <!--<parameter name="environment" value="tests" />-->
 

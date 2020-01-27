@@ -5,7 +5,7 @@
                   http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>SixSense</groupId>
-    <artifactId>OperatingSystem</artifactId>
+    <artifactId>OperationEngine</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <parent>
@@ -16,7 +16,7 @@
 
     <build>
         <!-- The name of the JAR file we create -->
-        <finalName>OperatingSystem</finalName>
+        <finalName>OperationEngine</finalName>
         <plugins>
             <!-- Set a JDK compiler level -->
             <plugin>
