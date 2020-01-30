@@ -75,6 +75,7 @@ function wrapWithServiceStopStart(steps){
     return () => stopService().then(steps).then(startService);
 }
 
+//Stops the engine service on the remote SixSense server
 function stopService(){
     let deployCommands = [
         'service engine stop',
@@ -84,6 +85,7 @@ function stopService(){
     return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
 }
 
+//Starts the engine service on the remote SixSense server
 function startService(){
     let deployCommands = [
         'service engine start',
