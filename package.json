@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@babel/core": "~7.8.3",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "~7.8.3",
     "@babel/preset-react": "~7.8.3",
     "eslint": "~6.8.0",
@@ -34,10 +35,16 @@
     "yargs": "~13.2.4"
   },
   "dependencies": {
-    "bootstrap": "^4.4.1",
-    "jquery": "^3.4.1",
-    "popper.js": "^1.16.1",
+    "axios": "~0.19.2",
+    "bootstrap": "~4.4.1",
+    "jquery": "~3.4.1",
+    "popper.js": "~1.16.1",
     "react": "~16.12.0",
     "react-dom": "~16.12.0"
-  }
+  },
+  "browserslist": [
+    ">0.25% and last 2 versions",
+    "not ie 11",
+    "not op_mini all"
+  ]
 }
