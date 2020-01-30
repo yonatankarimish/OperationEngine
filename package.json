@@ -1,28 +1,43 @@
 {
-  "name": "SixSenseEngine",
+  "name": "operation-engine",
   "version": "1.0.0",
-  "main": "index.js",
   "repository": "https://github.com/yonatankarimish/OperationEngine.git",
-  "author": "Yonatan <yonatan@backbox.co>",
+  "author": "Yonatan <yonatan@backbox.com>",
   "license": "MIT",
+  "main": "web/index.js",
   "scripts": {
     "clean": "mvn clean",
     "init-dev": "yarn && node ./scripts/init-dev.js",
+    "build-web": "rimraf ./src/main/resources/web/* && parcel build ./web/index.html --out-dir src/main/resources/web",
     "build-jar": "mvn clean package -DskipTests=true",
     "upload-jar": "node ./scripts/ssh-upload.js --task=jar",
     "upload-tests": "node ./scripts/ssh-upload.js --task=tests",
     "upload-dependencies": "node ./scripts/ssh-upload.js --task=dependencies",
     "upload-all": "node ./scripts/ssh-upload.js --task=all",
-    "deploy": "yarn build-jar && yarn upload-jar",
-    "deploy-full": "yarn build-jar && yarn upload-all"
+    "deploy": "yarn build-web && yarn build-jar && yarn upload-jar",
+    "deploy-full": "yarn build-web && yarn build-jar && yarn upload-all"
   },
   "devDependencies": {
+    "@babel/core": "~7.8.3",
+    "@babel/preset-env": "~7.8.3",
+    "@babel/preset-react": "~7.8.3",
+    "eslint": "~6.8.0",
     "graceful-fs": "~4.1.15",
     "ncp": "~2.0.0",
+    "parcel-bundler": "~1.12.4",
     "promise": "~8.0.1",
+    "rimraf": "~3.0.1",
     "ssh2": "~0.8.4",
     "ssh2-utils": "~1.0.28",
+    "stylus": "^0.54.7",
     "walk": "~2.3.9",
     "yargs": "~13.2.4"
+  },
+  "dependencies": {
+    "bootstrap": "^4.4.1",
+    "jquery": "^3.4.1",
+    "popper.js": "^1.16.1",
+    "react": "~16.12.0",
+    "react-dom": "~16.12.0"
   }
 }

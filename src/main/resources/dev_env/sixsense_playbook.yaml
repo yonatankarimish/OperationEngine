@@ -17,7 +17,7 @@
 
   vars:
     ssh_key_path: /root/.ssh/id_rsa
-    tomcat_service_file: /ansible/tomcat.service
+    engine_service_file: /ansible/engine.service
     dir_skeleton: /ansible/dir_skeleton/
     node_sixsense_base: /sixsense/
 
@@ -84,60 +84,30 @@
       - openjdk-11-jdk
       - cassandra
 
-  # Using :
-  # https://linuxize.com/post/how-to-install-tomcat-9-on-ubuntu-18-04/,
-  # https://www.bogotobogo.com/DevOps/Ansible/Ansible-Tomcat9-Ubuntu18-Playbook.php
-  # and https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
-  # All were rough guides, small modifications were made
-  - name: Add Tomcat group
+  # Using https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files as a rough guide, small modifications were made
+  - name: Add Engine group
     tags:
-    - tomcat
+    - service-wrapper
     group:
-      name: tomcat
+      name: engine
 
-  - name: Add Tomcat user
+  - name: Add Engine user
     tags:
-    - tomcat
+    - service-wrapper
     user:
-      name: tomcat
-      group: tomcat
-      home: /usr/share/tomcat
+      name: engine
+      group: engine
+      home: /usr/share/engine
 
-  - name: Create /opt/tomcat directory
+  - name: Copy Engine service file to remote host
     tags:
-    - tomcat
-    file:
-      path: /opt/tomcat
-      state: directory
-      mode: 075
-
-  - name: Download and extract Tomcat binaries
-    tags:
-    - tomcat
-    unarchive:
-      src: http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.30/bin/apache-tomcat-9.0.30.tar.gz
-      dest: /opt/tomcat
-      remote_src: yes
-      extra_opts: [--strip-components=1]
-
-  - name: Set Tomcat user as owner of /opt/tomcat directory
-    tags:
-    - tomcat
-    file:
-      path: /opt/tomcat
-      owner: tomcat
-      group: tomcat
-      mode: "u+rwx,g+rx,o=rx"
-      recurse: yes
-      state: directory
-
-  - name: Copy Tomcat service file to remote host
-    tags:
-    - tomcat
+    - service-wrapper
     copy:
-      src: "{{tomcat_service_file}}"
+      src: "{{engine_service_file}}"
       dest: /etc/systemd/system/
       mode: 0755
+    notify: Reload sysctl daemon
+  - meta: flush_handlers
 
   - name: Init directory tree
     tags:
@@ -162,4 +132,9 @@
   handlers:
   - name: Restart sysctl
     shell: sysctl -p
+
+  - name: Reload sysctl daemon
+    shell: |
+      systemctl daemon-reload
+      systemctl enable engine.service
 

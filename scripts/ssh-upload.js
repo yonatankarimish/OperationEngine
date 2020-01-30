@@ -12,10 +12,10 @@ const remoteConfig = require(devEnvDestination + '\\remote.config.js');
 
 const remoteUtils = require(appRoot + '\\scripts\\remote-utils.js');
 const uploadTasks = {
-    a: uploadAll, all: uploadAll,
-    j: uploadJar, jar: uploadJar,
-    t: uploadTests, tests: uploadTests,
-    d: uploadDependencies, dependencies: uploadDependencies
+    a: wrapWithServiceStopStart(uploadAll), all: wrapWithServiceStopStart(uploadAll),
+    j: wrapWithServiceStopStart(uploadJar), jar: wrapWithServiceStopStart(uploadJar),
+    t: wrapWithServiceStopStart(uploadTests), tests: wrapWithServiceStopStart(uploadTests),
+    d: wrapWithServiceStopStart(uploadDependencies), dependencies: wrapWithServiceStopStart(uploadDependencies)
 };
 
 //Executes the proper upload task according to the value passed to the --task flag.
@@ -69,4 +69,26 @@ function uploadDependencies(){
     ]).then(() => {
         return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
     });
+}
+
+function wrapWithServiceStopStart(steps){
+    return () => stopService().then(steps).then(startService);
+}
+
+function stopService(){
+    let deployCommands = [
+        'service engine stop',
+        'echo "engine service has stopped"' //notify the developer's machine CLI that all commands have run successfully.
+    ];
+
+    return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+}
+
+function startService(){
+    let deployCommands = [
+        'service engine start',
+        'echo "engine service has started"' //notify the developer's machine CLI that all commands have run successfully.
+    ];
+
+    return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
 }

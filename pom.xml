@@ -14,10 +14,20 @@
         <version>2.1.4.RELEASE</version>
     </parent>
 
+    <properties>
+        <tomcat.version>9.0.30</tomcat.version>
+    </properties>
+
     <build>
         <!-- The name of the JAR file we create -->
         <finalName>OperationEngine</finalName>
         <plugins>
+            <!--<plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.2.4.RELEASE</version>
+            </plugin>-->
+
             <!-- Set a JDK compiler level -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -88,16 +98,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <version>2.1.4.RELEASE</version>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>2.1.4.RELEASE</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>2.1.4.RELEASE</version>
         </dependency>
 
         <!-- Logging dependencies -->
