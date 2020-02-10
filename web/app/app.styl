@@ -56,5 +56,11 @@ h1
 .card-body.with-buttons textarea.form-control
   height: calc(100% - 45px)
 
-.card-body .btn-group
+.card-body.with-buttons .btn-group
   margin-top: 7px
+
+.card-body.with-buttons .btn:disabled
+  cursor: not-allowed
+
+.card-body.with-buttons .btn > .spinner-border-sm + span
+  margin-left: 10px
