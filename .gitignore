@@ -33,3 +33,4 @@ hs_err_pid*
 /.idea/
 /src/main/resources/localhost.properties
 /src/main/resources/web/*
+/.cache/

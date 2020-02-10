@@ -20,26 +20,41 @@ h1
   box-shadow: 0 0 10px 5px contents-outline-color
   display flex
   justify-content: space-around
-  height:50%
+  height: 80vh
+  min-height: 300px
   padding: 30px 15px
+  text-align: center
 
-.card
-  width:400px
+.contents .card
+  width: 45%
+  min-width: 250px
+  margin: 0 10px
 
-.contents .card-img-top
-  margin: 0 auto
-  width: 200px
+.contents .card-img-wrapper
+  min-height: 100px
+
+.contents .card-img-wrapper .card-img-top
+  max-height: 100%
+  max-width: 100%
+  width: unset
 
 .contents .card-body
   border: solid 1px card-body-outline-color
   border-radius 7px
-  margin: 15px
+  margin: 0 15px 15px 15px
+  min-height: 100px
+  overflow: hidden
   padding: 6px 7px
 
-.card-body textarea
+.card-body textarea.form-control
   border: none
   resize: none
   height: 100%
-  min-height: 400px
   overflow-y: auto
   width: 100%
+
+.card-body.with-buttons textarea.form-control
+  height: calc(100% - 45px)
+
+.card-body .btn-group
+  margin-top: 7px
