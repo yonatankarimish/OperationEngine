@@ -45,6 +45,26 @@ function initDevEnv(){
     });
 }
 
+function configureDevEnv(){
+    return configureRemoteVM("dev").then(vmConfig => {
+        let localhostProps = [
+            "local.host=localhost",
+            "local.username=" + vmConfig.username,
+            "local.password=" + vmConfig.password,
+            "local.port=22"
+        ];
+        return new Promise((resolve, reject) => {
+            fs.writeFile(localhostPropsPath, localhostProps.join("\n"), error => {
+                if(error){
+                    reject(error);
+                }else{
+                    resolve();
+                }
+            });
+        });
+    });
+}
+
 async function configureRemoteVM(remoteVMKey){
     let prettyKey = remoteVMKey.replace("_", " ");
     const remoteConfig = require(remoteConfigPath);
@@ -79,26 +99,6 @@ async function configureRemoteVM(remoteVMKey){
 function askQuestion(prompt, questionText){
     return new Promise((resolve, reject) => {
         prompt.question(questionText, resolve);
-    });
-}
-
-function configureDevEnv(){
-    return configureRemoteVM("dev").then(vmConfig => {
-        let localhostProps = [
-            "local.host=localhost",
-            "local.username=" + vmConfig.username,
-            "local.password=" + vmConfig.password,
-            "local.port=22"
-        ];
-        return new Promise((resolve, reject) => {
-            fs.writeFile(localhostPropsPath, localhostProps.join("\n"), error => {
-                if(error){
-                    reject(error);
-                }else{
-                    resolve();
-                }
-            });
-        });
     });
 }
 
