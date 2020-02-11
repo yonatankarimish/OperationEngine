@@ -84,21 +84,6 @@
       - openjdk-11-jdk
       - cassandra
 
-  # Using https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files as a rough guide, small modifications were made
-  - name: Add Engine group
-    tags:
-    - service-wrapper
-    group:
-      name: engine
-
-  - name: Add Engine user
-    tags:
-    - service-wrapper
-    user:
-      name: engine
-      group: engine
-      home: /usr/share/engine
-
   - name: Copy Engine service file to remote host
     tags:
     - service-wrapper

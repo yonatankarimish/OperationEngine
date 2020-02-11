@@ -6,7 +6,9 @@ const Promise = require('promise');
 const yargs = require('yargs').argv;
 
 const appRoot = path.join(__dirname, "\\..");
+const resources = appRoot + "\\src\\main\\resources";
 const devEnvDestination = appRoot + "\\dev_env";
+const ansibleDestination = "/ansible";
 const remoteDestination = "/sixsense";
 const remoteConfig = require(devEnvDestination + '\\remote.config.js');
 
@@ -15,7 +17,8 @@ const uploadTasks = {
     a: wrapWithServiceStopStart(uploadAll), all: wrapWithServiceStopStart(uploadAll),
     j: wrapWithServiceStopStart(uploadJar), jar: wrapWithServiceStopStart(uploadJar),
     t: wrapWithServiceStopStart(uploadTests), tests: wrapWithServiceStopStart(uploadTests),
-    d: wrapWithServiceStopStart(uploadDependencies), dependencies: wrapWithServiceStopStart(uploadDependencies)
+    d: wrapWithServiceStopStart(uploadDependencies), dependencies: wrapWithServiceStopStart(uploadDependencies),
+    c: uploadAnsible, control: uploadAnsible
 };
 
 //Executes the proper upload task according to the value passed to the --task flag.
@@ -66,6 +69,19 @@ function uploadDependencies(){
     return Promise.all([
         //uploadUtils.sftpTransferFile(appRoot+"\src\main\resources\log4j2.xml", remoteDestination + "/config/log4j2.xml", remoteConfig.dev.remotes), //this should be uncommented once we figure out how to point to external config file (currently loads log4j2 from classpath)
         remoteUtils.sftpTransferDir(appRoot+"\\target\\dependency-jars", remoteDestination + "/dependency-jars", remoteConfig.dev.remotes)
+    ]).then(() => {
+        return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+    });
+}
+
+//Uploads ansible_control directory to the ansible control server
+function uploadAnsible(){
+    let deployCommands = [
+        'echo "finished running uploadAnsible"' //notify the developer's machine CLI that all commands have run successfully.
+    ];
+
+    return Promise.all([
+        remoteUtils.sftpTransferDir(resources+"\\ansible_control", ansibleDestination, remoteConfig.ansible.remotes)
     ]).then(() => {
         return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
     });

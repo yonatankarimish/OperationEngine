@@ -10,6 +10,7 @@
     "init-dev": "yarn && node ./scripts/init-dev.js",
     "build-web": "rimraf ./src/main/resources/web/* && parcel build ./web/index.html --out-dir src/main/resources/web",
     "build-jar": "mvn clean package -DskipTests=true",
+    "upload-ansible": "node ./scripts/ssh-upload.js --task=control",
     "upload-jar": "node ./scripts/ssh-upload.js --task=jar",
     "upload-tests": "node ./scripts/ssh-upload.js --task=tests",
     "upload-dependencies": "node ./scripts/ssh-upload.js --task=dependencies",

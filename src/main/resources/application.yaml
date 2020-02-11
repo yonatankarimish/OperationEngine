@@ -22,4 +22,8 @@ spring:
       ORDER_MAP_ENTRIES_BY_KEYS: true
   resources:
     static-locations:
+      - classpath:/META-INF/resources/
+      - classpath:/public/
+      - classpath:/resources/
+      - classpath:/static/
       - classpath:/web/
