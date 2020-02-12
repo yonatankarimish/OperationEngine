@@ -349,11 +349,17 @@ public class TestingMocks {
             .withSecondsToTimeout(15)
             .addOutputPipe(new LastLinePipe())
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("GHz")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("GHz")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("MHz")
+                    )
             ).withSaveTo(
                 new ResultRetention()
                     .withRetentionType(RetentionType.Database)
@@ -367,53 +373,43 @@ public class TestingMocks {
             .addOutputPipe(new LastLinePipe())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("K")
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .withLogicalCondition(LogicalCondition.AND)
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("GHz")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("MHz")
+                            )
                     )
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("M")
-                    )
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("G")
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("K")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("M")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("G")
+                            )
                     )
             ).withSaveTo(
                 new ResultRetention()
                     .withRetentionType(RetentionType.Database)
                     .withName("var.inventory.space.root")
-            );
-
-        ICommand freeSpaceVar = new Command()
-            .withChannel(ChannelType.REMOTE)
-            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /var | grep -v /var/ | awk '{print $4}'")
-            .withSecondsToTimeout(15)
-            .addOutputPipe(new LastLinePipe())
-            .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>()
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("K")
-                    )
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("M")
-                    )
-                    .addResolvable(
-                        new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue("G")
-                    )
-            ).withSaveTo(
-                new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
-                    .withName("var.inventory.space.var")
             );
 
         ICommand uptime = new Command()
@@ -445,11 +441,57 @@ public class TestingMocks {
             );
 
 
+        ICommand freeSpaceVar = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /var | grep -v /var/ | awk '{print $4}'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .withLogicalCondition(LogicalCondition.AND)
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("GHz")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("MHz")
+                            )
+                    )
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("K")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("M")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withExpectedValue("G")
+                            )
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.space.var")
+            );
+
 
         return memory.chainCommands(cpu)
             .chainCommands(freeSpaceRoot)
-            .chainCommands(freeSpaceVar)
-            .chainCommands(uptime);
+            .chainCommands(uptime)
+            .chainCommands(freeSpaceVar);
     }
 
     private static ICommand exitCommand(){
