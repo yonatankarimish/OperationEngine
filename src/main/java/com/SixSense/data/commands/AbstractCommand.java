@@ -3,7 +3,7 @@ package com.SixSense.data.commands;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.*;
@@ -17,7 +17,7 @@ public abstract class AbstractCommand implements ICommand{
     private LogicalExpression<ExpectedOutcome> expectedOutcome;
 
     private Map<String, String> dynamicFields;
-    private VariableRetention saveTo;
+    private ResultRetention saveTo;
 
     /*Try not to pollute with additional constructors
     * The empty constructor is for using the 'with' design pattern
@@ -30,7 +30,7 @@ public abstract class AbstractCommand implements ICommand{
         this.expectedOutcome = new LogicalExpression<>();
 
         this.dynamicFields = new HashMap<>();
-        this.saveTo = new VariableRetention();
+        this.saveTo = new ResultRetention();
     }
 
     public AbstractCommand(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome) {
@@ -41,7 +41,7 @@ public abstract class AbstractCommand implements ICommand{
         this.expectedOutcome = expectedOutcome;
 
         this.dynamicFields = new HashMap<>();
-        this.saveTo = new VariableRetention();
+        this.saveTo = new ResultRetention();
     }
 
     @Override
@@ -121,17 +121,17 @@ public abstract class AbstractCommand implements ICommand{
     }
 
     @Override
-    public VariableRetention getSaveTo() {
+    public ResultRetention getSaveTo() {
         return saveTo;
     }
 
     @Override
-    public void setSaveTo(VariableRetention saveTo) {
+    public void setSaveTo(ResultRetention saveTo) {
         this.saveTo = saveTo;
     }
 
     @Override
-    public AbstractCommand withSaveTo(VariableRetention saveTo) {
+    public AbstractCommand withSaveTo(ResultRetention saveTo) {
         this.saveTo = saveTo;
         return this;
     }

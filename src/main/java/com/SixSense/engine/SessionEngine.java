@@ -133,6 +133,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
             try {
                 ICommand executionBlock = operation.getExecutionBlock();
+                session.incrementDrilldownRank();
                 session.loadSessionDynamicFields(operation);
 
                 diagnosticManager.emit(new ConditionEvaluationEvent(session, operation.getExecutionCondition()));
@@ -151,6 +152,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
                 diagnosticManager.emit(new OutcomeEvaluationEvent(session, "", operation.getExpectedOutcome()));
                 session.removeSessionDynamicFields(operation);
+                session.decrementDrilldownRank();
                 operation.setAlreadyExecuted(true);
             } catch (Exception e) {
                 String errorMessage = "SessionEngine - Failed to execute operation " + operation.getOperationName() + ". Caused by: ";

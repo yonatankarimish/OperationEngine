@@ -5,7 +5,7 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.retention.RetentionType;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 
 public class InternalCommands {
     public static ICommand invalidateCurrentPrompt(String channelType) {
@@ -23,7 +23,7 @@ public class InternalCommands {
                         .withExpectedValue("")
                 )
             )
-            .withSaveTo(new VariableRetention()
+            .withSaveTo(new ResultRetention()
                 .withRetentionType(RetentionType.Variable)
                 .withName("sixsense.session.lastLine")
             );
@@ -47,7 +47,7 @@ public class InternalCommands {
                         .withExpectedValue("")
                     )
             )
-            .withSaveTo(new VariableRetention()
+            .withSaveTo(new ResultRetention()
                 .withRetentionType(RetentionType.Variable)
                 .withName("sixsense.session.prompt." + channelType.toLowerCase())
             );
@@ -68,7 +68,7 @@ public class InternalCommands {
                         .withExpectedValue("")
                 )
             )
-            .withSaveTo(new VariableRetention()
+            .withSaveTo(new ResultRetention()
                 .withRetentionType(RetentionType.Variable)
                 .withName(assignedField)
                 .withOverwriteParent(true)

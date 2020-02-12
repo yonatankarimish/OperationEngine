@@ -6,11 +6,12 @@ import com.SixSense.data.commands.Command;
 import com.SixSense.data.events.InputSentEvent;
 import com.SixSense.data.events.OutcomeEvaluationEvent;
 import com.SixSense.data.events.OutputReceivedEvent;
+import com.SixSense.data.events.ResultRetentionEvent;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.RetentionType;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.engine.DiagnosticManager;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
@@ -52,7 +53,7 @@ public class Session implements Closeable{
     private String currentPrompt = "";
 
     //Dynamic fields
-    private final Map<String, Deque<VariableRetention>> sessionVariables;
+    private final Map<String, Deque<ResultRetention>> sessionVariables;
     private final Map<String, String> databaseVariables;
 
     public Session(SSHClient connectedSSHClient, Set<String> channelNames) throws IOException{
@@ -155,15 +156,16 @@ public class Session implements Closeable{
         //If the command has been resolved, check if the result should be retained in any way, and save it if necessary
         if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
             //We clone the retention so that if the command is called again, any action we take within this code block will not affect subsequent executions
-            VariableRetention clonedRetention = command.getSaveTo().deepClone();
+            ResultRetention clonedRetention = command.getSaveTo().deepClone();
             if(clonedRetention.getValue().isEmpty()){
                 clonedRetention.setValue(output);
             }
 
+            diagnosticManager.emit(new ResultRetentionEvent(this, clonedRetention));
             if(clonedRetention.getRetentionType().equals(RetentionType.Variable)){
                 String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
-                Deque<VariableRetention> varStack = this.sessionVariables.get(variable);
+                Deque<ResultRetention> varStack = this.sessionVariables.get(variable);
                 if(!varStack.isEmpty()) {
                     varStack.pop();
                 }
@@ -177,6 +179,7 @@ public class Session implements Closeable{
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
                 }
             }else if(clonedRetention.getRetentionType().equals(RetentionType.Database)){
+                //TODO: once we provide a database service, this should write the key value pairs async, similar to file retention.
                 this.databaseVariables.put(clonedRetention.getName(), clonedRetention.getValue());
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
@@ -332,7 +335,7 @@ public class Session implements Closeable{
         for(String propertyName : properties.keySet()){
             this.sessionVariables.putIfAbsent(propertyName, new ArrayDeque<>());
             this.sessionVariables.get(propertyName).push(
-                new VariableRetention()
+                new ResultRetention()
                     .withName(propertyName)
                     .withValue(properties.get(propertyName))
                     .withRetentionType(RetentionType.Variable)
@@ -349,8 +352,8 @@ public class Session implements Closeable{
     public void removeSessionDynamicFields(ICommand context){
         Map<String, String> contextDynamicFields = context.getDynamicFields();
         for(String propertyName : contextDynamicFields.keySet()){
-            Deque<VariableRetention> dynamicFieldStack = this.sessionVariables.get(propertyName);
-            VariableRetention topmostVariable = dynamicFieldStack.pop();
+            Deque<ResultRetention> dynamicFieldStack = this.sessionVariables.get(propertyName);
+            ResultRetention topmostVariable = dynamicFieldStack.pop();
 
             if(topmostVariable.isOverwriteParent()){
                 if(!dynamicFieldStack.isEmpty()) {
@@ -364,7 +367,7 @@ public class Session implements Closeable{
     public Map<String, String> getCurrentSessionVariables(){
         Map<String, String> currentSessionFields = new HashMap<>();
         for(String field : this.sessionVariables.keySet()){
-            VariableRetention currentValue = this.sessionVariables.get(field).peek();
+            ResultRetention currentValue = this.sessionVariables.get(field).peek();
             if(currentValue != null) {
                 currentSessionFields.put(field, currentValue.getValue());
             }
@@ -374,7 +377,7 @@ public class Session implements Closeable{
 
     private String getSessionVariableValue(String sessionVar){
         if(this.sessionVariables.containsKey(sessionVar) && !this.sessionVariables.get(sessionVar).isEmpty()){
-            VariableRetention latestValue = this.sessionVariables.get(sessionVar).peek();
+            ResultRetention latestValue = this.sessionVariables.get(sessionVar).peek();
             if(latestValue != null) {
                 return latestValue.getValue();
             }

@@ -3,6 +3,8 @@ package com.SixSense.engine;
 import com.SixSense.data.events.*;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.retention.RetentionType;
+import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.io.Session;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.ExpressionUtils;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class LoggingManager  {
                 case SessionClosed: logSessionClosed((SessionClosedEvent)event); break;
                 case ConditionEvaluation: logConditionEvaluation((ConditionEvaluationEvent) event); break;
                 case OutcomeEvaluation: logOutcomeEvaluation((OutcomeEvaluationEvent) event); break;
+                case ResultRetention: logVariableRetention((ResultRetentionEvent)event); break;
                 case ExecutionAnomaly: logExecutionAnomaly((ExecutionAnomalyEvent)event); break;
                 default: throw new IllegalArgumentException("Cannot log event of type " + event.getEventType() + ": Event type does not exist");
             }
@@ -140,6 +144,42 @@ public class LoggingManager  {
         String resolvedOutcome = CommandUtils.evaluateAgainstDynamicFields(asTree, event.getSession().getCurrentSessionVariables());
         loggers.get(Loggers.SessionLogger).info(indentation + "Expected outcome:");
         loggers.get(Loggers.SessionLogger).info(indentation + resolvedOutcome);
+    }
+
+    private void logVariableRetention(ResultRetentionEvent event){
+        Session session = event.getSession();
+        String indentation = getIndentation(session);
+        ResultRetention retention = event.getResultRetention();
+        RetentionType retentionType = retention.getRetentionType();
+        loggers.get(Loggers.SessionLogger).info(indentation + "Result retention of type [" + retentionType.name() + "]");
+        switch (retentionType){
+            case Variable:{
+                Map<String, String> oldSessionVarState = session.getCurrentSessionVariables();
+                if(oldSessionVarState.containsKey(retention.getName())) {
+                    Map<String, String> oldValue = Collections.singletonMap(retention.getName(), oldSessionVarState.get(retention.getName()));
+                    logDynamicFields(session, oldValue, '-');
+                }
+
+                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
+                logDynamicFields(session, newValue, '+');
+            }break;
+            case File:{
+                loggers.get(Loggers.SessionLogger).info(indentation + "Added results to file " + retention.getName());
+            }break;
+            case Database:{
+                Map<String, String> oldDatabaseVarState = session.getDatabaseVariables();
+                if(oldDatabaseVarState.containsKey(retention.getName())) {
+                    Map<String, String> oldValue = Collections.singletonMap(retention.getName(), oldDatabaseVarState.get(retention.getName()));
+                    logDynamicFields(session, oldValue, '-');
+                }
+
+                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
+                logDynamicFields(session, newValue, '+');
+            }break;
+            default:{
+                loggers.get(Loggers.SessionLogger).info(indentation + "No result retention was performed");
+            }break;
+        }
     }
 
     private void logExecutionAnomaly(ExecutionAnomalyEvent event){

@@ -10,7 +10,7 @@ import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.RetentionType;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.util.FileUtils;
 import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
@@ -124,7 +124,7 @@ public class TestingMocks {
                             .withMessage("No route to host")
                     )
                 )
-            ).withSaveTo(new VariableRetention()
+            ).withSaveTo(new ResultRetention()
                 .withRetentionType(RetentionType.Variable)
                 .withName("ssh.connect.response")
             );
@@ -200,7 +200,7 @@ public class TestingMocks {
                     )
                 )
             ).withSaveTo(
-                new VariableRetention()
+                new ResultRetention()
                     .withRetentionType(RetentionType.Variable)
                     .withName("ssh.connect.response")
             );
@@ -308,7 +308,7 @@ public class TestingMocks {
                                 .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
                                 .withOutcome(ResultStatus.SUCCESS)
                 ).withSaveTo(
-                        new VariableRetention()
+                        new ResultRetention()
                         .withResultRetention(ResultRetention.File)
                         .withName("hosts.txt")
                 );

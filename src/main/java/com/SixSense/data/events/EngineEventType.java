@@ -14,5 +14,7 @@ public enum EngineEventType {
     SessionClosed,
     ConditionEvaluation,
     OutcomeEvaluation,
+    LoopingEvaluation,
+    ResultRetention,
     ExecutionAnomaly
 }

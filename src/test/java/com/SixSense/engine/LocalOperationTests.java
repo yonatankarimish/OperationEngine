@@ -13,7 +13,7 @@ import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.DrainingPipe;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.data.retention.RetentionType;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.io.Session;
 import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
@@ -171,7 +171,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                         .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.prompt.local\\E")
                 )
             ).withSaveTo(
-                new VariableRetention()
+                new ResultRetention()
                     .withRetentionType(RetentionType.File)
                     .withName("hosts.txt")
             );
@@ -280,7 +280,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                         )
                     )
                     .withSaveTo(
-                        new VariableRetention()
+                        new ResultRetention()
                         .withRetentionType(RetentionType.Variable)
                         .withName("var.command.finished")
                     )
@@ -468,7 +468,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                 )
             )
             .withSaveTo(
-                new VariableRetention()
+                new ResultRetention()
                     .withRetentionType(RetentionType.File)
                     .withName("iptable.daily.log")
             );

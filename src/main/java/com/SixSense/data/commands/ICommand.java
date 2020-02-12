@@ -3,11 +3,10 @@ package com.SixSense.data.commands;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
-import com.SixSense.data.retention.VariableRetention;
+import com.SixSense.data.retention.ResultRetention;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.util.List;
 import java.util.Map;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="@class")
@@ -46,11 +45,11 @@ public interface ICommand {
 
     AbstractCommand addDynamicFields(Map<String, String> dynamicFields);
 
-    VariableRetention getSaveTo();
+    ResultRetention getSaveTo();
 
-    void setSaveTo(VariableRetention saveTo);
+    void setSaveTo(ResultRetention saveTo);
 
-    ICommand withSaveTo(VariableRetention saveTo);
+    ICommand withSaveTo(ResultRetention saveTo);
 
     ICommand deepClone(); //Returns a new instance of the same command in its pristine state. That is - as if the new state was never executed
 
