@@ -1,7 +1,7 @@
 package com.SixSense.data.pipes;
 
 import com.SixSense.data.logging.Loggers;
-import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.io.Session;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +25,7 @@ public class DrainingPipe extends AbstractOutputPipe  {
 
         String fileName;
         VariableRetention commandRetention = session.getCurrentCommand().getSaveTo();
-        if(commandRetention.getResultRetention().equals(ResultRetention.File)){
+        if(commandRetention.getRetentionType().equals(RetentionType.File)){
             fileName = commandRetention.getName();
         }else{
             fileName = DEFAULT_DRAIN_FILE;

@@ -9,7 +9,7 @@ import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
-import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.engine.DiagnosticManager;
 import com.SixSense.queue.WorkerQueue;
@@ -53,9 +53,11 @@ public class Session implements Closeable{
 
     //Dynamic fields
     private final Map<String, Deque<VariableRetention>> sessionVariables;
+    private final Map<String, String> databaseVariables;
 
     public Session(SSHClient connectedSSHClient, Set<String> channelNames) throws IOException{
         this.sessionVariables = new HashMap<>();
+        this.databaseVariables = new HashMap<>();
         this.channels = new HashMap<>();
         for(String channelName : channelNames){
             ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
@@ -158,7 +160,7 @@ public class Session implements Closeable{
                 clonedRetention.setValue(output);
             }
 
-            if(clonedRetention.getResultRetention().equals(ResultRetention.Variable)){
+            if(clonedRetention.getRetentionType().equals(RetentionType.Variable)){
                 String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
                 Deque<VariableRetention> varStack = this.sessionVariables.get(variable);
@@ -166,7 +168,7 @@ public class Session implements Closeable{
                     varStack.pop();
                 }
                 varStack.push(clonedRetention);
-            }else if(clonedRetention.getResultRetention().equals(ResultRetention.File)){
+            }else if(clonedRetention.getRetentionType().equals(RetentionType.File)){
                 clonedRetention.setValue(this.filterFileOutput(clonedRetention.getValue()));
                 RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
                 try {
@@ -174,6 +176,8 @@ public class Session implements Closeable{
                 } catch (Exception e) {
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system", e);
                 }
+            }else if(clonedRetention.getRetentionType().equals(RetentionType.Database)){
+                this.databaseVariables.put(clonedRetention.getName(), clonedRetention.getValue());
             }
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && elapsedSeconds >= command.getSecondsToTimeout()){
             //If a timeout occured, the command failed to execute and the method will return a failure
@@ -331,7 +335,7 @@ public class Session implements Closeable{
                 new VariableRetention()
                     .withName(propertyName)
                     .withValue(properties.get(propertyName))
-                    .withResultRetention(ResultRetention.Variable)
+                    .withRetentionType(RetentionType.Variable)
                     .withOverwriteParent(false)
             );
         }
@@ -376,6 +380,10 @@ public class Session implements Closeable{
             }
         }
         return "";
+    }
+
+    public Map<String, String> getDatabaseVariables(){
+        return Collections.unmodifiableMap(this.databaseVariables);
     }
 
     public boolean isClosed() {

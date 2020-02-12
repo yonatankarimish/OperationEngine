@@ -1,35 +1,35 @@
 package com.SixSense.data.retention;
 
 public class VariableRetention{
-    private ResultRetention resultRetention;
+    private RetentionType retentionType;
     private String name;
     private String value; //Value may be set either upon creation (preconfigured value) or when a command outputs (dynamic value)
     private boolean overwriteParent; //If true, will overwrite it's entire variable stack, ignoring variable scoping considerations
 
     public VariableRetention() {
-        this.resultRetention = ResultRetention.None;
+        this.retentionType = RetentionType.None;
         this.name = "";
         this.value = "";
         this.overwriteParent = false;
     }
 
-    public VariableRetention(ResultRetention resultRetention, String name, String value, boolean overwriteParent) {
-        this.resultRetention = resultRetention;
+    public VariableRetention(RetentionType retentionType, String name, String value, boolean overwriteParent) {
+        this.retentionType = retentionType;
         this.name = value;
         this.value = name;
         this.overwriteParent = overwriteParent;
     }
 
-    public ResultRetention getResultRetention() {
-        return resultRetention;
+    public RetentionType getRetentionType() {
+        return retentionType;
     }
 
-    public void setResultRetention(ResultRetention resultRetention) {
-        this.resultRetention = resultRetention;
+    public void setRetentionType(RetentionType retentionType) {
+        this.retentionType = retentionType;
     }
 
-    public VariableRetention withResultRetention(ResultRetention resultRetention) {
-        this.resultRetention = resultRetention;
+    public VariableRetention withRetentionType(RetentionType retentionType) {
+        this.retentionType = retentionType;
         return this;
     }
 
@@ -75,7 +75,7 @@ public class VariableRetention{
     //Returns a new instance of the same variable retention in its pristine state. That is - as if the new state was never saved
     public VariableRetention deepClone(){
         return new VariableRetention()
-                .withResultRetention(this.resultRetention)
+                .withRetentionType(this.retentionType)
                 .withName(this.name)
                 .withValue(this.value)
                 .withOverwriteParent(this.overwriteParent);
@@ -84,7 +84,7 @@ public class VariableRetention{
     @Override
     public String toString() {
         return "VariableRetention{" +
-                "resultRetention=" + resultRetention +
+                "retentionType=" + retentionType +
                 ", name='" + name + '\'' +
                 ", value='" + value + '\'' +
                 ", overwriteParent=" + overwriteParent +

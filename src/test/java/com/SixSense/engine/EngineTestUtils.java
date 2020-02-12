@@ -2,10 +2,9 @@ package com.SixSense.engine;
 
 import com.SixSense.Main;
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.Session;
 import com.SixSense.queue.WorkerQueue;
-import com.SixSense.util.EventQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -24,7 +23,7 @@ public class EngineTestUtils {
     private static DiagnosticManager diagnosticManager;
     private static WorkerQueue workerQueue;
 
-    private static Map<String, Future<ExpressionResult>> futureOutcomesBySessionId;
+    private static Map<String, Future<OperationResult>> futureOutcomesBySessionId;
 
     @BeforeGroups("engine")
     public void beforeClass() {
@@ -70,12 +69,12 @@ public class EngineTestUtils {
         return workerQueue;
     }
 
-    public static ExpressionResult executeOperation(Operation operation) throws AssertionError {
+    public static OperationResult executeOperation(Operation operation) throws AssertionError {
         Session session = submitOperation(operation);
-        ExpressionResult resolvedOutcome = awaitOperation(session);
+        OperationResult resolvedOutcome = awaitOperation(session);
 
-        logger.info("Operation " + operation.getOperationName() + " Completed with result " + resolvedOutcome.getOutcome());
-        logger.info("Result Message: " + resolvedOutcome.getMessage());
+        logger.info("Operation " + operation.getOperationName() + " Completed with result " + resolvedOutcome.getExpressionResult().getOutcome());
+        logger.info("Result Message: " + resolvedOutcome.getExpressionResult().getMessage());
         return resolvedOutcome;
     }
 
@@ -83,7 +82,7 @@ public class EngineTestUtils {
         try {
             Session session = getSessionEngine().initializeSession(operation);
             getDiagnosticManager().registerSession(session.getSessionShellId());
-            Future<ExpressionResult> operationResult = getWorkerQueue().submit(() -> getSessionEngine().executeOperation(session, operation));
+            Future<OperationResult> operationResult = getWorkerQueue().submit(() -> getSessionEngine().executeOperation(session, operation));
             futureOutcomesBySessionId.put(session.getSessionShellId(), operationResult);
             return session;
         } catch (Exception e) {
@@ -92,12 +91,12 @@ public class EngineTestUtils {
         }
     }
 
-    public static ExpressionResult awaitOperation(Session session){
+    public static OperationResult awaitOperation(Session session){
         return awaitOperation(session, futureOutcomesBySessionId.get(session.getSessionShellId()));
     }
 
-    private static ExpressionResult awaitOperation(Session session, Future<ExpressionResult> runningOperation){
-        ExpressionResult resolvedOutcome = null;
+    private static OperationResult awaitOperation(Session session, Future<OperationResult> runningOperation){
+        OperationResult resolvedOutcome = null;
         try {
             resolvedOutcome = runningOperation.get();
         } catch (Exception e) {

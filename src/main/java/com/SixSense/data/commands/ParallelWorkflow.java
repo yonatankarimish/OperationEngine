@@ -1,6 +1,7 @@
 package com.SixSense.data.commands;
 
 import com.SixSense.data.logic.*;
+import com.SixSense.data.retention.OperationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -8,7 +9,7 @@ import java.util.stream.Collectors;
 public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<Operation> parallelOperations;
-    private Map<String, ExpressionResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations. //key: operation id, value: operation result
+    private Map<String, OperationResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations. //key: operation id, value: operation result
     private Set<WorkflowPolicy> workflowPolicies;
 
     /*Try not to pollute with additional constructors
@@ -55,16 +56,16 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
         return this;
     }
 
-    public synchronized Map<String, ExpressionResult> getOperationOutcomes() {
+    public synchronized Map<String, OperationResult> getOperationOutcomes() {
         return Collections.unmodifiableMap(operationOutcomes);
     }
 
-    public synchronized ParallelWorkflow addOperationOutcome(String operationId, ExpressionResult operationOutcome) {
+    public synchronized ParallelWorkflow addOperationOutcome(String operationId, OperationResult operationOutcome) {
         this.operationOutcomes.put(operationId, operationOutcome);
         return this;
     }
 
-    public synchronized ParallelWorkflow addOperationOutcomes(Map<String, ExpressionResult> operationOutcomes) {
+    public synchronized ParallelWorkflow addOperationOutcomes(Map<String, OperationResult> operationOutcomes) {
         this.operationOutcomes.putAll(operationOutcomes);
         return this;
     }

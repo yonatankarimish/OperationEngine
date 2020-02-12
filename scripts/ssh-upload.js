@@ -16,8 +16,8 @@ const remoteUtils = require(appRoot + '\\scripts\\remote-utils.js');
 const uploadTasks = {
     a: wrapWithServiceStopStart(uploadAll), all: wrapWithServiceStopStart(uploadAll),
     j: wrapWithServiceStopStart(uploadJar), jar: wrapWithServiceStopStart(uploadJar),
-    t: wrapWithServiceStopStart(uploadTests), tests: wrapWithServiceStopStart(uploadTests),
     d: wrapWithServiceStopStart(uploadDependencies), dependencies: wrapWithServiceStopStart(uploadDependencies),
+    t: uploadTests, tests: uploadTests,
     c: uploadAnsible, control: uploadAnsible
 };
 

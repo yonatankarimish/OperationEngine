@@ -1,7 +1,7 @@
 package com.SixSense.data.devices;
 
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.retention.OperationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class RawExecutionConfig {
     private Operation operation;
     private List<Device> devices;
-    private Map<String, ExpressionResult> results;
+    private Map<String, OperationResult> results;
 
     /*Try not to pollute with additional constructors
      * The empty constructor is for using the 'with' design pattern
@@ -53,16 +53,16 @@ public class RawExecutionConfig {
         return this;
     }
 
-    public Map<String, ExpressionResult> getResults() {
+    public Map<String, OperationResult> getResults() {
         return Collections.unmodifiableMap(results);
     }
 
-    public RawExecutionConfig addResult(String deviceId, ExpressionResult result) {
+    public RawExecutionConfig addResult(String deviceId, OperationResult result) {
         this.results.put(deviceId, result);
         return this;
     }
 
-    public RawExecutionConfig addResults(Map<String, ExpressionResult> results) {
+    public RawExecutionConfig addResults(Map<String, OperationResult> results) {
         this.results.putAll(results);
         return this;
     }

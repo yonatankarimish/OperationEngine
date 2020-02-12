@@ -1,6 +1,5 @@
 package com.SixSense.engine;
 
-import com.SixSense.data.commands.IWorkflow;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.events.AbstractEngineEvent;
@@ -8,6 +7,7 @@ import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.events.IEngineEventHandler;
 import com.SixSense.data.events.OperationEndEvent;
 import com.SixSense.data.logic.*;
+import com.SixSense.data.retention.OperationResult;
 import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.LogicalExpressionResolver;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +37,8 @@ public class WorkflowManager implements IEngineEventHandler {
         this.diagnosticManager.registerHandler(this, EnumSet.of(EngineEventType.OperationEnd));
     }
 
-    //TODO: currently returns a list of operations and their expression result. Shouldn't we return the workflow result instead?
-    public CompletableFuture<Map<String, ExpressionResult>> executeWorkflow(ParallelWorkflow workflow){
+    //TODO: currently returns a list of operations and their operation result. Shouldn't we return the workflow result instead?
+    public CompletableFuture<Map<String, OperationResult>> executeWorkflow(ParallelWorkflow workflow){
         //First, verify the parallel node matches it's execution conditions
         boolean executionConditionsMet = LogicalExpressionResolver.resolveLogicalExpression(
             workflow.getDynamicFields(),
@@ -47,7 +47,7 @@ public class WorkflowManager implements IEngineEventHandler {
 
         if(executionConditionsMet) {
             //If conditions are met, submit the operations for execution
-            Map<String, CompletableFuture<ExpressionResult>> runningOperations = new HashMap<>();
+            Map<String, CompletableFuture<OperationResult>> runningOperations = new HashMap<>();
             for(Operation operation : workflow.getParallelOperations()){
                 runningOperations.put(operation.getUUID(), this.executeParallelOperation(operation));
             }
@@ -57,7 +57,7 @@ public class WorkflowManager implements IEngineEventHandler {
                 runningOperations.values().toArray(CompletableFuture[]::new)
             ).thenApply(voidStub -> {
                 //and map each operation id to the operation result
-                Map<String, ExpressionResult> resultMap = new HashMap<>();
+                Map<String, OperationResult> resultMap = new HashMap<>();
                 for(String operationId : runningOperations.keySet()){
                     resultMap.put(operationId, runningOperations.get(operationId).join());
                 }
@@ -65,16 +65,16 @@ public class WorkflowManager implements IEngineEventHandler {
             });
         }else{
             //Otherwise, skip the execution of the operations
-            Map<String, ExpressionResult> emptyResult = new HashMap<>();
+            Map<String, OperationResult> emptyResult = new HashMap<>();
             for(Operation operation : workflow.getParallelOperations()){
-                emptyResult.put(operation.getUUID(), ExpressionResult.skip());
+                emptyResult.put(operation.getUUID(), new OperationResult().withExpressionResult(ExpressionResult.skip()));
             }
 
             return CompletableFuture.completedFuture(emptyResult);
         }
     }
 
-    private CompletableFuture<ExpressionResult> executeParallelOperation(Operation operation){
+    private CompletableFuture<OperationResult> executeParallelOperation(Operation operation){
         try {
             return workerQueue.submit(() -> sessionEngine.executeOperation(operation));
         }catch (Exception e){
@@ -95,10 +95,10 @@ public class WorkflowManager implements IEngineEventHandler {
         }
     }
 
-    private void notifyWorkflow(Operation resolvedOperation, ExpressionResult operationOutcome){
+    private void notifyWorkflow(Operation resolvedOperation, OperationResult operationOutcome){
         //Operations always use SELF_SEQUENCE_EAGER. Therefore, execute their sequential workflows
         resolvedOperation.setSequenceExecutionStarted(true);
-        if(operationOutcome.getOutcome().equals(ResultStatus.SUCCESS)) {
+        if(operationOutcome.getExpressionResult().getOutcome().equals(ResultStatus.SUCCESS)) {
             for (ParallelWorkflow sequence : resolvedOperation.getSequentialWorkflowUponSuccess()) {
                 executeWorkflow(sequence);
             }
@@ -116,10 +116,10 @@ public class WorkflowManager implements IEngineEventHandler {
         }
     }
 
-    private void notifyWorkflow(ParallelWorkflow parentWorkflow, Operation resolvedOperation, ExpressionResult operationOutcome){
+    private void notifyWorkflow(ParallelWorkflow parentWorkflow, Operation resolvedOperation, OperationResult operationOutcome){
         Set<WorkflowPolicy> workflowPolicies = parentWorkflow.getWorkflowPolicies();
         parentWorkflow.addOperationOutcome(resolvedOperation.getUUID(), operationOutcome);
-        boolean operationSuccessful = operationOutcome.getOutcome().equals(ResultStatus.SUCCESS);
+        boolean operationSuccessful = operationOutcome.getExpressionResult().getOutcome().equals(ResultStatus.SUCCESS);
         boolean allChildrenCompleted = parentWorkflow.getCompletedOperations() == parentWorkflow.getTotalOperations();
 
         if(!parentWorkflow.isSequenceExecutionStarted()) { //to avoid executing the same sequence more than once per workflow

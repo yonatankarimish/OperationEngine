@@ -5,15 +5,14 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.devices.Device;
-import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.events.AbstractEngineEvent;
 import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.events.InputSentEvent;
 import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.DrainingPipe;
-import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.OperationResult;
+import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.VariableRetention;
 import com.SixSense.io.Session;
 import com.SixSense.util.InternalCommands;
@@ -23,7 +22,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
-import java.util.Map;
 import java.util.concurrent.Future;
 
 @Test(groups = {"engine"})
@@ -45,9 +43,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(simpleOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(simpleOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void simpleFailingOperation() {
@@ -63,9 +61,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(failingOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.FAILURE);
-        Assert.assertFalse(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(failingOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.FAILURE);
+        Assert.assertFalse(operationResult.getExpressionResult().isResolved());
     }
 
     public void invalidOperation() {
@@ -81,9 +79,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(localBlock)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(invalidOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.FAILURE);
-        Assert.assertFalse(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(invalidOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.FAILURE);
+        Assert.assertFalse(operationResult.getExpressionResult().isResolved());
     }
 
     public void nestedBlock() {
@@ -118,9 +116,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.operation.product", "CentOS")
             .addDynamicField("var.operation.version", "6");
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(blockOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(blockOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void repeatingBlock() {
@@ -155,9 +153,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.block.repeatCount", "5")
             .addDynamicField("var.block.counter", "1");
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(repeatingOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(repeatingOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void fileWriteOperation() {
@@ -174,7 +172,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                 )
             ).withSaveTo(
                 new VariableRetention()
-                    .withResultRetention(ResultRetention.File)
+                    .withRetentionType(RetentionType.File)
                     .withName("hosts.txt")
             );
 
@@ -183,9 +181,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withExecutionBlock(fileWrite)
             .addChannel(ChannelType.LOCAL);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(writeOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void drainingFileOperation() {
@@ -195,9 +193,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addChannel(ChannelType.LOCAL)
             .addChannel(ChannelType.DOWNLOAD);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(writeOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void executeIfConditionsAreMet() {
@@ -283,7 +281,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                     )
                     .withSaveTo(
                         new VariableRetention()
-                        .withResultRetention(ResultRetention.Variable)
+                        .withRetentionType(RetentionType.Variable)
                         .withName("var.command.finished")
                     )
                 )
@@ -302,9 +300,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .addDynamicField("var.operation.bigNumber", "999")
             .withExecutionCondition(reallyComplexCondition);
 
-        ExpressionResult resolvedOutcome = EngineTestUtils.executeOperation(writeOperation);
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.executeOperation(writeOperation);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     public void dynamicFieldLoading(){
@@ -345,10 +343,10 @@ public class LocalOperationTests extends SixSenseBaseTest {
         }catch (NullPointerException e){
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
-        ExpressionResult resolvedOutcome = EngineTestUtils.awaitOperation(session);
 
-        Assert.assertEquals(resolvedOutcome.getOutcome(), ResultStatus.SUCCESS);
-        Assert.assertTrue(resolvedOutcome.isResolved());
+        OperationResult operationResult = EngineTestUtils.awaitOperation(session);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
     @AfterMethod(groups = "engine")
@@ -471,7 +469,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             )
             .withSaveTo(
                 new VariableRetention()
-                    .withResultRetention(ResultRetention.File)
+                    .withRetentionType(RetentionType.File)
                     .withName("iptable.daily.log")
             );
     }

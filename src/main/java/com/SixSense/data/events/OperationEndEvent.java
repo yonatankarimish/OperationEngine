@@ -1,14 +1,14 @@
 package com.SixSense.data.events;
 
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.Session;
 
 public class OperationEndEvent extends AbstractEngineEvent {
     private Operation operation;
-    private ExpressionResult result;
+    private OperationResult result;
 
-    public OperationEndEvent(Session session, Operation operation, ExpressionResult result) {
+    public OperationEndEvent(Session session, Operation operation, OperationResult result) {
         super(EngineEventType.OperationEnd, session);
         this.operation = operation;
         this.result = result;
@@ -18,7 +18,7 @@ public class OperationEndEvent extends AbstractEngineEvent {
         return operation;
     }
 
-    public ExpressionResult getResult() {
+    public OperationResult getResult() {
         return result;
     }
 }

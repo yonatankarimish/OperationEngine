@@ -4,7 +4,7 @@ import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.LastLinePipe;
-import com.SixSense.data.retention.ResultRetention;
+import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.VariableRetention;
 
 public class InternalCommands {
@@ -24,7 +24,7 @@ public class InternalCommands {
                 )
             )
             .withSaveTo(new VariableRetention()
-                .withResultRetention(ResultRetention.Variable)
+                .withRetentionType(RetentionType.Variable)
                 .withName("sixsense.session.lastLine")
             );
 
@@ -48,7 +48,7 @@ public class InternalCommands {
                     )
             )
             .withSaveTo(new VariableRetention()
-                .withResultRetention(ResultRetention.Variable)
+                .withRetentionType(RetentionType.Variable)
                 .withName("sixsense.session.prompt." + channelType.toLowerCase())
             );
 
@@ -69,7 +69,7 @@ public class InternalCommands {
                 )
             )
             .withSaveTo(new VariableRetention()
-                .withResultRetention(ResultRetention.Variable)
+                .withRetentionType(RetentionType.Variable)
                 .withName(assignedField)
                 .withOverwriteParent(true)
             );

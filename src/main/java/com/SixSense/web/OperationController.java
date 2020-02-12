@@ -5,6 +5,7 @@ import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.logic.ExpressionResult;
+import com.SixSense.data.retention.OperationResult;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
 import com.SixSense.util.CommandUtils;
@@ -62,12 +63,12 @@ public class OperationController {
     public RawExecutionConfig execute(@RequestBody RawExecutionConfig rawExecutionConfig){
         ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
 
-        Map<String, ExpressionResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
+        Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
         for(Operation operation : workflow.getParallelOperations()) {
-            ExpressionResult result = workflowResult.get(operation.getUUID());
+            OperationResult result = workflowResult.get(operation.getUUID());
             rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
-            logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getOutcome());
-            logger.info("Result Message: " + result.getMessage());
+            logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
+            logger.info("Result Message: " + result.getExpressionResult().getMessage());
         }
 
         return rawExecutionConfig;
