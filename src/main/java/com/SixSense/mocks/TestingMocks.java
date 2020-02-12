@@ -9,6 +9,7 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
+import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.util.FileUtils;
@@ -57,6 +58,7 @@ public class TestingMocks {
                             .addChildBlock(sshConnect())
                             .addChildBlock(rebuildSixSenseDirectory())
                             .addChildBlock(etcHosts())
+                            .addChildBlock(inventory())
                             .addChildBlock(exitCommand())
                     )
                     .addChannel(ChannelType.LOCAL)
@@ -321,6 +323,133 @@ public class TestingMocks {
             "hosts.txt",
             45
         );
+    }
+
+    private static ICommand inventory(){
+        ICommand memory = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("cat /proc/meminfo | awk 'NR < 2 {print $2,$3}'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>().addResolvable(
+                    new ExpectedOutcome()
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                        .withExpectedValue("kB")
+                )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.memory")
+            );
+
+        ICommand cpu = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("cat /proc/cpuinfo | grep 'model name' | awk 'NR < 2' | sed 's/model name/ /g' |sed 's/://' | sed 's/^[[:space:]]*//' | sed 's/  */\\ /g'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>().addResolvable(
+                    new ExpectedOutcome()
+                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                        .withExpectedValue("GHz")
+                )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.cpu")
+            );
+
+        ICommand freeSpaceRoot = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /$ | awk '{print $4}'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("K")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("M")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("G")
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.space.root")
+            );
+
+        ICommand freeSpaceVar = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /var | grep -v /var/ | awk '{print $4}'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("K")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("M")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("G")
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.space.var")
+            );
+
+        ICommand uptime = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("uptime | awk '{print $3\" \"$4}' | sed 's|,||g'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("day")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("hour")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("min")
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.uptime")
+            );
+
+
+
+        return memory.chainCommands(cpu)
+            .chainCommands(freeSpaceRoot)
+            .chainCommands(freeSpaceVar)
+            .chainCommands(uptime);
     }
 
     private static ICommand exitCommand(){

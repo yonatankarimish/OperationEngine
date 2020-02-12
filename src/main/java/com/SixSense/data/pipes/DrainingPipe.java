@@ -11,7 +11,8 @@ import org.apache.logging.log4j.ThreadContext;
 import java.util.Iterator;
 import java.util.List;
 
-public class DrainingPipe extends AbstractOutputPipe  {
+//Drains the contents of the output list to the file provided in the ResultRetention of the current command
+public class DrainingPipe extends AbstractOutputPipe {
     private static final Logger logger = LogManager.getLogger(Loggers.FileLogger.name());
     private final String DEFAULT_DRAIN_FILE = "current_file.txt";
 
