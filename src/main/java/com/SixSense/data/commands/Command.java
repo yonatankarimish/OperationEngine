@@ -16,6 +16,7 @@ public class Command extends AbstractCommand implements ICommand{
     private int minimalSecondsToResponse;
     private int secondsToTimeout;
 
+    private boolean requiresCleanup;
     private boolean useRawOutput;
     private LinkedHashSet<AbstractOutputPipe> outputPipes; // ordered set (i.e. no duplicate pipes)
 
@@ -29,6 +30,7 @@ public class Command extends AbstractCommand implements ICommand{
         this.minimalSecondsToResponse = 0;
         this.secondsToTimeout = 10;
 
+        this.requiresCleanup = true;
         this.useRawOutput = false;
         this.outputPipes = new LinkedHashSet<>();
     }
@@ -40,6 +42,7 @@ public class Command extends AbstractCommand implements ICommand{
         this.minimalSecondsToResponse = minimalSecondsToResponse;
         this.secondsToTimeout = secondsToTimeout;
 
+        this.requiresCleanup = true;
         this.useRawOutput = false;
         this.outputPipes = outputPipes;
     }
@@ -108,6 +111,19 @@ public class Command extends AbstractCommand implements ICommand{
         return this;
     }
 
+    public boolean isRequiresCleanup() {
+        return requiresCleanup;
+    }
+
+    public void setRequiresCleanup(boolean requiresCleanup) {
+        this.requiresCleanup = requiresCleanup;
+    }
+
+    public Command withRequiresCleanup(boolean requiresCleanup) {
+        this.requiresCleanup = requiresCleanup;
+        return this;
+    }
+
     public boolean isUseRawOutput() {
         return useRawOutput;
     }
@@ -153,6 +169,7 @@ public class Command extends AbstractCommand implements ICommand{
                 .withCommandText(this.commandText)
                 .withMinimalSecondsToResponse(this.minimalSecondsToResponse)
                 .withSecondsToTimeout(this.secondsToTimeout)
+                .withRequiresCleanup(this.requiresCleanup)
                 .withUseRawOutput(this.useRawOutput)
                 .addOutputPipes(this.outputPipes)
                 .withSuperCloneState(this);
@@ -165,6 +182,7 @@ public class Command extends AbstractCommand implements ICommand{
                 ", commandText='" + commandText + '\'' +
                 ", minimalSecondsToResponse=" + minimalSecondsToResponse +
                 ", secondsToTimeout=" + secondsToTimeout +
+                ", requiresCleanup=" + requiresCleanup +
                 ", useRawOutput=" + useRawOutput +
                 ", outputPipes=" + outputPipes +
                 ", " + super.superToString() +

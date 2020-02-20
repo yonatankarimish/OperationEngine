@@ -42,11 +42,11 @@ public class Session implements Closeable{
     private final Map<String, ShellChannel> channels;
     private final Lock commandLock =  new ReentrantLock();
     private final Condition newChunkReceived = commandLock.newCondition();
+    private boolean isClosed = false;
 
     //Current command context
     private final UUID sessionShellId = UUID.randomUUID();
     private int drilldownRank = 0;
-    private boolean isClosed = false;
     private Command currentCommand;
     private int commandOrdinal = 0;
     private String evaluatedCommand = "";
@@ -105,7 +105,7 @@ public class Session implements Closeable{
 
         String output = "";
         long elapsedSeconds = 0L;
-        boolean commandEndReached;
+        boolean commandEndReached = false;
         boolean hasWaitElapsed = command.getExpectedOutcome().getResolvableExpressions().isEmpty();
         ExpressionResult resolvedOutcome = ExpressionResult.defaultOutcome();
         LocalDateTime commandStartTime = LocalDateTime.now();
@@ -131,14 +131,6 @@ public class Session implements Closeable{
                 /*Attempt to resolve the latest chunk against the current expected logic
                  * Then continue if successful, if the command returned completely, or if our waiting period had elapsed */
                 resolvedOutcome = this.attemptToResolve(command, output);
-
-                if(commandEndReached){
-                    synchronized (processOutput) {
-                        processOutput.clear();
-                        processOutput.add(this.currentPrompt);
-                    }
-                }
-
                 elapsedSeconds = commandStartTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
                 if(commandEndReached || resolvedOutcome.isResolved() || elapsedSeconds >= command.getSecondsToTimeout() - command.getMinimalSecondsToResponse()){
                     hasWaitElapsed = true;
@@ -187,6 +179,19 @@ public class Session implements Closeable{
             resolvedOutcome.setMessage(MessageLiterals.TimeoutInCommand);
         }
 
+        /*Perform a cleanup on the process output if a cleanup is required (by default or if commandEndReached is true)
+        * If commandEndReached is true, the last line is the current prompt; we can safely remove all preceding lines
+         * If a cleanup is required, we have no guarantee the last line is not being edited; but we can still safely remove all preceding lines*/
+        if (command.isRequiresCleanup() || commandEndReached) {
+            synchronized (processOutput) {
+                int cleanupCounter = processOutput.size() - 1; //all lines before this index (zero-based) will be cleared
+                while (cleanupCounter > 0) {
+                    processOutput.remove(0);
+                    cleanupCounter--;
+                }
+            }
+        }
+
         return resolvedOutcome;
     }
 
@@ -214,7 +219,7 @@ public class Session implements Closeable{
             firstLineOfCommand = this.evaluatedCommand;
         }
 
-        int firstRelevantIdx = 0;
+        int firstRelevantIdx = 0; //all lines before this index (zero-based) will be cleared
         int promptScore = 0;
         int cmdScore = 0;
         boolean promptAppearsTwice = false;

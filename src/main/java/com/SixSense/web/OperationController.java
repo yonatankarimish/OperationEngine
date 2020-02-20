@@ -4,7 +4,6 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.RawExecutionConfig;
-import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
@@ -72,6 +71,36 @@ public class OperationController {
         }
 
         return rawExecutionConfig;
+    }
+
+    @GetMapping("/debugMethod")
+    public void debugMethod(){
+        //This method body acts as a pastebin for development and debugging purposes. Method body is subject to change without notice
+        logger.info("Starting debug method now");
+
+        try {
+            RawExecutionConfig rawExecutionConfig = TestingMocks.f5BigIpBackup(
+                Collections.singletonList(
+                    new Credentials()
+                        .withHost("172.31.252.179")
+                        .withUsername("root")
+                        .withPassword("qwe123")
+                )
+            );
+
+            ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
+            Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
+            for(Operation operation : workflow.getParallelOperations()) {
+                OperationResult result = workflowResult.get(operation.getUUID());
+                rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
+                logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
+                logger.info("Result Message: " + result.getExpressionResult().getMessage());
+            }
+
+            logger.info("Results added to serializable configuration");
+        } catch (Exception e) {
+            logger.error("A fatal exception was encountered - applications is closing now", e);
+        }
     }
 
     private static String wrapForHtml(String text){

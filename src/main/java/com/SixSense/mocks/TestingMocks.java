@@ -254,11 +254,18 @@ public class TestingMocks {
             .withSecondsToTimeout(30)
             .withUseRawOutput(true)
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                        .withExpectedValue("tmsh.*\\n\\Q$sixsense.session.prompt.remote\\E")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("tmsh")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.remote")
+                    )
             );
 
         return ssh.chainCommands(rsaFirstTime)
@@ -274,11 +281,18 @@ public class TestingMocks {
             .withSecondsToTimeout(600)
             .withUseRawOutput(true)
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                        .withExpectedValue("rm -rf.*\\n\\Q$sixsense.session.prompt.remote\\E")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("rm -rf")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.remote")
+                    )
             );
 
         ICommand makeNewDir = new Command()
@@ -287,11 +301,18 @@ public class TestingMocks {
             .withSecondsToTimeout(15)
             .withUseRawOutput(true)
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                        .withExpectedValue("mkdir -p.*\\n\\Q$sixsense.session.prompt.remote\\E")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("mkdir -p")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.remote")
+                    )
             );
 
         return deleteOldDir.chainCommands(makeNewDir);
@@ -334,7 +355,7 @@ public class TestingMocks {
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>().addResolvable(
                     new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.CONTAINS)
+                        .withBinaryRelation(BinaryRelation.ENDS_WITH)
                         .withExpectedValue("kB")
                 )
             ).withSaveTo(
@@ -352,12 +373,12 @@ public class TestingMocks {
                 new LogicalExpression<ExpectedOutcome>()
                     .addResolvable(
                         new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
                             .withExpectedValue("GHz")
                     )
                     .addResolvable(
                         new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
                             .withExpectedValue("MHz")
                     )
             ).withSaveTo(
@@ -368,7 +389,7 @@ public class TestingMocks {
 
         ICommand freeSpaceRoot = new Command()
             .withChannel(ChannelType.REMOTE)
-            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /$ | awk '{print $4}'")
+            .withCommandText("df -lh | grep /$ | awk '{print $4}'")
             .withSecondsToTimeout(15)
             .addOutputPipe(new LastLinePipe())
             .withExpectedOutcome(
@@ -392,17 +413,17 @@ public class TestingMocks {
                         new LogicalExpression<ExpectedOutcome>()
                             .addResolvable(
                                 new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
                                     .withExpectedValue("K")
                             )
                             .addResolvable(
                                 new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
                                     .withExpectedValue("M")
                             )
                             .addResolvable(
                                 new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
                                     .withExpectedValue("G")
                             )
                     )
@@ -410,6 +431,52 @@ public class TestingMocks {
                 new ResultRetention()
                     .withRetentionType(RetentionType.Database)
                     .withName("var.inventory.space.root")
+            );
+
+        ICommand freeSpaceVar = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("df -lh | grep /var$ | awk '{print $4}'")
+            .withSecondsToTimeout(15)
+            .addOutputPipe(new LastLinePipe())
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .withLogicalCondition(LogicalCondition.AND)
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("GHz")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
+                                    .withExpectedValue("MHz")
+                            )
+                    )
+                    .addExpression(
+                        new LogicalExpression<ExpectedOutcome>()
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                                    .withExpectedValue("K")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                                    .withExpectedValue("M")
+                            )
+                            .addResolvable(
+                                new ExpectedOutcome()
+                                    .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                                    .withExpectedValue("G")
+                            )
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.inventory.space.var")
             );
 
         ICommand uptime = new Command()
@@ -441,57 +508,10 @@ public class TestingMocks {
             );
 
 
-        ICommand freeSpaceVar = new Command()
-            .withChannel(ChannelType.REMOTE)
-            .withCommandText("df -lh | awk '{if(/^[^ ]+$/){remember=$0}else{print remember $0}}' | grep /var | grep -v /var/ | awk '{print $4}'")
-            .withSecondsToTimeout(15)
-            .addOutputPipe(new LastLinePipe())
-            .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>()
-                    .withLogicalCondition(LogicalCondition.AND)
-                    .addExpression(
-                        new LogicalExpression<ExpectedOutcome>()
-                            .withLogicalCondition(LogicalCondition.AND)
-                            .addResolvable(
-                                new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
-                                    .withExpectedValue("GHz")
-                            )
-                            .addResolvable(
-                                new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.NOT_CONTAINS)
-                                    .withExpectedValue("MHz")
-                            )
-                    )
-                    .addExpression(
-                        new LogicalExpression<ExpectedOutcome>()
-                            .addResolvable(
-                                new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
-                                    .withExpectedValue("K")
-                            )
-                            .addResolvable(
-                                new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
-                                    .withExpectedValue("M")
-                            )
-                            .addResolvable(
-                                new ExpectedOutcome()
-                                    .withBinaryRelation(BinaryRelation.CONTAINS)
-                                    .withExpectedValue("G")
-                            )
-                    )
-            ).withSaveTo(
-                new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
-                    .withName("var.inventory.space.var")
-            );
-
-
         return memory.chainCommands(cpu)
             .chainCommands(freeSpaceRoot)
-            .chainCommands(uptime)
-            .chainCommands(freeSpaceVar);
+            .chainCommands(freeSpaceVar)
+            .chainCommands(uptime);
     }
 
     private static ICommand exitCommand(){

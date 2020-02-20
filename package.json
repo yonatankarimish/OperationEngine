@@ -15,8 +15,10 @@
     "upload-tests": "node ./scripts/ssh-upload.js --task=tests",
     "upload-dependencies": "node ./scripts/ssh-upload.js --task=dependencies",
     "upload-all": "node ./scripts/ssh-upload.js --task=all",
-    "deploy": "yarn build-web && yarn build-jar && yarn upload-jar",
-    "deploy-tests": "yarn build-web && yarn build-jar && yarn upload-tests",
+    "deploy": "yarn deploy-jar",
+    "deploy-web": "yarn build-web && yarn deploy-jar",
+    "deploy-jar": "yarn build-jar && yarn upload-jar",
+    "deploy-tests": "yarn build-jar && yarn upload-tests",
     "deploy-full": "yarn build-web && yarn build-jar && yarn upload-all"
   },
   "devDependencies": {

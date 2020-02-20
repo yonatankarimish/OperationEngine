@@ -165,11 +165,18 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withSecondsToTimeout(90)
             .withUseRawOutput(true)
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                        .withExpectedValue("cat[\\w\\W]*\\Q$sixsense.session.prompt.local\\E")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("cat")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.local")
+                    )
             ).withSaveTo(
                 new ResultRetention()
                     .withRetentionType(RetentionType.File)
@@ -461,11 +468,12 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withUseRawOutput(true)
             .addOutputPipe(new DrainingPipe())
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                        .withExpectedValue("\\n\\Q$sixsense.session.prompt.local\\E")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.local")
+                    )
             )
             .withSaveTo(
                 new ResultRetention()

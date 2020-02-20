@@ -7,6 +7,8 @@ public enum BinaryRelation {
     NOT_CONTAINS,
     CONTAINED_BY,
     NOT_CONTAINED_BY,
+    STARTS_WITH,
+    ENDS_WITH,
     LESSER_THAN,
     GREATER_THAN,
     LESSER_OR_EQUAL_TO,

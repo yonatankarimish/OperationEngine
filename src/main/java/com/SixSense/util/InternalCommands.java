@@ -98,8 +98,8 @@ public class InternalCommands {
                 new LogicalExpression<ExpectedOutcome>()
                     .addResolvable(
                         new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.MATCHES_REGEX)
-                            .withExpectedValue("$var.scp.source_file_name.*\\n\\Q$sixsense.session.prompt.download\\E")
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.download")
                     )
                     .addResolvable(new ExpectedOutcome()
                         .withBinaryRelation(BinaryRelation.MATCHES_REGEX)

@@ -98,6 +98,8 @@ public class LogicalExpressionResolver {
                 case NOT_CONTAINS: evaluation = expectDoesNotContain(output, expectedOutcome); break;
                 case CONTAINED_BY: evaluation = expectContainedBy(output, expectedOutcome); break;
                 case NOT_CONTAINED_BY: evaluation = expectNotContainedBy(output, expectedOutcome); break;
+                case STARTS_WITH: evaluation = expectStartsWith(output, expectedOutcome); break;
+                case ENDS_WITH: evaluation = expectEndsWith(output, expectedOutcome); break;
                 case LESSER_THAN: evaluation = expectLesserThan(output, expectedOutcome); break;
                 case LESSER_OR_EQUAL_TO: evaluation = expectLesserThanOrEqual(output, expectedOutcome); break;
                 case GREATER_THAN: evaluation = expectGreaterThan(output, expectedOutcome); break;
@@ -134,6 +136,14 @@ public class LogicalExpressionResolver {
 
     private static boolean expectNotContainedBy(String output, IFlowConnector expectedOutcome){
         return !expectedOutcome.getExpectedValue().contains(output);
+    }
+
+    private static boolean expectStartsWith(String output, IFlowConnector expectedOutcome){
+        return output.startsWith(expectedOutcome.getExpectedValue());
+    }
+
+    private static boolean expectEndsWith(String output, IFlowConnector expectedOutcome){
+        return output.endsWith(expectedOutcome.getExpectedValue());
     }
 
     private static boolean expectLesserThan(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
