@@ -38,10 +38,11 @@ public class Session implements Closeable{
     @Autowired private WorkerQueue workerQueue;
     @Autowired private DiagnosticManager diagnosticManager;
 
-    //Connection and synchronization
+    //Connection, synchronization and debugging
     private final Map<String, ShellChannel> channels;
     private final Lock commandLock =  new ReentrantLock();
     private final Condition newChunkReceived = commandLock.newCondition();
+    private boolean isUnderDebug = false;
     private boolean isClosed = false;
 
     //Current command context
@@ -139,7 +140,7 @@ public class Session implements Closeable{
                 }
             }
         } catch (InterruptedException e) {
-            sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + "to return", e);
+            sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + " to return", e);
         }
         diagnosticManager.emit(new OutputReceivedEvent(this, command, this.commandOrdinal, output));
         diagnosticManager.emit(new OutcomeEvaluationEvent(this, output, command.getExpectedOutcome()));
@@ -255,22 +256,19 @@ public class Session implements Closeable{
                     .replace(MessageLiterals.LineBreak, " ")
                     .replace(MessageLiterals.CarriageReturn, " ")
                     .replace(this.evaluatedCommand, "")
-                    .trim()
             );
         }
 
         return stringRepresentation.toString()
                 .replaceAll("\\s+", " ")
                 .replace(this.evaluatedCommand, "")
-                .replace(this.currentPrompt, "")
-                .trim();
+                .replace(this.currentPrompt, "");
     }
 
     private String filterFileOutput(String fileData){
         return fileData
                 .replace(this.evaluatedCommand, "")
-                .replace(this.currentPrompt, "")
-                .trim();
+                .replace(this.currentPrompt, "");
     }
 
     private ExpressionResult attemptToResolve(Command command, String outputAsString){
@@ -392,6 +390,17 @@ public class Session implements Closeable{
 
     public Map<String, String> getDatabaseVariables(){
         return Collections.unmodifiableMap(this.databaseVariables);
+    }
+
+    public boolean isUnderDebug() {
+        return isUnderDebug;
+    }
+
+    public void activateDebugMode() {
+        for(ShellChannel channel : getShellChannels().values()){
+            channel.activateDebugMode();
+        }
+        isUnderDebug = true;
     }
 
     public boolean isClosed() {

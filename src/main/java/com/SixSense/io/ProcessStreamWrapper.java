@@ -7,16 +7,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class ProcessStreamWrapper implements Supplier<Boolean> {
+    //Loggers
     private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
     private static final Logger terminalLogger = LogManager.getLogger(Loggers.TerminalLogger.name());
 
-    private Session session;
-    private InputStream processStream;
-    private final List<String> processOutput;
+    //Session and I/O
+    private Session session; //parent session
+    private InputStream processStream; //JVM input stream (i.e. terminal output stream)
+    private final List<String> processOutput; //List representation of the parsed output
+
+    //Diagnostics
+    private final List<String> rawChunks;
+    private final Map<String, String> substitutionCriteria;
+    private boolean isUnderDebug = false;
 
     /*ProcessStreamWrapper runs in a separate thread than the session that created it
     * If the process output/error stream fills it's own buffer, the process will get stuck and no new commands may be written to it
@@ -26,6 +33,12 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
         this.processStream = processStream;
         this.session = session;
         this.processOutput = processOutput;
+        this.rawChunks = new ArrayList<>();
+        this.substitutionCriteria = new LinkedHashMap<>();
+
+        //Initialize the default substitution criteria
+        this.substitutionCriteria.put(" *" + MessageLiterals.CarriageReturn + " *", ""); //trim all space characters around carriage returns
+        this.substitutionCriteria.put(" *" + MessageLiterals.LineBreak + " *", MessageLiterals.LineBreak); //while retaining the line breaks
     }
 
     @Override
@@ -38,19 +51,34 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
             do {
                 bytesRead = this.processStream.read(rawData);
                 if(bytesRead != -1) {
+                    /*If any bytes have been read into the byte buffer, construct a string using the bytes in the buffer
+                    * add the chunk into the raw chunks list
+                    * then log that it has been parsed*/
                     String currentChunk = new String(rawData, 0, bytesRead);
-                    logger.debug("read chunk " + currentChunk + " directly from stream");
+                    if(this.isUnderDebug) {
+                        synchronized (this.rawChunks) {
+                            rawChunks.add(currentChunk);
+                        }
+                        logger.debug("read chunk " + currentChunk + " directly from stream");
+                    }
                     terminalLogger.info(currentChunk);
-                    synchronized (this.processOutput) {
-                        //splitChunk will always have at least one entry (if no line break was read)
-                        String[] splitChunk = (" "  + currentChunk  //pad the current chunk with whitespace to split on leading line breaks
-                                .replaceAll(" *" + MessageLiterals.CarriageReturn + " *", "") //trim all space characters around carriage returns
-                                .replaceAll(" *" + MessageLiterals.LineBreak + " *", MessageLiterals.LineBreak) //while retaining the line breaks
-                                + " ")// then pad the current chunk with whitespace to split on trailing line breaks
-                                .split(MessageLiterals.LineBreak); //so we can split on them here
 
+                    //Execute the substitution criteria against the current chunk
+                    synchronized (this.substitutionCriteria) {
+                        for(String pattern : this.substitutionCriteria.keySet()) {
+                            String replacement = this.substitutionCriteria.get(pattern);
+                            currentChunk = currentChunk.replaceAll(pattern, replacement);
+                        }
+                    }
+
+                    //splitChunk will always have at least one entry (if no line break was read)
+                    //passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
+                    String[] splitChunk = currentChunk.split(MessageLiterals.LineBreak, -1);
+
+                    //Add the split chunks into the list representation of the output
+                    synchronized (this.processOutput) {
                         if(splitChunk.length > 0) {
-                            String firstChunk = splitChunk[0].trim();
+                            String firstChunk = splitChunk[0];
                             if (this.processOutput.isEmpty()) {
                                 this.processOutput.add(firstChunk);
                             } else {
@@ -60,11 +88,12 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
 
                             int chunkIdx;
                             for (chunkIdx = 1; chunkIdx < splitChunk.length; chunkIdx++) {
-                                this.processOutput.add(splitChunk[chunkIdx].trim());
+                                this.processOutput.add(splitChunk[chunkIdx]);
                             }
                         }
                     }
 
+                    //Signal the parent session that new chunks has been parsed (i.e. there is new output)
                     if(!this.session.isClosed()) {
                         this.session.getCommandLock().lock();
                         logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
@@ -87,5 +116,28 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
             ThreadContext.remove("sessionID");
         }
         return true;
+    }
+
+    public List<String> getRawChunks(){
+        synchronized (this.rawChunks) {
+            return Collections.unmodifiableList(this.rawChunks);
+        }
+    }
+
+    public Map<String, String> getSubstitutionCriteria(){
+        synchronized (this.substitutionCriteria) {
+            return Collections.unmodifiableMap(this.substitutionCriteria);
+        }
+    }
+
+    public ProcessStreamWrapper addSubstitutionCriteria(String regex, String replacement){
+        synchronized (this.substitutionCriteria) {
+            this.substitutionCriteria.put(regex, replacement);
+            return this;
+        }
+    }
+
+    public void activateDebugMode() {
+        isUnderDebug = true;
     }
 }

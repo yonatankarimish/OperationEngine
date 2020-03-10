@@ -76,6 +76,36 @@ public class TestingMocks {
             );
     }
 
+    public static RawExecutionConfig f5BigIpInventory(List<Credentials> credentialList){
+        VendorProductVersion f5BigIp = new VendorProductVersion()
+            .withVendor("F5")
+            .withProduct("BigIP")
+            .withVersion("11 and above");
+
+        return new RawExecutionConfig()
+            .withOperation(
+                new Operation()
+                    .withOperationName("Configuration Backup")
+                    .withExecutionBlock(
+                        new Block()
+                            .addChildBlock(sshConnect())
+                            .addChildBlock(inventory())
+                            .addChildBlock(exitCommand())
+                    )
+                    .addChannel(ChannelType.LOCAL)
+                    .addChannel(ChannelType.REMOTE)
+            )
+            .addDevices(
+                credentialList.stream()
+                    .map(
+                        credentials -> new Device()
+                            .withCredentials(credentials)
+                            .withVpv(f5BigIp.deepClone())
+                    )
+                    .collect(Collectors.toList())
+            );
+    }
+
     private static ICommand sshConnect(){
         ICommand ssh = new Command()
             .withChannel(ChannelType.REMOTE)
@@ -507,11 +537,81 @@ public class TestingMocks {
                     .withName("var.inventory.uptime")
             );
 
+        ICommand tmsh = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("tmsh")
+            .withMinimalSecondsToResponse(1)
+            .withSecondsToTimeout(10)
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>().addResolvable(
+                    new ExpectedOutcome()
+                        .withBinaryRelation(BinaryRelation.NOT_EQUALS)
+                        .withExpectedValue("")
+                )
+            );
+
+        ICommand chassisTxt = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("show sys hardware | grep 'Chassis Serial'")
+            .withSecondsToTimeout(15)
+            .withUseRawOutput(true)
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("Chassis Serial")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.remote")
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Variable)
+                    .withName("var.parsing.chassis")
+            );
+
+        ICommand chassisParse = new Command()
+            .withChannel(ChannelType.LOCAL)
+            .withCommandText("echo $var.parsing.chassis | awk '{print $3}'")
+            .withSecondsToTimeout(15)
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("awk '{print $3}'")
+                    )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue("$sixsense.session.prompt.local")
+                    )
+            ).withSaveTo(
+                new ResultRetention()
+                    .withRetentionType(RetentionType.Database)
+                    .withName("var.parsing.chassis")
+            );
+
+        ICommand quit = new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("quit")
+            .withSecondsToTimeout(10);
+
 
         return memory.chainCommands(cpu)
             .chainCommands(freeSpaceRoot)
             .chainCommands(freeSpaceVar)
-            .chainCommands(uptime);
+            .chainCommands(uptime)
+            .chainCommands(tmsh)
+            .chainCommands(InternalCommands.invalidateCurrentPrompt(ChannelType.REMOTE.name()))
+            .chainCommands(chassisTxt)
+            .chainCommands(chassisParse)
+            .chainCommands(quit);
     }
 
     private static ICommand exitCommand(){

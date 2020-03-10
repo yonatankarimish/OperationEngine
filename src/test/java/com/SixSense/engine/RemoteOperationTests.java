@@ -33,4 +33,20 @@ public class RemoteOperationTests extends SixSenseBaseTest {
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
+
+    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
+    public void f5BigIpInventory(String host, String username, String password){
+        Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
+            Collections.singletonList(
+                new Credentials()
+                    .withHost(host)
+                    .withUsername(username)
+                    .withPassword(password)
+            )
+        )).getParallelOperations().get(0); //We can get the first operation, since only one credential set was passed
+
+        OperationResult operationResult = EngineTestUtils.executeOperation(f5Backup);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
+        Assert.assertTrue(operationResult.getExpressionResult().isResolved());
+    }
 }

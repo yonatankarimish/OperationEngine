@@ -5,7 +5,7 @@
 <!--java -cp "/sixsense/dependency-jars/*:/sixsense/*" org.testng.TestNG -testjar /sixsense/OperationEngine-tests.jar-->
 <!--To debug remotely, enter the following command in cli (parameter order matters!):-->
 <!--java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -cp "/sixsense/dependency-jars/*:/sixsense/*" -Denvironment="debug" org.testng.TestNG -testjar /sixsense/OperationEngine-tests.jar-->
-<suite name="MainSuite">
+<suite name="MainSuite" verbose="10">
     <!--<parameter name="environment" value="tests" />-->
 
     <listeners>

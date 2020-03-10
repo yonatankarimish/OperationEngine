@@ -3,6 +3,7 @@ package com.SixSense.util;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.*;
+import com.SixSense.data.pipes.FirstLinePipe;
 import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
@@ -12,16 +13,23 @@ public class InternalCommands {
         ICommand lastChunk = new Command()
             .withChannelName(channelType)
             .withCommandText("")
-            //.withMinimalSecondsToResponse(2)
+            .withMinimalSecondsToResponse(2)
             .withSecondsToTimeout(10)
-            //.withUseRawOutput(true)
+            .withUseRawOutput(true)
             .addOutputPipe(new LastLinePipe())
             .withExpectedOutcome(
-                new LogicalExpression<ExpectedOutcome>().addResolvable(
-                    new ExpectedOutcome()
-                        .withBinaryRelation(BinaryRelation.NOT_EQUALS)
-                        .withExpectedValue("")
-                )
+                new LogicalExpression<ExpectedOutcome>()
+                    /*.withLogicalCondition(LogicalCondition.AND)
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withExpectedValue(MessageLiterals.LineBreak)
+                    )*/
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.NOT_EQUALS)
+                            .withExpectedValue("")
+                    )
             )
             .withSaveTo(new ResultRetention()
                 .withRetentionType(RetentionType.Variable)
@@ -37,6 +45,7 @@ public class InternalCommands {
             .addOutputPipe(new LastLinePipe())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
+                    .withLogicalCondition(LogicalCondition.AND)
                     .addResolvable(
                         new ExpectedOutcome()
                             .withBinaryRelation(BinaryRelation.EQUALS)

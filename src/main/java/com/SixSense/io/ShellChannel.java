@@ -21,6 +21,7 @@ public class ShellChannel implements Closeable {
     private final BufferedWriter channelInput; //Buffered writer through which to write commands to shell input stream
     private final ProcessStreamWrapper channelOutputWrapper; //Runs in a separate thread with one purpose: clear the output stream all the time and keep the responses coming in
     private final List<String> channelOutput; //Line separated response (which we read) from both the shell output and error streams.
+    private boolean isUnderDebug = false;
     private boolean isClosed = false;
 
     /*Shell Channels have a single constructor
@@ -64,6 +65,15 @@ public class ShellChannel implements Closeable {
 
     public List<String> getChannelOutput() {
         return channelOutput;
+    }
+
+    public boolean isUnderDebug() {
+        return isUnderDebug;
+    }
+
+    public void activateDebugMode() {
+        this.channelOutputWrapper.activateDebugMode();
+        isUnderDebug = true;
     }
 
     public boolean isClosed() {

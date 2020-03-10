@@ -19,7 +19,6 @@ import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.Future;
@@ -355,12 +354,6 @@ public class LocalOperationTests extends SixSenseBaseTest {
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
-
-    @AfterMethod(groups = "engine")
-    public void engineTestCleanup(){
-        EngineTestUtils.engineTestCleanup();
-    }
-
 
     //TODO: find a way to generalize these tests for each qa machine
     private ICommand loopbackInterface() {

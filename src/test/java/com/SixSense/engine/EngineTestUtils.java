@@ -25,8 +25,8 @@ public class EngineTestUtils {
 
     private static Map<String, Future<OperationResult>> futureOutcomesBySessionId;
 
-    @BeforeGroups("engine")
-    public void beforeClass() {
+    @BeforeGroups(groups = "engine")
+    public void initSpringBeans() {
         appContext = SpringApplication.run(Main.class);
         sessionEngine = (SessionEngine)appContext.getBean("sessionEngine");
         diagnosticManager = (DiagnosticManager)appContext.getBean("diagnosticManager");
@@ -35,7 +35,8 @@ public class EngineTestUtils {
         futureOutcomesBySessionId = new ConcurrentHashMap<>();
     }
 
-    public static void engineTestCleanup(){
+    @AfterMethod(groups = "engine")
+    public void engineTestCleanup(){
         getDiagnosticManager().clearDiagnosedSessions();
         futureOutcomesBySessionId.clear();
     }
@@ -81,6 +82,7 @@ public class EngineTestUtils {
     public static Session submitOperation(Operation operation){
         try {
             Session session = getSessionEngine().initializeSession(operation);
+            session.activateDebugMode();
             getDiagnosticManager().registerSession(session.getSessionShellId());
             Future<OperationResult> operationResult = getWorkerQueue().submit(() -> getSessionEngine().executeOperation(session, operation));
             futureOutcomesBySessionId.put(session.getSessionShellId(), operationResult);
