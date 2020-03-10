@@ -124,4 +124,11 @@ public class CommandUtils {
         }
         return output;
     }
+
+    public static String pipeCommandRetention(Session session, String retentionValue){
+        for(AbstractOutputPipe retentionPipe : session.getCurrentCommand().getRetentionPipes()){
+            retentionValue = retentionPipe.pipe(session, retentionValue);
+        }
+        return retentionValue;
+    }
 }

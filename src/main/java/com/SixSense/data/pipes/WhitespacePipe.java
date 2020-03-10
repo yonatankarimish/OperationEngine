@@ -5,17 +5,15 @@ import com.SixSense.io.Session;
 import java.util.ArrayList;
 import java.util.List;
 
-//Clears the current prompt and the current command from the contents of the output list
-public class ClearingPipe extends AbstractOutputPipe {
+//Replaces all whitespace sequences with a single space in the contents of the output list
+public class WhitespacePipe extends AbstractOutputPipe {
     @Override
     public List<String> pipe(Session session, List<String> output) {
         List<String> pipedOutput = new ArrayList<>();
 
         for(String nextLine : output){
             pipedOutput.add(
-                nextLine
-                    .replace(session.getCurrentEvaluatedCommand(), "")
-                    .replace(session.getCurrentPrompt(), "")
+                nextLine.replaceAll("\\s+", " ")
             );
         }
 
@@ -24,6 +22,6 @@ public class ClearingPipe extends AbstractOutputPipe {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof ClearingPipe;
+        return obj instanceof WhitespacePipe;
     }
 }

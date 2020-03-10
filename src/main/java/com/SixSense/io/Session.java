@@ -151,7 +151,9 @@ public class Session implements Closeable{
             //We clone the retention so that if the command is called again, any action we take within this code block will not affect subsequent executions
             ResultRetention clonedRetention = command.getSaveTo().deepClone();
             if(clonedRetention.getValue().isEmpty()){
-                clonedRetention.setValue(output);
+                clonedRetention.setValue(CommandUtils.pipeCommandRetention(this, output));
+            }else{
+                clonedRetention.setValue(CommandUtils.pipeCommandRetention(this, clonedRetention.getValue()));
             }
 
             diagnosticManager.emit(new ResultRetentionEvent(this, clonedRetention));
@@ -248,6 +250,8 @@ public class Session implements Closeable{
         return commandAppearsOnce && promptAppearsTwice; //We assume that if the prompt appears twice, and the command appears once, than case 1) is met
     }
 
+    /*We could theoretically just apply a ClearingPipe and then a WhitespacePipe
+    * But then changes to the pipes could affect the session filtering methods*/
     private String filterRawOutput(List<String> output){
         StringJoiner stringRepresentation = new StringJoiner(" ", "", "");
         for(String line : output){
@@ -265,6 +269,8 @@ public class Session implements Closeable{
                 .replace(this.currentPrompt, "");
     }
 
+    /*We could theoretically just apply a ClearingPipe and then a WhitespacePipe
+     * But then changes to the pipes could affect the session filtering methods*/
     private String filterFileOutput(String fileData){
         return fileData
                 .replace(this.evaluatedCommand, "")

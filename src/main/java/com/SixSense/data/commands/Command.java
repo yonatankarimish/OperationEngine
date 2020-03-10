@@ -19,6 +19,7 @@ public class Command extends AbstractCommand implements ICommand{
     private boolean requiresCleanup;
     private boolean useRawOutput;
     private LinkedHashSet<AbstractOutputPipe> outputPipes; // ordered set (i.e. no duplicate pipes)
+    private LinkedHashSet<AbstractOutputPipe> retentionPipes; // ordered set (i.e. no duplicate pipes)
 
     /*Try not to pollute with additional constructors
      * The empty constructor is for using the 'with' design pattern
@@ -33,9 +34,10 @@ public class Command extends AbstractCommand implements ICommand{
         this.requiresCleanup = true;
         this.useRawOutput = false;
         this.outputPipes = new LinkedHashSet<>();
+        this.retentionPipes = new LinkedHashSet<>();
     }
 
-    public Command(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, String channelName, String commandText, int minimalSecondsToResponse, int secondsToTimeout, LinkedHashSet<AbstractOutputPipe> outputPipes) {
+    public Command(LogicalExpression<ExecutionCondition> executionCondition, LogicalExpression<ExpectedOutcome> expectedOutcome, String channelName, String commandText, int minimalSecondsToResponse, int secondsToTimeout, LinkedHashSet<AbstractOutputPipe> outputPipes, LinkedHashSet<AbstractOutputPipe> retentionPipes) {
         super(executionCondition, expectedOutcome);
         this.channelName = channelName;
         this.commandText = commandText;
@@ -45,6 +47,7 @@ public class Command extends AbstractCommand implements ICommand{
         this.requiresCleanup = true;
         this.useRawOutput = false;
         this.outputPipes = outputPipes;
+        this.retentionPipes = retentionPipes;
     }
 
     public ICommand chainCommands(ICommand additional){
@@ -151,6 +154,20 @@ public class Command extends AbstractCommand implements ICommand{
         return this;
     }
 
+    public Set<AbstractOutputPipe> getRetentionPipes() {
+        return retentionPipes;
+    }
+
+    public Command addRetentionPipe(AbstractOutputPipe retentionPipes) {
+        this.retentionPipes.add(retentionPipes);
+        return this;
+    }
+
+    public Command addRetentionPipes(Collection<AbstractOutputPipe> retentionPipes) {
+        this.retentionPipes.addAll(retentionPipes);
+        return this;
+    }
+
     //Returns a new instance of the same command in its pristine state. That is - as if the new state was never executed
     @Override
     public Command deepClone(){
@@ -172,6 +189,7 @@ public class Command extends AbstractCommand implements ICommand{
                 .withRequiresCleanup(this.requiresCleanup)
                 .withUseRawOutput(this.useRawOutput)
                 .addOutputPipes(this.outputPipes)
+                .addRetentionPipes(this.retentionPipes)
                 .withSuperCloneState(this);
     }
 
@@ -185,6 +203,7 @@ public class Command extends AbstractCommand implements ICommand{
                 ", requiresCleanup=" + requiresCleanup +
                 ", useRawOutput=" + useRawOutput +
                 ", outputPipes=" + outputPipes +
+                ", retentionPipes=" + retentionPipes +
                 ", " + super.superToString() +
                 '}';
     }

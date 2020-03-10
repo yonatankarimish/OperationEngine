@@ -9,7 +9,10 @@ import com.SixSense.data.devices.Device;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.data.logic.*;
+import com.SixSense.data.pipes.ClearingPipe;
+import com.SixSense.data.pipes.FirstLinePipe;
 import com.SixSense.data.pipes.LastLinePipe;
+import com.SixSense.data.pipes.WhitespacePipe;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.util.FileUtils;
@@ -555,6 +558,9 @@ public class TestingMocks {
             .withCommandText("show sys hardware | grep 'Chassis Serial'")
             .withSecondsToTimeout(15)
             .withUseRawOutput(true)
+            .addRetentionPipe(new ClearingPipe())
+            .addRetentionPipe(new LastLinePipe())
+            .addRetentionPipe(new WhitespacePipe())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
                     .withLogicalCondition(LogicalCondition.AND)
@@ -578,6 +584,10 @@ public class TestingMocks {
             .withChannel(ChannelType.LOCAL)
             .withCommandText("echo $var.parsing.chassis | awk '{print $3}'")
             .withSecondsToTimeout(15)
+            .withUseRawOutput(true)
+            .addRetentionPipe(new ClearingPipe())
+            .addRetentionPipe(new LastLinePipe())
+            .addRetentionPipe(new FirstLinePipe())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
                     .withLogicalCondition(LogicalCondition.AND)
@@ -594,7 +604,7 @@ public class TestingMocks {
             ).withSaveTo(
                 new ResultRetention()
                     .withRetentionType(RetentionType.Database)
-                    .withName("var.parsing.chassis")
+                    .withName("var.inventory.chassis")
             );
 
         ICommand quit = new Command()

@@ -5,6 +5,7 @@ import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.pipes.FirstLinePipe;
 import com.SixSense.data.pipes.LastLinePipe;
+import com.SixSense.data.pipes.WhitespacePipe;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
 
@@ -16,15 +17,16 @@ public class InternalCommands {
             .withMinimalSecondsToResponse(2)
             .withSecondsToTimeout(10)
             .withUseRawOutput(true)
-            .addOutputPipe(new LastLinePipe())
+            .addRetentionPipe(new FirstLinePipe())
+            .addRetentionPipe(new WhitespacePipe())
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
-                    /*.withLogicalCondition(LogicalCondition.AND)
+                    .withLogicalCondition(LogicalCondition.AND)
                     .addResolvable(
                         new ExpectedOutcome()
-                            .withBinaryRelation(BinaryRelation.ENDS_WITH)
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
                             .withExpectedValue(MessageLiterals.LineBreak)
-                    )*/
+                    )
                     .addResolvable(
                         new ExpectedOutcome()
                             .withBinaryRelation(BinaryRelation.NOT_EQUALS)
