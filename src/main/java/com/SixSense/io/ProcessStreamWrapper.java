@@ -51,59 +51,11 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
             do {
                 bytesRead = this.processStream.read(rawData);
                 if(bytesRead != -1) {
-                    /*If any bytes have been read into the byte buffer, construct a string using the bytes in the buffer
-                    * add the chunk into the raw chunks list
-                    * then log that it has been parsed*/
-                    String currentChunk = new String(rawData, 0, bytesRead);
-                    if(this.isUnderDebug) {
-                        synchronized (this.rawChunks) {
-                            rawChunks.add(currentChunk);
-                        }
-                        logger.debug("read chunk " + currentChunk + " directly from stream");
-                    }
-                    terminalLogger.info(currentChunk);
-
-                    //Execute the substitution criteria against the current chunk
-                    synchronized (this.substitutionCriteria) {
-                        for(String pattern : this.substitutionCriteria.keySet()) {
-                            String replacement = this.substitutionCriteria.get(pattern);
-                            currentChunk = currentChunk.replaceAll(pattern, replacement);
-                        }
-                    }
-
-                    //splitChunk will always have at least one entry (if no line break was read)
-                    //passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
-                    String[] splitChunk = currentChunk.split(MessageLiterals.LineBreak, -1);
-
-                    //Add the split chunks into the list representation of the output
-                    synchronized (this.processOutput) {
-                        if(splitChunk.length > 0) {
-                            String firstChunk = splitChunk[0];
-                            if (this.processOutput.isEmpty()) {
-                                this.processOutput.add(firstChunk);
-                            } else {
-                                String lastLine = this.processOutput.get(this.processOutput.size() - 1);
-                                this.processOutput.set(this.processOutput.size() - 1, lastLine + firstChunk);
-                            }
-
-                            int chunkIdx;
-                            for (chunkIdx = 1; chunkIdx < splitChunk.length; chunkIdx++) {
-                                this.processOutput.add(splitChunk[chunkIdx]);
-                            }
-                        }
-                    }
-
-                    //Signal the parent session that new chunks has been parsed (i.e. there is new output)
-                    if(!this.session.isClosed()) {
-                        this.session.getCommandLock().lock();
-                        logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
-                        try {
-                            this.session.getNewChunkReceived().signalAll();
-                        } finally {
-                            this.session.getCommandLock().unlock();
-                            logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
-                        }
-                    }
+                    String currentChunk = parseRawChunk(rawData, bytesRead);
+                    String chunkAfterSubstitution = executeSubstitutionCriteria(currentChunk);
+                    String[] splitChunk = chunkAfterSubstitution.split(MessageLiterals.LineBreak, -1);  //splitChunk will always have at least one entry (if no line break was read); passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
+                    addChunksToOutput(splitChunk);
+                    signalNewChunk();
                 }
             } while (bytesRead != -1);
 
@@ -116,6 +68,67 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
             ThreadContext.remove("sessionID");
         }
         return true;
+    }
+
+    /*If any bytes have been read into the byte buffer, construct a string using the bytes in the buffer
+     * add the chunk into the raw chunks list
+     * then log that it has been parsed*/
+    private String parseRawChunk(byte[] rawData, int bytesRead){
+        String currentChunk = new String(rawData, 0, bytesRead);
+        if(this.isUnderDebug) {
+            synchronized (this.rawChunks) {
+                rawChunks.add(currentChunk);
+            }
+            logger.debug("read chunk " + currentChunk + " directly from stream");
+        }
+        terminalLogger.info(currentChunk);
+        return currentChunk;
+    }
+
+    /*Execute the substitution criteria against the current chunk*/
+    private String executeSubstitutionCriteria(String currentChunk){
+        synchronized (this.substitutionCriteria) {
+            for(String pattern : this.substitutionCriteria.keySet()) {
+                String replacement = this.substitutionCriteria.get(pattern);
+                currentChunk = currentChunk.replaceAll(pattern, replacement);
+            }
+        }
+
+        return currentChunk;
+    }
+
+    /*Add the split chunks into the list representation of the output*/
+    private void addChunksToOutput(String[] splitChunk){
+        synchronized (this.processOutput) {
+            if(splitChunk.length > 0) {
+                String firstChunk = splitChunk[0];
+                if (this.processOutput.isEmpty()) {
+                    this.processOutput.add(firstChunk);
+                } else {
+                    String lastLine = this.processOutput.get(this.processOutput.size() - 1);
+                    this.processOutput.set(this.processOutput.size() - 1, lastLine + firstChunk);
+                }
+
+                int chunkIdx;
+                for (chunkIdx = 1; chunkIdx < splitChunk.length; chunkIdx++) {
+                    this.processOutput.add(splitChunk[chunkIdx]);
+                }
+            }
+        }
+    }
+
+    /*Signal the parent session that new chunks has been parsed (i.e. there is new output)*/
+    private void signalNewChunk(){
+        if(!this.session.isClosed()) {
+            this.session.getCommandLock().lock();
+            logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
+            try {
+                this.session.getNewChunkReceived().signalAll();
+            } finally {
+                this.session.getCommandLock().unlock();
+                logger.debug(this.session.getTerminalIdentifier() + " proccess stream released lock");
+            }
+        }
     }
 
     public List<String> getRawChunks(){
