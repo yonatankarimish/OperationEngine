@@ -61,7 +61,7 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
 
             logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
         } catch (Exception e) {
-            if(!this.session.isClosed()) {
+            if(!this.session.isClosed() && !this.session.isTerminated()) {
                 logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: ", e);
             }
         } finally {

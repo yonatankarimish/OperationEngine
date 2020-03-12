@@ -30,6 +30,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -47,7 +48,8 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private final SSHClient sshClient = new SSHClient();
     private boolean isClosed = false;
 
-    private static final Map<String, String> sessionProperties = new HashMap<>();
+    private static final Map<String, String> sessionProperties = new ConcurrentHashMap<>();
+    private final Map<String, Operation> runningOperations = new ConcurrentHashMap<>(); //key: operation id, value: operation
     private final Map<String, Session> runningSessions = new ConcurrentHashMap<>(); //key: session id, value: session
     private final Map<String, String> operationsToSessions = new ConcurrentHashMap<>(); //key: operation id, value: session id
 
@@ -81,6 +83,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             this.sshClient.authPassword(localhostProperties.getProperty("local.username"), localhostProperties.getProperty("local.password"));
         } catch (IOException e) {
             logger.error("Session engine failed to initialize - failed to initialize ssh client. Caused by: ", e);
+            throw e;
+        } catch (NullPointerException e) {
+            logger.error("Session engine failed to initialize - failed reading localhost properties. Caused by: ", e);
             throw e;
         }
 
@@ -126,9 +131,11 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 handleExecutionAnomaly(session, "Operation " + operation.getUUID() + " has incomplete configuration")
             );
         }else{
-            session.incrementDrilldownRank();
             this.runningSessions.put(session.getSessionShellId(), session);
+            this.runningOperations.put(operation.getUUID(), operation);
             this.operationsToSessions.put(operation.getUUID(), session.getSessionShellId());
+
+            session.incrementDrilldownRank();
             diagnosticManager.emit(new OperationStartEvent(session, operation));
 
             try {
@@ -164,9 +171,11 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
             operationResult.addDatabaseVariables(session.getDatabaseVariables());
             diagnosticManager.emit(new OperationEndEvent(session, operation, operationResult));
-            this.operationsToSessions.remove(operation.getUUID());
-            this.runningSessions.remove(session.getSessionShellId());
             session.decrementDrilldownRank();
+
+            this.operationsToSessions.remove(operation.getUUID());
+            this.runningOperations.remove(operation.getUUID());
+            this.runningSessions.remove(session.getSessionShellId());
         }
 
         return operationResult;
@@ -341,11 +350,13 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         if(sessionID == null) {
             logger.warn("Operation " + operationID + " has no running session, and therefore cannot be terminated");
         }else{
+            this.runningOperations.remove(operationID);
             Session terminatingSession = this.runningSessions.remove(sessionID);
             if (terminatingSession == null) {
                 logger.warn("Session " + sessionID + " is not currently running, and therefore cannot be terminated");
             } else {
                 try {
+                    terminatingSession.terminate();
                     finalizeSession(terminatingSession);
                 } catch (IOException e) {
                     logger.error("Failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: ", e);
@@ -368,6 +379,35 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
     public static Map<String, String> getSessionProperties(){
         return Collections.unmodifiableMap(sessionProperties);
+    }
+
+    public static Map<String, String> addSessionProperties(Map<String, String> updatedConfig) throws IOException{
+        Path sessionProps = Paths.get(SessionPropertiesPath);
+        try (BufferedReader reader = Files.newBufferedReader(sessionProps);
+            BufferedWriter writer = Files.newBufferedWriter(sessionProps, StandardOpenOption.WRITE)) {
+            Properties sessionProperties = new Properties();
+            sessionProperties.load(reader);
+
+            for(String field: updatedConfig.keySet()){
+                sessionProperties.put(field, updatedConfig.get(field));
+            }
+
+            sessionProperties.store(writer, "");
+        } catch (IOException e) {
+            logger.error("Session engine failed to initialize - failed to load session properties. Caused by: ", e);
+            throw e;
+        }
+
+        sessionProperties.putAll(updatedConfig);
+        return Collections.unmodifiableMap(sessionProperties);
+    }
+
+    public Map<String, Operation> getRunningOperations() {
+        return Collections.unmodifiableMap(runningOperations);
+    }
+
+    public Map<String, String> getOperationsToSessions(){
+        return Collections.unmodifiableMap(operationsToSessions);
     }
 
     @Override

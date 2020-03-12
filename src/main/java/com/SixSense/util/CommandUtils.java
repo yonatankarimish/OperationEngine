@@ -64,11 +64,11 @@ public class CommandUtils {
             parallelNode.addParallelOperation(
                 (Operation)rawConfig.getOperation().deepClone()
                     .addDynamicFields(device.getDynamicFields())
-                    .addDynamicField("device.internal.id", device.getShortUUID())
-                    .addDynamicField("device.host", device.getCredentials().getHost())
-                    .addDynamicField("device.username", device.getCredentials().getUsername())
-                    .addDynamicField("device.password", device.getCredentials().getPassword())
-                    .addDynamicField("device.port", String.valueOf(device.getCredentials().getPort()))
+                    .addDynamicField(DynamicFieldGlossary.device_internal_id, device.getShortUUID())
+                    .addDynamicField(DynamicFieldGlossary.device_host, device.getCredentials().getHost())
+                    .addDynamicField(DynamicFieldGlossary.device_username, device.getCredentials().getUsername())
+                    .addDynamicField(DynamicFieldGlossary.device_password, device.getCredentials().getPassword())
+                    .addDynamicField(DynamicFieldGlossary.device_port, String.valueOf(device.getCredentials().getPort()))
             );
         }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import axios from 'axios';
+import Rest from '../services/rest';
 import "./app.styl";
 
 import f5_logo from '../assets/f5_logo.png';
@@ -20,7 +20,7 @@ class App extends React.Component {
     }
 
      async fetchF5Mock() {
-        let result = await axios.get(window.location.origin + '/api/f5Config');
+        let result = await Rest.get('/operations/f5Config');
         this.setState({
             f5MockJson: JSON.stringify(result.data, null, 4)
         });
@@ -56,7 +56,7 @@ class App extends React.Component {
 
             let payloadJson = JSON.parse(payloadString);
             payloadJson.results = {};
-            let result = await axios.post(window.location.origin + '/api/execute', payloadJson);
+            let result = await Rest.post('/operations/execute', payloadJson);
 
             console.log("execution result:", result.data);
             this.setState({
@@ -84,6 +84,14 @@ class App extends React.Component {
         }catch(e){
             return false;
         }
+    }
+
+    async terminate(){
+        let runningOperations = await Rest.get('/diagnostics/operations');
+        console.log("running operations: ", runningOperations);
+
+        let terminationResults = await Rest.post("/operations/terminate", runningOperations.data);
+        console.log("termination results: ", terminationResults);
     }
 
     render() {
@@ -117,6 +125,7 @@ class App extends React.Component {
                                     </button>:
                                     <button type="button" className="btn btn-primary" onClick={this.execute.bind(this)}>Execute</button>
                                 }
+                                <button type="button" className="btn btn-primary" disabled={!this.state.uiLocked} onClick={this.terminate.bind(this)}>Terminate</button>
                             </div>
                         </div>
                     </div>

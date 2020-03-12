@@ -44,6 +44,7 @@ public class Session implements Closeable{
     private final Condition newChunkReceived = commandLock.newCondition();
     private boolean isUnderDebug = false;
     private boolean isClosed = false;
+    private boolean terminatedExternally = false;
 
     //Current command context
     private final UUID sessionShellId = UUID.randomUUID();
@@ -113,7 +114,7 @@ public class Session implements Closeable{
         diagnosticManager.emit(new InputSentEvent(this, this.currentCommand, this.commandOrdinal, this.evaluatedCommand));
 
         sleepMinimalSecondsToResponse();
-        while(!hasWaitElapsed){
+        while(!hasWaitElapsed && !terminatedExternally){
             /*this.removeOutdatedChunks() clears the command output from data left over from previous commands (edits processOutput in place)
              *and returns a boolean which is true only if the command has certainly finished writing it's output (if true, then certainly finished. if false, may be either way)
              *CommandUtils.pipeCommandOutput() passes the output through any pipes defined by this command, possibly mutating, replacing or truncating it. */
@@ -320,6 +321,9 @@ public class Session implements Closeable{
                 //TODO: once we provide a database service, this should write the key value pairs async, similar to file retention.
                 this.databaseVariables.put(clonedRetention.getName(), clonedRetention.getValue());
             }
+        }else if(terminatedExternally){
+            //If terminated externally, the session must stop and the method will return a failure
+            resolvedOutcome.setMessage(MessageLiterals.OperationTerminated);
         }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && this.elapsedSeconds >= this.currentCommand.getSecondsToTimeout()){
             //If a timeout occured, the command failed to execute and the method will return a failure
             resolvedOutcome.setMessage(MessageLiterals.TimeoutInCommand);
@@ -464,6 +468,14 @@ public class Session implements Closeable{
         return isClosed;
     }
 
+    public boolean isTerminated() {
+        return terminatedExternally;
+    }
+
+    public void terminate() {
+        this.terminatedExternally = true;
+    }
+
     @Override
     public void close() throws IOException{
         boolean partialClosure = false;
@@ -476,6 +488,18 @@ public class Session implements Closeable{
                 sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channelName +". Caused by: ", e.getMessage());
             }
         }
+
+        this.commandLock.lock();
+        sessionLogger.debug(this.getTerminalIdentifier() + " close method acquired lock");
+        try {
+            this.newChunkReceived.signalAll();
+        }catch(Exception e){
+            sessionLogger.error("Session " +  this.getShortSessionId() + " failed to terminate current command. Caused by: ", e.getMessage());
+        }finally {
+            this.commandLock.unlock();
+            sessionLogger.debug(this.getTerminalIdentifier() + " close method released lock");
+        }
+
         this.isClosed = true;
 
         if(partialClosure){

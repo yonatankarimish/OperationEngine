@@ -5,8 +5,10 @@ import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
+import com.SixSense.engine.SessionEngine;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
+import com.SixSense.queue.WorkerQueue;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,17 +18,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/operations")
 public class OperationController {
     private static final Logger logger = LogManager.getLogger(OperationController.class);
+    private final SessionEngine sessionEngine;
     private final WorkflowManager workflowManager;
+    private final WorkerQueue workerQueue;
 
     @Autowired
-    public OperationController(WorkflowManager workflowManager) {
+    public OperationController(SessionEngine sessionEngine, WorkflowManager workflowManager, WorkerQueue workerQueue) {
+        this.sessionEngine = sessionEngine;
         this.workflowManager = workflowManager;
+        this.workerQueue = workerQueue;
     }
 
     @GetMapping("/f5Config")
@@ -73,34 +82,34 @@ public class OperationController {
         return rawExecutionConfig;
     }
 
+    @PostMapping("/terminate")
+    public Map<String, OperationResult> terminate(@RequestBody Set<String> operationIdSet) {
+        Map<String, CompletableFuture<OperationResult>> terminationResults = new HashMap<>();
+        for(String operationId : operationIdSet) {
+            CompletableFuture<OperationResult> terminationResult = workerQueue.submit(() -> sessionEngine.terminateOperation(operationId));
+            terminationResults.put(operationId, terminationResult);
+        }
+
+        CompletableFuture<Map<String, OperationResult>> aggregatedTerminations = CompletableFuture.allOf(
+            //Wait for all terminations to finish asynchronously
+            terminationResults.values().toArray(CompletableFuture[]::new)
+        ).thenApply(voidStub -> {
+            //and map each operation id to the termination result
+            Map<String, OperationResult> resultMap = new HashMap<>();
+            for(String operationId : terminationResults.keySet()){
+                resultMap.put(operationId, terminationResults.get(operationId).join());
+            }
+            return resultMap;
+        });
+
+        //finally, join the aggregated future with the invoking thread (this one) and return the termination results
+        return aggregatedTerminations.join();
+    }
+
     @GetMapping("/debugMethod")
     public void debugMethod(){
         //This method body acts as a pastebin for development and debugging purposes. Method body is subject to change without notice
         logger.info("Starting debug method now");
-
-        try {
-            RawExecutionConfig rawExecutionConfig = TestingMocks.f5BigIpBackup(
-                Collections.singletonList(
-                    new Credentials()
-                        .withHost("172.31.252.179")
-                        .withUsername("root")
-                        .withPassword("qwe123")
-                )
-            );
-
-            ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
-            Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
-            for(Operation operation : workflow.getParallelOperations()) {
-                OperationResult result = workflowResult.get(operation.getUUID());
-                rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
-                logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
-                logger.info("Result Message: " + result.getExpressionResult().getMessage());
-            }
-
-            logger.info("Results added to serializable configuration");
-        } catch (Exception e) {
-            logger.error("A fatal exception was encountered - applications is closing now", e);
-        }
     }
 
     private static String wrapForHtml(String text){

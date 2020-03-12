@@ -134,8 +134,8 @@ public class InternalCommands {
 
         String[] splitSourceFileName = sourceFile.split("/");
         return scpInit.chainCommands(typePassword)
-            .addDynamicField("var.scp.source", sourceFile)
-            .addDynamicField("var.scp.source_file_name", splitSourceFileName[splitSourceFileName.length - 1])
-            .addDynamicField("var.scp.destination", destFile);
+            .addDynamicField(DynamicFieldGlossary.var_scp_source, sourceFile)
+            .addDynamicField(DynamicFieldGlossary.var_scp_source_file_name, splitSourceFileName[splitSourceFileName.length - 1])
+            .addDynamicField(DynamicFieldGlossary.var_scp_destination, destFile);
     }
 }
