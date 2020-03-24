@@ -1,8 +1,6 @@
-package com.SixSense.web;
+package com.SixSense.api;
 
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.devices.Device;
-import com.SixSense.data.devices.VendorProductVersion;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.util.DynamicFieldGlossary;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/diagnostics")
