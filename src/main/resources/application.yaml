@@ -20,6 +20,14 @@ spring:
     serialization:
       FAIL_ON_EMPTY_BEANS: false
       ORDER_MAP_ENTRIES_BY_KEYS: true
+  rabbitmq:
+    listener:
+      direct:
+        acknowledge-mode: manual
+        prefetch: 1
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
   resources:
     static-locations:
       - classpath:/META-INF/resources/

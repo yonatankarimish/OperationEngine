@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Component
@@ -26,6 +27,14 @@ public class WorkerQueue implements Closeable {
             return CompletableFuture.failedFuture(new Exception("Cannot submit supplier to work queue - worker pool has been closed"));
         }else{
             return CompletableFuture.supplyAsync(worker, workerPool);
+        }
+    }
+
+    public <V> void acceptAsync(CompletableFuture<V> future, Consumer<? super V> action){
+        if(this.isClosed){
+            future.completeExceptionally(new Exception("Cannot apply action to future task - worker pool has been closed"));
+        }else{
+            future.thenAcceptAsync(action, workerPool);
         }
     }
 
