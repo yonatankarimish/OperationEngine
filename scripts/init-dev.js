@@ -23,6 +23,7 @@ function init(){
     initDevEnv()
         .then(configureDevEnv)
         .then(() => configureRemoteVM("ansible"))
+        .then(() => configureRemoteVM("rabbit", ["vhost"]))
         .then(uploadConfigToAnsibleHost)
         .catch(error => {
             console.error(error);
@@ -65,7 +66,7 @@ function configureDevEnv(){
     });
 }
 
-async function configureRemoteVM(remoteVMKey){
+async function configureRemoteVM(remoteVMKey, additionalKeys){
     let prettyKey = remoteVMKey.replace("_", " ");
     const remoteConfig = require(remoteConfigPath);
     const prompt = readline.createInterface({
@@ -76,6 +77,14 @@ async function configureRemoteVM(remoteVMKey){
     let vmHost = await askQuestion(prompt, "Please enter the ip address of your " + prettyKey + " vm : ");
     let vmUsername = await askQuestion(prompt, "Please enter a username for the "+ prettyKey + " vm : ");
     let vmPassword = await askQuestion(prompt, "Please enter the password for the username you provided: ");
+
+    let additionalFields = {};
+    if(additionalKeys) {
+        for (let key of additionalKeys) {
+            additionalFields[key] = await askQuestion(prompt, "Please enter a " + key + " for the " + prettyKey + " vm : ");
+        }
+    }
+
     prompt.close();
 
     let vmConfig = remoteConfig[remoteVMKey].remotes[0];
@@ -83,6 +92,10 @@ async function configureRemoteVM(remoteVMKey){
     vmConfig.host = vmHost;
     vmConfig.username = vmUsername;
     vmConfig.password = vmPassword;
+
+    for(let key of Object.keys(additionalFields)){
+        vmConfig[key] = additionalFields[key];
+    }
 
     let updatedContents = "module.exports = " + JSON.stringify(remoteConfig, null, 4)  + ";"; //indent with four space characters per indent
     return new Promise((resolve, reject) => {
