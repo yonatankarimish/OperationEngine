@@ -8,7 +8,7 @@ import com.SixSense.data.retention.OperationResult;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.mocks.TestingMocks;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,13 +29,13 @@ public class OperationController {
     private static final Logger logger = LogManager.getLogger(OperationController.class);
     private final SessionEngine sessionEngine;
     private final WorkflowManager workflowManager;
-    private final WorkerQueue workerQueue;
+    private final ThreadingManager threadingManager;
 
     @Autowired
-    public OperationController(SessionEngine sessionEngine, WorkflowManager workflowManager, WorkerQueue workerQueue) {
+    public OperationController(SessionEngine sessionEngine, WorkflowManager workflowManager, ThreadingManager threadingManager) {
         this.sessionEngine = sessionEngine;
         this.workflowManager = workflowManager;
-        this.workerQueue = workerQueue;
+        this.threadingManager = threadingManager;
     }
 
     @GetMapping("/f5Config")
@@ -86,7 +86,7 @@ public class OperationController {
     public Map<String, OperationResult> terminate(@RequestBody Set<String> operationIdSet) {
         Map<String, CompletableFuture<OperationResult>> terminationResults = new HashMap<>();
         for(String operationId : operationIdSet) {
-            CompletableFuture<OperationResult> terminationResult = workerQueue.submit(() -> sessionEngine.terminateOperation(operationId));
+            CompletableFuture<OperationResult> terminationResult = threadingManager.submit(() -> sessionEngine.terminateOperation(operationId));
             terminationResults.put(operationId, terminationResult);
         }
 

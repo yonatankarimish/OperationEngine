@@ -8,7 +8,7 @@ import com.SixSense.data.events.IEngineEventHandler;
 import com.SixSense.data.events.OperationEndEvent;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.OperationResult;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.LogicalExpressionResolver;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -24,15 +24,15 @@ public class WorkflowManager implements IEngineEventHandler {
     private static final Logger logger = LogManager.getLogger(WorkflowManager.class);
     private final SessionEngine sessionEngine;
     private final DiagnosticManager diagnosticManager;
-    private final WorkerQueue workerQueue;
+    private final ThreadingManager threadingManager;
 
     private final Map<String, ParallelWorkflow> parentWorkflows = new ConcurrentHashMap<>(); //key: operation id, value: parent workflow
 
     @Autowired
-    private WorkflowManager(SessionEngine sessionEngine, DiagnosticManager diagnosticManager, WorkerQueue workerQueue) {
+    private WorkflowManager(SessionEngine sessionEngine, DiagnosticManager diagnosticManager, ThreadingManager threadingManager) {
         this.sessionEngine = sessionEngine;
         this.diagnosticManager = diagnosticManager;
-        this.workerQueue = workerQueue;
+        this.threadingManager = threadingManager;
 
         this.diagnosticManager.registerHandler(this, EnumSet.of(EngineEventType.OperationEnd));
     }
@@ -76,7 +76,7 @@ public class WorkflowManager implements IEngineEventHandler {
 
     private CompletableFuture<OperationResult> executeParallelOperation(Operation operation){
         try {
-            return workerQueue.submit(() -> sessionEngine.executeOperation(operation));
+            return threadingManager.submit(() -> sessionEngine.executeOperation(operation));
         }catch (Exception e){
             logger.error("Failed to submit operation " + operation.getUUID() + " to worker queue. Caused by: ", e);
             return CompletableFuture.failedFuture(e);
@@ -150,7 +150,7 @@ public class WorkflowManager implements IEngineEventHandler {
         try {
             for (Operation dependentOperation : parentWorkflow.getParallelOperations()) {
                 if (!dependentOperation.isAlreadyExecuted()) {
-                    workerQueue.submit(() -> sessionEngine.terminateOperation(dependentOperation.getUUID()));
+                    threadingManager.submit(() -> sessionEngine.terminateOperation(dependentOperation.getUUID()));
                 }
             }
         } catch (Exception e) {

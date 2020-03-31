@@ -5,7 +5,7 @@ import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.engine.WorkflowManager;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,16 +34,16 @@ public class OperationConsumer {
 
     //Engine entities
     private final WorkflowManager workflowManager;
-    private final WorkerQueue workerQueue;
+    private final ThreadingManager threadingManager;
 
     //AMQP entities
     private final RabbitTemplate rabbitTemplate;
     private final DirectExchange resultExchange;
 
     @Autowired
-    public OperationConsumer(WorkflowManager workflowManager, WorkerQueue workerQueue, RabbitTemplate rabbitTemplate, DirectExchange resultExchange) {
+    public OperationConsumer(WorkflowManager workflowManager, ThreadingManager threadingManager, RabbitTemplate rabbitTemplate, DirectExchange resultExchange) {
         this.workflowManager = workflowManager;
-        this.workerQueue = workerQueue;
+        this.threadingManager = threadingManager;
         this.rabbitTemplate = rabbitTemplate;
         this.resultExchange = resultExchange;
     }
@@ -81,7 +81,7 @@ public class OperationConsumer {
             final RawExecutionConfig asFinalCopy = rawExecutionConfig; //this ugly line is needed because lambda expressions require final variables
 
             CompletableFuture<Map<String, OperationResult>> workflowResult = workflowManager.executeWorkflow(workflow);
-            workerQueue.acceptAsync(workflowResult, map -> {
+            threadingManager.acceptAsync(workflowResult, map -> {
                 produceOperationResults(asFinalCopy, workflow, map, queueName, deliveryTag);
             });
 

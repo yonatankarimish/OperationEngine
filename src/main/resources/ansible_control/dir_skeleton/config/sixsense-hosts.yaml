@@ -1,0 +1,14 @@
+#Currently stores credentials for hosts the engine interfaces with (will be generated + secure as we move closer to production)
+sixsense:
+  hosts:
+    local:
+      host: localhost
+      username: root
+      password: qwe123
+      port: 22
+    rabbit:
+      host: "172.31.252.39"
+      username: engine
+      password: engine
+      port: 5672
+      vhost: "/engine"

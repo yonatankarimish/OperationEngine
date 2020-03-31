@@ -3,7 +3,7 @@ package com.SixSense.engine;
 import com.SixSense.data.events.AbstractEngineEvent;
 import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.events.IEngineEventHandler;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.EventQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 public class DiagnosticManager{
     private static final Logger logger = LogManager.getLogger(DiagnosticManager.class);
     private final LoggingManager loggingManager;
-    private final WorkerQueue workerQueue;
+    private final ThreadingManager threadingManager;
 
     /* EnumMap<EngineEventType, HashSet<IEngineEventHandler>> allows for constant time lookup, register, unregister (O(1) time complexity)
      * while maintaining linear time emit (O(n) time complexity) where n denotes # of event listeners 
@@ -33,9 +33,9 @@ public class DiagnosticManager{
     private final EventQueue eventQueue = new EventQueue();
 
     @Autowired
-    private DiagnosticManager(LoggingManager loggingManager, WorkerQueue workerQueue){
+    private DiagnosticManager(LoggingManager loggingManager, ThreadingManager threadingManager){
         this.loggingManager = loggingManager;
-        this.workerQueue = workerQueue;
+        this.threadingManager = threadingManager;
 
         for(EngineEventType eventType : EnumSet.allOf(EngineEventType.class)){
             engineEventHandlers.put(eventType, new HashSet<>());
@@ -151,7 +151,7 @@ public class DiagnosticManager{
         synchronized (this.engineEventHandlers){
             for (IEngineEventHandler iEngineEventHandler : this.engineEventHandlers.get(event.getEventType())) {
                 try {
-                    workerQueue.submit(() -> iEngineEventHandler.handleEngineEvent(event));
+                    threadingManager.submit(() -> iEngineEventHandler.handleEngineEvent(event));
                 } catch (Exception e) {
                     logger.error("Failed to emit task to event handler for engine event. Caused by: ", e);
                 }

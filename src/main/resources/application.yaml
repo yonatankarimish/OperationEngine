@@ -20,6 +20,8 @@ spring:
     serialization:
       FAIL_ON_EMPTY_BEANS: false
       ORDER_MAP_ENTRIES_BY_KEYS: true
+  main:
+    banner-mode: off
   rabbitmq:
     listener:
       direct:

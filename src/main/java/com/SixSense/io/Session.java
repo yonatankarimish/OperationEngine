@@ -13,7 +13,7 @@ import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.engine.DiagnosticManager;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Session implements Closeable{
     //Static members and injected beans
     private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
-    @Autowired private WorkerQueue workerQueue;
+    @Autowired private ThreadingManager threadingManager;
     @Autowired private DiagnosticManager diagnosticManager;
 
     //Connection, synchronization and debugging
@@ -313,7 +313,7 @@ public class Session implements Closeable{
                 clonedRetention.setValue(this.filterFileOutput(clonedRetention.getValue()));
                 RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
                 try {
-                    this.workerQueue.submit(fileWriter);
+                    this.threadingManager.submit(fileWriter);
                 } catch (Exception e) {
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: ", e.getMessage());
                 }

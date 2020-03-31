@@ -1,0 +1,6 @@
+#Session execution configuration
+sixsense:
+  session:
+    prompt:
+      default: "[SixSensePrompt ~]# "
+    version: "0.0.1"

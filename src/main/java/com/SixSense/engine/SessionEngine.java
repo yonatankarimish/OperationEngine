@@ -1,5 +1,7 @@
 package com.SixSense.engine;
 
+import com.SixSense.config.HostConfig;
+import com.SixSense.config.SessionConfig;
 import com.SixSense.data.events.*;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.commands.Operation;
@@ -10,7 +12,7 @@ import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
 import com.SixSense.io.ShellChannel;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
 import net.schmizz.sshj.SSHClient;
@@ -20,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -27,23 +30,21 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.SixSense.util.MessageLiterals.SessionPropertiesPath;
-
-@Service
 /*Creates sessions and executes operations*/
+@Service
+@EnableConfigurationProperties({SessionConfig.class, HostConfig.class})
 public class SessionEngine implements Closeable, ApplicationContextAware {
     private static final Logger logger = LogManager.getLogger(SessionEngine.class);
     private ApplicationContext appContext;
-    private final WorkerQueue workerQueue;
+    private final ThreadingManager threadingManager;
     private final DiagnosticManager diagnosticManager;
+
+    private final SessionConfig sessionConfig;
+    private final HostConfig.Host localhostConfig;
 
     private final SSHClient sshClient = new SSHClient();
     private boolean isClosed = false;
@@ -54,38 +55,23 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private final Map<String, String> operationsToSessions = new ConcurrentHashMap<>(); //key: operation id, value: session id
 
     @Autowired
-    private SessionEngine(WorkerQueue workerQueue, DiagnosticManager diagnosticManager) throws Exception{
-        this.workerQueue = workerQueue;
+    private SessionEngine(ThreadingManager threadingManager, DiagnosticManager diagnosticManager, SessionConfig sessionConfig, HostConfig hostConfig) throws IOException{
+        this.threadingManager = threadingManager;
         this.diagnosticManager = diagnosticManager;
-        Path sessionProps = Paths.get(SessionPropertiesPath);
-        try (BufferedReader reader = Files.newBufferedReader(sessionProps)) {
-            Properties sessionProperties = new Properties();
-            sessionProperties.load(reader);
+        this.sessionConfig = sessionConfig;
+        this.localhostConfig = hostConfig.getLocal();
 
-            for(String field: sessionProperties.stringPropertyNames()){
-                this.sessionProperties.put(field, sessionProperties.getProperty(field));
-            }
-        } catch (IOException e) {
-            logger.error("Session engine failed to initialize - failed to load session properties. Caused by: ", e);
-            throw e;
+        sessionProperties.put("sixsense.session.version", this.sessionConfig.getVersion());
+        for(String promptName : this.sessionConfig.getPrompt().keySet()){
+            sessionProperties.put("sixsense.session.prompt." + promptName, this.sessionConfig.getPrompt().get(promptName));
         }
 
-        try (InputStream stream = ClassLoader.getSystemClassLoader().getResource("localhost.properties").openStream()){
-            Properties localhostProperties = new Properties();
-            localhostProperties.load(stream);
-
-            logger.info("enumerating localhost.properties");
-            for(String field: localhostProperties.stringPropertyNames()){
-                logger.info("enumerated localhost property " + field + ": " + localhostProperties.getProperty(field));
-            }
+        try {
             this.sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-            this.sshClient.connect(localhostProperties.getProperty("local.host"), Integer.valueOf(localhostProperties.getProperty("local.port")));
-            this.sshClient.authPassword(localhostProperties.getProperty("local.username"), localhostProperties.getProperty("local.password"));
+            this.sshClient.connect(this.localhostConfig.getHost(), this.localhostConfig.getPort());
+            this.sshClient.authPassword(this.localhostConfig.getUsername(), this.localhostConfig.getPassword());
         } catch (IOException e) {
             logger.error("Session engine failed to initialize - failed to initialize ssh client. Caused by: ", e);
-            throw e;
-        } catch (NullPointerException e) {
-            logger.error("Session engine failed to initialize - failed reading localhost properties. Caused by: ", e);
             throw e;
         }
 
@@ -318,7 +304,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                     .collect(Collectors.toList());
 
             for(ProcessStreamWrapper wrapper : wrappers){
-                this.workerQueue.submit(wrapper);
+                this.threadingManager.submit(wrapper);
             }
         }catch (Exception e){
             String message = "Failed to create new session - could not submit channel IO streams to worker queue.";
@@ -381,23 +367,8 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         return Collections.unmodifiableMap(sessionProperties);
     }
 
-    public static Map<String, String> addSessionProperties(Map<String, String> updatedConfig) throws IOException{
-        Path sessionProps = Paths.get(SessionPropertiesPath);
-        try (BufferedReader reader = Files.newBufferedReader(sessionProps);
-            BufferedWriter writer = Files.newBufferedWriter(sessionProps, StandardOpenOption.WRITE)) {
-            Properties sessionProperties = new Properties();
-            sessionProperties.load(reader);
-
-            for(String field: updatedConfig.keySet()){
-                sessionProperties.put(field, updatedConfig.get(field));
-            }
-
-            sessionProperties.store(writer, "");
-        } catch (IOException e) {
-            logger.error("Session engine failed to initialize - failed to load session properties. Caused by: ", e);
-            throw e;
-        }
-
+    public static Map<String, String> addSessionProperties(Map<String, String> updatedConfig) {
+        //updates the session properties for the current run of the engine
         sessionProperties.putAll(updatedConfig);
         return Collections.unmodifiableMap(sessionProperties);
     }

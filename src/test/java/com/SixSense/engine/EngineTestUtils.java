@@ -4,7 +4,7 @@ import com.SixSense.Main;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.Session;
-import com.SixSense.queue.WorkerQueue;
+import com.SixSense.threading.ThreadingManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -21,7 +21,7 @@ public class EngineTestUtils {
     private static ConfigurableApplicationContext appContext;
     private static SessionEngine sessionEngine;
     private static DiagnosticManager diagnosticManager;
-    private static WorkerQueue workerQueue;
+    private static ThreadingManager threadingManager;
 
     private static Map<String, Future<OperationResult>> futureOutcomesBySessionId;
 
@@ -30,7 +30,7 @@ public class EngineTestUtils {
         appContext = SpringApplication.run(Main.class);
         sessionEngine = (SessionEngine)appContext.getBean("sessionEngine");
         diagnosticManager = (DiagnosticManager)appContext.getBean("diagnosticManager");
-        workerQueue = (WorkerQueue)appContext.getBean("workerQueue");
+        threadingManager = (ThreadingManager)appContext.getBean("threadingManager");
 
         futureOutcomesBySessionId = new ConcurrentHashMap<>();
     }
@@ -46,8 +46,8 @@ public class EngineTestUtils {
         if(sessionEngine != null && !sessionEngine.isClosed()){
             sessionEngine.close();
         }
-        if(workerQueue != null){
-            workerQueue.close();
+        if(threadingManager != null){
+            threadingManager.close();
         }
         if(appContext != null){
             SpringApplication.exit(appContext);
@@ -66,8 +66,8 @@ public class EngineTestUtils {
         return diagnosticManager;
     }
 
-    public static WorkerQueue getWorkerQueue() {
-        return workerQueue;
+    public static ThreadingManager getThreadingManager() {
+        return threadingManager;
     }
 
     public static OperationResult executeOperation(Operation operation) throws AssertionError {
@@ -84,7 +84,7 @@ public class EngineTestUtils {
             Session session = getSessionEngine().initializeSession(operation);
             session.activateDebugMode();
             getDiagnosticManager().registerSession(session.getSessionShellId());
-            Future<OperationResult> operationResult = getWorkerQueue().submit(() -> getSessionEngine().executeOperation(session, operation));
+            Future<OperationResult> operationResult = getThreadingManager().submit(() -> getSessionEngine().executeOperation(session, operation));
             futureOutcomesBySessionId.put(session.getSessionShellId(), operationResult);
             return session;
         } catch (Exception e) {

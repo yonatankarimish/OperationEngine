@@ -10,8 +10,17 @@ import java.time.format.DateTimeFormatter;
 
 public class MessageLiterals {
     private static final Logger logger = LogManager.getLogger(MessageLiterals.class);
-    public static final String DateTimeFormat = "dd-MM-yyyy HH:mm:ss";
-    public static final DateTimeFormatter DateFormatter = DateTimeFormatter.ofPattern(DateTimeFormat);
+    public static final String projectDirectory;
+    static{
+        String tmpDirectory = "/";
+        try {
+            tmpDirectory =  new File(MessageLiterals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
+        } catch (URISyntaxException e) {
+            logger.error("Failed to resolve current project directory. Resolving as root directory. Caused by: ", e);
+        }finally {
+            projectDirectory = tmpDirectory;
+        }
+    }
 
     public static final String FileSeparator = FileSystems.getDefault().getSeparator();
     public static final String CarriageReturn = "\r";
@@ -19,9 +28,12 @@ public class MessageLiterals {
     public static final String Tab = "\t";
     public static final String VariableMark = "$";
 
+    public static final String DateTimeFormat = "dd-MM-yyyy HH:mm:ss";
+    public static final DateTimeFormatter DateFormatter = DateTimeFormatter.ofPattern(DateTimeFormat);
+
     public static final String localPartitionName = "/dev/mapper/vg_root-lv_tmp";
-    public static final String SessionPropertiesPath = projectDirectory() + "/config/sixsense.session.properties";
-    public static final String SessionExecutionDir = projectDirectory() + "/logs/sessions/";
+    public static final String configFilesPath = projectDirectory + "/config";
+    public static final String SessionExecutionDir = projectDirectory + "/logs/sessions/";
 
     public static final String EngineShutdown = "Session engine has been shut down";
     public static final String ExceptionEncountered = "Session engine encountered an error";
@@ -33,14 +45,4 @@ public class MessageLiterals {
     public static final String OperationTerminated = "Operation has been terminated externally";
     public static final String UnsuportedBinaryRelation = "Expected outcome has an unsupported binary relation";
     public static final String TimeoutInCommand = "Command did not return within it's specified time limit";
-
-    public static String projectDirectory(){
-        String projectDir;
-        try {
-            return new File(MessageLiterals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
-        } catch (URISyntaxException e) {
-            logger.error("Failed to resolve current project directory. Resolving as root directory. Caused by: ", e);
-            return "/";
-        }
-    }
 }

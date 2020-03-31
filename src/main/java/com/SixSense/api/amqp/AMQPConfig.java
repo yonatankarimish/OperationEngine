@@ -1,30 +1,50 @@
 package com.SixSense.api.amqp;
 
+
+import com.SixSense.config.HostConfig;
+import com.SixSense.config.ThreadingConfig;
+import com.SixSense.threading.ThreadingManager;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 //https://www.rabbitmq.com/tutorials/tutorial-four-spring-amqp.html
 //Should explain the whole class, read the article through
 @Configuration
+@EnableConfigurationProperties({HostConfig.class, ThreadingConfig.class})
 public class AMQPConfig {
     private static final Logger logger = LogManager.getLogger(AMQPConfig.class);
     static final String OperationResultBindingKey = "operation";
     static final String TerminationResultBindingKey = "terminate";
 
+    private final ThreadingManager threadingManager;
+    private final HostConfig.RabbitHost rabbitHost;
+    private final ThreadingConfig.ThreadingProperties amqpThreadingProperties;
+
+    @Autowired
+    public AMQPConfig(ThreadingManager threadingManager, HostConfig hostConfig, ThreadingConfig threadingConfig){
+        this.threadingManager = threadingManager;
+        this.rabbitHost = hostConfig.getRabbit();
+        this.amqpThreadingProperties = threadingConfig.getAmqp();
+    }
+
+
     @Bean
     public ConnectionFactory rabbitConnectionFactory(){
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
-        connectionFactory.setHost("172.31.252.39");
-        connectionFactory.setPort(5672);
-        connectionFactory.setUsername("engine");
-        connectionFactory.setPassword("engine");
-        connectionFactory.setVirtualHost("/engine");
+        connectionFactory.setHost(rabbitHost.getHost());
+        connectionFactory.setPort(rabbitHost.getPort());
+        connectionFactory.setUsername(rabbitHost.getUsername());
+        connectionFactory.setPassword(rabbitHost.getPassword());
+        connectionFactory.setVirtualHost(rabbitHost.getVhost());
+
         connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         connectionFactory.setPublisherReturns(true);
         connectionFactory.addConnectionListener(new ConnectionListener() {
@@ -38,6 +58,7 @@ public class AMQPConfig {
                 logger.debug("AMQP CachingConnectionFactory is now closed (" + signal.getMessage() + ")");
             }
         });
+
         return connectionFactory;
     }
 
