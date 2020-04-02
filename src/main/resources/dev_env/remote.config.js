@@ -1,5 +1,5 @@
 module.exports = {
-    dev: {
+    engine: {
         remotes: [{
             host: '172.31.XXX.XXX',
             username: 'user',

@@ -1,29 +1,36 @@
 /**
  * Created by Yonatan on 11/06/2019.
  */
+//dev dependencies
 const readline = require('readline');
 const path = require('path');
 const Promise = require('promise');
 const ncp = require('ncp').ncp;
+const readYaml = require('read-yaml');
+const writeYaml = require('write-yaml');
 const fs = require('graceful-fs');
 
+//common directories
 const appRoot = path.join(__dirname, "\\..");
 const resources = appRoot + "\\src\\main\\resources";
 const configTemplateFolder = resources + "\\dev_env";
 const remoteConfigFolder = appRoot + "\\dev_env";
+const ansibleTemplateFolder = resources + "\\ansible_control";
+const remoteAnsibleFolder = remoteConfigFolder + "\\ansible_control";
 
-const localhostPropsPath = resources + "\\localhost.properties";
-const configTemplatePath = configTemplateFolder + "\\remote.config.js";
+//configuration files
 const remoteConfigPath = remoteConfigFolder + "\\remote.config.js";
 
 const remoteUtils = require(appRoot + '\\scripts\\remote-utils.js');
 
 init();
 function init(){
-    initDevEnv()
-        .then(configureDevEnv)
-        .then(() => configureRemoteVM("ansible"))
-        .then(() => configureRemoteVM("rabbit", ["vhost"]))
+    initDevEnv() // generate the dev_env directory
+        .then(() => configureRemoteVM("engine")) //developer enters credentials for his engine vm
+        .then((engineVmConfig) => addToHostsFile("local", engineVmConfig)) //configure sixsense-hosts.yaml with engine vm config
+        .then(() => configureRemoteVM("ansible")) //developer enters credentials for his ansible control vm
+        .then(() => configureRemoteVM("rabbit", ["vhost"])) //developer enters credentials for his rabbitmq broker vm
+        .then((rabbitVmConfig) => addToHostsFile("rabbit", rabbitVmConfig)) //configure sixsense-hosts.yaml with rabbitmq broker vm config
         .then(uploadConfigToAnsibleHost)
         .catch(error => {
             console.error(error);
@@ -32,39 +39,31 @@ function init(){
 }
 
 function initDevEnv(){
-    return new Promise((resolve, reject) => {
-        ncp.limit = 4;
+    ncp.limit = 4;
 
-        ncp(configTemplateFolder, remoteConfigFolder, error => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve();
-            }
-
-        });
-    });
-}
-
-function configureDevEnv(){
-    return configureRemoteVM("dev").then(vmConfig => {
-        let localhostProps = [
-            "local.host=localhost",
-            "local.username=" + vmConfig.username,
-            "local.password=" + vmConfig.password,
-            "local.port=22"
-        ];
-        return new Promise((resolve, reject) => {
-            fs.writeFile(localhostPropsPath, localhostProps.join("\n"), error => {
-                if(error){
+    return new Promise(
+        (resolve, reject) => {
+            ncp(configTemplateFolder, remoteConfigFolder, error => {
+                if (error) {
                     reject(error);
-                }else{
+                } else {
                     resolve();
                 }
             });
-        });
-    });
+        }
+    ).then(() => new Promise(
+        (resolve, reject) => {
+            ncp(ansibleTemplateFolder, remoteAnsibleFolder, error => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            })
+        }
+    ));
 }
+
 
 async function configureRemoteVM(remoteVMKey, additionalKeys){
     let prettyKey = remoteVMKey.replace("_", " ");
@@ -113,6 +112,14 @@ function askQuestion(prompt, questionText){
     return new Promise((resolve, reject) => {
         prompt.question(questionText, resolve);
     });
+}
+
+function addToHostsFile(key, vmConfig){
+    let sixsenseHosts = remoteAnsibleFolder + "\\dir_skeleton\\config\\sixsense-hosts.yaml";
+    let hostsData = readYaml.sync(sixsenseHosts);
+
+    hostsData.sixsense.hosts[key] = vmConfig;
+    writeYaml.sync(sixsenseHosts, hostsData);
 }
 
 function uploadConfigToAnsibleHost(){

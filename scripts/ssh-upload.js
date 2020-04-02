@@ -1,10 +1,12 @@
 /**
  * Created by Yonatan on 07/11/2017.
  */
+//dev dependencies
 const path = require('path');
 const Promise = require('promise');
 const yargs = require('yargs').argv;
 
+//configuration files and directories
 const appRoot = path.join(__dirname, "\\..");
 const resources = appRoot + "\\src\\main\\resources";
 const devEnvDestination = appRoot + "\\dev_env";
@@ -45,8 +47,8 @@ function uploadJar(){
     let deployCommands = [
         'echo "finished running uploadJar"' //notify the developer's machine CLI that all commands have run successfully.
     ];
-    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine.jar", remoteDestination + "/OperationEngine.jar", remoteConfig.dev.remotes).then(() => {
-        return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine.jar", remoteDestination + "/OperationEngine.jar", remoteConfig.engine.remotes).then(() => {
+        return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
     });
 }
 
@@ -55,8 +57,8 @@ function uploadTests(){
     let deployCommands = [
         'echo "finished running uploadTests"' //notify the developer's machine CLI that all commands have run successfully.
     ];
-    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine-tests.jar", remoteDestination + "/OperationEngine-tests.jar", remoteConfig.dev.remotes).then(() => {
-        return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+    return remoteUtils.sftpTransferFile(appRoot+"\\target\\OperationEngine-tests.jar", remoteDestination + "/OperationEngine-tests.jar", remoteConfig.engine.remotes).then(() => {
+        return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
     });
 }
 
@@ -67,10 +69,10 @@ function uploadDependencies(){
     ];
 
     return Promise.all([
-        //uploadUtils.sftpTransferFile(appRoot+"\src\main\resources\log4j2.xml", remoteDestination + "/config/log4j2.xml", remoteConfig.dev.remotes), //this should be uncommented once we figure out how to point to external config file (currently loads log4j2 from classpath)
-        remoteUtils.sftpTransferDir(appRoot+"\\target\\dependency-jars", remoteDestination + "/dependency-jars", remoteConfig.dev.remotes)
+        //uploadUtils.sftpTransferFile(appRoot+"\src\main\resources\log4j2.xml", remoteDestination + "/config/log4j2.xml", remoteConfig.engine.remotes), //this should be uncommented once we figure out how to point to external config file (currently loads log4j2 from classpath)
+        remoteUtils.sftpTransferDir(appRoot+"\\target\\dependency-jars", remoteDestination + "/dependency-jars", remoteConfig.engine.remotes)
     ]).then(() => {
-        return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+        return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
     });
 }
 
@@ -81,9 +83,9 @@ function uploadAnsible(){
     ];
 
     return Promise.all([
-        remoteUtils.sftpTransferDir(resources+"\\ansible_control", ansibleDestination, remoteConfig.ansible.remotes)
+        remoteUtils.sftpTransferDir(devEnvDestination + "\\ansible_control", ansibleDestination, remoteConfig.ansible.remotes)
     ]).then(() => {
-        return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+        return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
     });
 }
 
@@ -98,7 +100,7 @@ function stopService(){
         'echo "engine service has stopped"' //notify the developer's machine CLI that all commands have run successfully.
     ];
 
-    return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+    return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
 }
 
 //Starts the engine service on the remote SixSense server
@@ -108,5 +110,5 @@ function startService(){
         'echo "engine service has started"' //notify the developer's machine CLI that all commands have run successfully.
     ];
 
-    return remoteUtils.executeSsh(deployCommands, remoteConfig.dev.remotes);
+    return remoteUtils.executeSsh(deployCommands, remoteConfig.engine.remotes);
 }

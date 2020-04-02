@@ -31,11 +31,13 @@
     "ncp": "~2.0.0",
     "parcel-bundler": "~1.12.4",
     "promise": "~8.0.1",
+    "read-yaml": "^1.1.0",
     "rimraf": "~3.0.1",
     "ssh2": "~0.8.4",
     "ssh2-utils": "~1.0.28",
     "stylus": "^0.54.7",
     "walk": "~2.3.9",
+    "write-yaml": "~1.0.0",
     "yargs": "~13.2.4"
   },
   "dependencies": {
