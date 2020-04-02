@@ -5,6 +5,7 @@ import com.SixSense.engine.SessionEngine;
 import com.SixSense.util.DynamicFieldGlossary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +17,12 @@ import java.util.*;
 public class DiagnosticController {
     private static final Logger logger = LogManager.getLogger(DiagnosticController.class);
     private final SessionEngine sessionEngine;
+    private final CachingConnectionFactory amqpConnectionFactory;
 
     @Autowired
-    public DiagnosticController(SessionEngine sessionEngine) {
+    public DiagnosticController(SessionEngine sessionEngine, CachingConnectionFactory amqpConnectionFactory) {
         this.sessionEngine = sessionEngine;
+        this.amqpConnectionFactory = amqpConnectionFactory;
     }
 
     @GetMapping("/config")
@@ -53,6 +56,11 @@ public class DiagnosticController {
         }
 
         return runningDevices;
+    }
+
+    @GetMapping("/amqp/cacheProperties")
+    public Properties getAMQPCacheProperties(){
+        return amqpConnectionFactory.getCacheProperties();
     }
 
     /*@GetMapping("/logs/{sessionId}")

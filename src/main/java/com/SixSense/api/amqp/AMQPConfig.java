@@ -4,6 +4,7 @@ package com.SixSense.api.amqp;
 import com.SixSense.config.HostConfig;
 import com.SixSense.config.ThreadingConfig;
 import com.SixSense.threading.ThreadingManager;
+import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,24 +40,55 @@ public class AMQPConfig {
     @Bean
     public ConnectionFactory rabbitConnectionFactory(){
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
+
+        //host configuration
         connectionFactory.setHost(rabbitHost.getHost());
         connectionFactory.setPort(rabbitHost.getPort());
         connectionFactory.setUsername(rabbitHost.getUsername());
         connectionFactory.setPassword(rabbitHost.getPassword());
         connectionFactory.setVirtualHost(rabbitHost.getVhost());
 
+        //maximum idle (cached) connections and channels. Currently using default values
+        connectionFactory.setCacheMode(CachingConnectionFactory.CacheMode.CHANNEL);
+        connectionFactory.setConnectionNameStrategy(nameStrategy -> "Engine-Connection");
+        this.threadingManager.injectAMQPFactoryWithPool(connectionFactory);
+
+        //might apply these properties in the future
+        /*connectionFactory.setConnectionCacheSize();
+        connectionFactory.setChannelCacheSize(25); //Channel open/close is expensive, so in high-throughput environments we would prefer keeping a lot of them open (cached)
+        connectionFactory.setConnectionThreadFactory();
+        ConnectionFactory publisherConnectionFactory = connectionFactory.getPublisherConnectionFactory();
+        ConnectionFactory rabbitConnectionFactory = (ConnectionFactory) connectionFactory.getRabbitConnectionFactory();*/
+
+        //enable publisher confirms
         connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         connectionFactory.setPublisherReturns(true);
+
+        //connection and channel listeners
         connectionFactory.addConnectionListener(new ConnectionListener() {
             @Override
             public void onCreate(Connection connection) {
-                logger.debug("AMQP CachingConnectionFactory is now open");
+                logger.debug("AMQP CachingConnectionFactory opened a new connection");
+                connection.addBlockedListener(new BlockedListener() {
+                    @Override
+                    public void handleBlocked(String reason) {
+                        logger.warn("AMQP connection to broker is now blocked. Caused by: " + reason);
+                    }
+
+                    @Override
+                    public void handleUnblocked() {
+                        logger.info("AMQP connection to broker is now unblocked");
+                    }
+                });
             }
 
             @Override
             public void onShutDown(ShutdownSignalException signal) {
-                logger.debug("AMQP CachingConnectionFactory is now closed (" + signal.getMessage() + ")");
+                logger.debug("AMQP CachingConnectionFactory closed a connection (" + signal.getMessage() + ")");
             }
+        });
+        connectionFactory.addChannelListener((channel, isTransactional) -> {
+            //might extend this in the future
         });
 
         return connectionFactory;

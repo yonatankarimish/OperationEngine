@@ -15,4 +15,4 @@ sixsense:
       allowed-idle-time: 30s
       maximum-threads: 2147483647
       minimum-threads: 10
-      threadNamePrefix: "engine-amqp-listener-"
+      threadNamePrefix: "engine-amqp-consumer-"

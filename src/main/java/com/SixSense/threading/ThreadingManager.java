@@ -5,6 +5,7 @@ import com.SixSense.config.ThreadingConfig;
 import org.apache.catalina.connector.Connector;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
@@ -22,15 +23,19 @@ public class ThreadingManager implements Closeable {
     private static final Logger logger = LogManager.getLogger(ThreadingManager.class);
     private final ThreadPoolExecutor enginePool; //Executes all tasks originating from the engine itself (com.SixSense.*)
     private final HTTPThreadExecutor httpConnectionPool; //Executes all threads intercepting web requests (org.apache.catalina.*) [NOT all tomcat threads]
+    private final ThreadPoolExecutor amqpConnectionPool;
+
     private boolean isClosed = false;
 
     @Autowired
     private ThreadingManager(ThreadingConfig threadingConfig){
         ThreadingConfig.ThreadingProperties engineProperties = threadingConfig.getEngine();
         ThreadingConfig.ThreadingProperties httpProperties = threadingConfig.getHttp();
+        ThreadingConfig.ThreadingProperties amqpProperties = threadingConfig.getAmqp();
 
         this.enginePool = generateThreadPool(engineProperties);
         this.httpConnectionPool = new HTTPThreadExecutor(httpProperties);
+        this.amqpConnectionPool = generateThreadPool(amqpProperties);
     }
 
     public ThreadPoolExecutor generateThreadPool(ThreadingConfig.ThreadingProperties threadingProperties){
@@ -73,6 +78,10 @@ public class ThreadingManager implements Closeable {
 
     public void injectConnectorWithPool(Connector connector){
         connector.getProtocolHandler().setExecutor(this.httpConnectionPool);
+    }
+
+    public void injectAMQPFactoryWithPool(AbstractConnectionFactory connectionFactory){
+        connectionFactory.setExecutor(this.amqpConnectionPool);
     }
 
     public boolean isShutdown(){
