@@ -58,7 +58,7 @@ public class OperationConsumer {
                             value = "engine.operations.execute",
                             durable = "true"
                     ),
-                    key = "execute.operation"
+                    key = "execute"
             )
     )
     public void executeOperation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
@@ -91,6 +91,7 @@ public class OperationConsumer {
         //TODO: Manual acknowledgement should happen only after publisher confirm is received (and not after sending for submission)
         try {
             if (successfullySubmitted) {
+                //basicAck(long deliveryTag, boolean multiple)
                 channel.basicAck(deliveryTag, false);
             } else {
                 //basicNack(long deliveryTag, boolean multiple, boolean requeue)
@@ -135,7 +136,7 @@ public class OperationConsumer {
                             value = "engine.operations.terminate",
                             durable = "true"
                     ),
-                    key = "execute.operation"
+                    key = "terminate"
             )
     )
     public void terminateOperation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {

@@ -12,9 +12,9 @@ import java.time.temporal.ChronoUnit;
 public class ThreadingConfig {
     private final ThreadingProperties engine;
     private final ThreadingProperties http;
-    private final ThreadingProperties amqp;
+    private final AMQPThreadingProperties amqp;
 
-    public ThreadingConfig(ThreadingProperties engine, ThreadingProperties http, ThreadingProperties amqp) {
+    public ThreadingConfig(ThreadingProperties engine, ThreadingProperties http, AMQPThreadingProperties amqp) {
         this.engine = engine;
         this.http = http;
         this.amqp = amqp;
@@ -51,6 +51,25 @@ public class ThreadingConfig {
         }
     }
 
+    public static class AMQPThreadingProperties extends ThreadingProperties{
+        private final int minimumChannels;
+        private final int minimumConnections;
+
+        public AMQPThreadingProperties(Duration allowedIdleTime, int maximumThreads, int minimumThreads, String threadNamePrefix, int minimumChannels, int minimumConnections) {
+            super(allowedIdleTime, maximumThreads, minimumThreads, threadNamePrefix);
+            this.minimumChannels = minimumChannels;
+            this.minimumConnections = minimumConnections;
+        }
+
+        public int getMinimumChannels() {
+            return minimumChannels;
+        }
+
+        public int getMinimumConnections() {
+            return minimumConnections;
+        }
+    }
+
     public ThreadingProperties getEngine() {
         return engine;
     }
@@ -59,7 +78,7 @@ public class ThreadingConfig {
         return http;
     }
 
-    public ThreadingProperties getAmqp() {
+    public AMQPThreadingProperties getAmqp() {
         return amqp;
     }
 }

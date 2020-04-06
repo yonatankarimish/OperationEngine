@@ -5,7 +5,7 @@ import com.SixSense.config.ThreadingConfig;
 import org.apache.catalina.connector.Connector;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
@@ -25,17 +25,21 @@ public class ThreadingManager implements Closeable {
     private final HTTPThreadExecutor httpConnectionPool; //Executes all threads intercepting web requests (org.apache.catalina.*) [NOT all tomcat threads]
     private final ThreadPoolExecutor amqpConnectionPool;
 
+    private final ThreadingConfig.ThreadingProperties engineProperties;
+    private final ThreadingConfig.ThreadingProperties httpProperties;
+    private final ThreadingConfig.AMQPThreadingProperties amqpProperties;
+
     private boolean isClosed = false;
 
     @Autowired
     private ThreadingManager(ThreadingConfig threadingConfig){
-        ThreadingConfig.ThreadingProperties engineProperties = threadingConfig.getEngine();
-        ThreadingConfig.ThreadingProperties httpProperties = threadingConfig.getHttp();
-        ThreadingConfig.ThreadingProperties amqpProperties = threadingConfig.getAmqp();
+        this.engineProperties = threadingConfig.getEngine();
+        this.httpProperties = threadingConfig.getHttp();
+        this.amqpProperties = threadingConfig.getAmqp();
 
-        this.enginePool = generateThreadPool(engineProperties);
-        this.httpConnectionPool = new HTTPThreadExecutor(httpProperties);
-        this.amqpConnectionPool = generateThreadPool(amqpProperties);
+        this.enginePool = generateThreadPool(this.engineProperties);
+        this.httpConnectionPool = new HTTPThreadExecutor(this.httpProperties);
+        this.amqpConnectionPool = generateThreadPool(this.amqpProperties);
     }
 
     public ThreadPoolExecutor generateThreadPool(ThreadingConfig.ThreadingProperties threadingProperties){
@@ -80,8 +84,13 @@ public class ThreadingManager implements Closeable {
         connector.getProtocolHandler().setExecutor(this.httpConnectionPool);
     }
 
-    public void injectAMQPFactoryWithPool(AbstractConnectionFactory connectionFactory){
+    public void injectAMQPFactoryWithPool(CachingConnectionFactory connectionFactory){
         connectionFactory.setExecutor(this.amqpConnectionPool);
+        connectionFactory.getRabbitConnectionFactory().setSharedExecutor(this.amqpConnectionPool);
+
+        //note that connection and channel open/close is expensive, so in high-throughput environments we would prefer keeping a lot of them open (cached)
+        connectionFactory.setConnectionCacheSize(this.amqpProperties.getMinimumConnections());
+        connectionFactory.setChannelCacheSize(this.amqpProperties.getMinimumChannels());
     }
 
     public boolean isShutdown(){

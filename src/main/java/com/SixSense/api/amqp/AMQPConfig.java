@@ -16,8 +16,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-//https://www.rabbitmq.com/tutorials/tutorial-four-spring-amqp.html
-//Should explain the whole class, read the article through
+/*https://www.rabbitmq.com/tutorials/tutorial-four-spring-amqp.html
+* Should explain the whole class, read the article through
+*
+* https://groups.google.com/forum/#!topic/rabbitmq-users/f6AlwP6Tcv0
+* should give more insight as to some of the advanced configurations*/
 @Configuration
 @EnableConfigurationProperties({HostConfig.class, ThreadingConfig.class})
 public class AMQPConfig {
@@ -52,13 +55,6 @@ public class AMQPConfig {
         connectionFactory.setCacheMode(CachingConnectionFactory.CacheMode.CHANNEL);
         connectionFactory.setConnectionNameStrategy(nameStrategy -> "Engine-Connection");
         this.threadingManager.injectAMQPFactoryWithPool(connectionFactory);
-
-        //might apply these properties in the future
-        /*connectionFactory.setConnectionCacheSize();
-        connectionFactory.setChannelCacheSize(25); //Channel open/close is expensive, so in high-throughput environments we would prefer keeping a lot of them open (cached)
-        connectionFactory.setConnectionThreadFactory();
-        ConnectionFactory publisherConnectionFactory = connectionFactory.getPublisherConnectionFactory();
-        ConnectionFactory rabbitConnectionFactory = (ConnectionFactory) connectionFactory.getRabbitConnectionFactory();*/
 
         //enable publisher confirms
         connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
@@ -97,7 +93,8 @@ public class AMQPConfig {
     @Bean
     public RabbitTemplate rabbitTemplate(){
         RabbitTemplate template = new RabbitTemplate(rabbitConnectionFactory());
-        template.setMandatory(true);
+        template.setMandatory(true); //must be set to "true" for publisher confirms
+        template.setUsePublisherConnection(true); //uses a separate connection(s) from separate connection factories for publishing and consuming (to avoid blocking consumers while publishing)
         template.setConfirmCallback((CorrelationData correlationData, boolean ack, String cause) -> {
             if(!ack){
                 logger.error("Failed to publish message to rabbitmq broker. Caused by: " + cause);
