@@ -1,6 +1,7 @@
 package com.SixSense.io;
 
 
+import com.SixSense.api.amqp.OperationProducer;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.events.InputSentEvent;
@@ -37,6 +38,7 @@ public class Session implements Closeable{
     private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
     @Autowired private ThreadingManager threadingManager;
     @Autowired private DiagnosticManager diagnosticManager;
+    @Autowired private OperationProducer operationProducer;
 
     //Connection, synchronization and debugging
     private final Map<String, ShellChannel> channels;
@@ -48,6 +50,7 @@ public class Session implements Closeable{
 
     //Current command context
     private final UUID sessionShellId = UUID.randomUUID();
+    private final String operationId;
     private LocalDateTime commandStartTime;
     private long elapsedSeconds = 0;
     private int drilldownRank = 0;
@@ -60,7 +63,7 @@ public class Session implements Closeable{
     private final Map<String, Deque<ResultRetention>> sessionVariables;
     private final Map<String, String> databaseVariables;
 
-    public Session(SSHClient connectedSSHClient, Set<String> channelNames) throws IOException{
+    public Session(SSHClient connectedSSHClient, Set<String> channelNames, String operationId) throws IOException{
         this.sessionVariables = new HashMap<>();
         this.databaseVariables = new HashMap<>();
         this.channels = new HashMap<>();
@@ -70,6 +73,7 @@ public class Session implements Closeable{
         }
 
         //Logging configurations
+        this.operationId = operationId;
         this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + this.getSessionShellId()));
     }
 
@@ -125,7 +129,7 @@ public class Session implements Closeable{
             }
 
             parsedOutput = parsePipedOutput(pipedProcessOutput);
-            resolvedOutcome = this.attemptToResolve(parsedOutput);
+            resolvedOutcome = attemptToResolve(parsedOutput);
             hasWaitElapsed = awaitIfNeeded(resolvedOutcome, commandEndReached);
         }
 
@@ -310,15 +314,16 @@ public class Session implements Closeable{
                 }
                 varStack.push(clonedRetention);
             }else if(clonedRetention.getRetentionType().equals(RetentionType.File)){
-                clonedRetention.setValue(this.filterFileOutput(clonedRetention.getValue()));
+                clonedRetention.setValue(filterFileOutput(clonedRetention.getValue()));
                 RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
                 try {
                     this.threadingManager.submit(fileWriter);
                 } catch (Exception e) {
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: ", e.getMessage());
                 }
-            }else if(clonedRetention.getRetentionType().equals(RetentionType.Database)){
-                //TODO: once we provide a database service, this should write the key value pairs async, similar to file retention.
+            }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseImmediate)){
+                operationProducer.produceRetentionResult(this.operationId, clonedRetention);
+            }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseEventual)){
                 this.databaseVariables.put(clonedRetention.getName(), clonedRetention.getValue());
             }
         }else if(terminatedExternally){

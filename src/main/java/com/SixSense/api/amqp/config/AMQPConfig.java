@@ -1,4 +1,4 @@
-package com.SixSense.api.amqp;
+package com.SixSense.api.amqp.config;
 
 
 import com.SixSense.config.HostConfig;
@@ -25,8 +25,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({HostConfig.class, ThreadingConfig.class})
 public class AMQPConfig {
     private static final Logger logger = LogManager.getLogger(AMQPConfig.class);
-    static final String OperationResultBindingKey = "operation";
-    static final String TerminationResultBindingKey = "terminate";
+    public static final String OperationResultBindingKey = "operation";
+    public static final String RetentionResultBindingKey = "retention";
+    public static final String TerminationResultBindingKey = "terminate";
 
     private final ThreadingManager threadingManager;
     private final HostConfig.RabbitHost rabbitHost;
@@ -120,6 +121,12 @@ public class AMQPConfig {
     }
 
     @Bean
+    public Queue retentionResultsQueue(){
+        //Queue(String name, boolean durable)
+        return new Queue("engine.results.retention", true);
+    }
+
+    @Bean
     public Queue terminationResultsQueue(){
         //Queue(String name, boolean durable)
         return new Queue("engine.results.terminate", true);
@@ -127,11 +134,16 @@ public class AMQPConfig {
 
     @Bean
     public Binding bindOperationResults(DirectExchange resultsExchange, Queue operationResultsQueue){
-        return BindingBuilder.bind(operationResultsQueue).to(resultsExchange).with("operation");
+        return BindingBuilder.bind(operationResultsQueue).to(resultsExchange).with(OperationResultBindingKey);
+    }
+
+    @Bean
+    public Binding bindRetentionResults(DirectExchange resultsExchange, Queue retentionResultsQueue){
+        return BindingBuilder.bind(retentionResultsQueue).to(resultsExchange).with(RetentionResultBindingKey);
     }
 
     @Bean
     public Binding bindTerminationResults(DirectExchange resultsExchange, Queue terminationResultsQueue){
-        return BindingBuilder.bind(terminationResultsQueue).to(resultsExchange).with("terminate");
+        return BindingBuilder.bind(terminationResultsQueue).to(resultsExchange).with(TerminationResultBindingKey);
     }
 }

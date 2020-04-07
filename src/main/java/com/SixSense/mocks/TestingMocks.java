@@ -393,7 +393,7 @@ public class TestingMocks {
                 )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.memory")
             );
 
@@ -416,7 +416,7 @@ public class TestingMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.cpu")
             );
 
@@ -462,7 +462,7 @@ public class TestingMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.space.root")
             );
 
@@ -508,7 +508,7 @@ public class TestingMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.space.var")
             );
 
@@ -536,7 +536,7 @@ public class TestingMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.uptime")
             );
 
@@ -603,7 +603,7 @@ public class TestingMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Database)
+                    .withRetentionType(RetentionType.DatabaseEventual)
                     .withName("var.inventory.chassis")
             );
 

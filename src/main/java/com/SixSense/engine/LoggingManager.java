@@ -166,13 +166,17 @@ public class LoggingManager  {
             case File:{
                 loggers.get(Loggers.SessionLogger).info(indentation + "Added results to file " + retention.getName());
             }break;
-            case Database:{
+            case DatabaseEventual:{
                 Map<String, String> oldDatabaseVarState = session.getDatabaseVariables();
                 if(oldDatabaseVarState.containsKey(retention.getName())) {
                     Map<String, String> oldValue = Collections.singletonMap(retention.getName(), oldDatabaseVarState.get(retention.getName()));
                     logDynamicFields(session, oldValue, '-');
                 }
 
+                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
+                logDynamicFields(session, newValue, '+');
+            }break;
+            case DatabaseImmediate:{
                 Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
                 logDynamicFields(session, newValue, '+');
             }break;

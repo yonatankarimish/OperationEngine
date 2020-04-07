@@ -1,4 +1,4 @@
-package com.SixSense.api.http;
+package com.SixSense.api.http.controllers;
 
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;

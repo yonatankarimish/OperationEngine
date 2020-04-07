@@ -1,9 +1,11 @@
 package com.SixSense.api.amqp;
 
+import com.SixSense.api.amqp.config.AMQPConfig;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
+import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
@@ -35,17 +37,13 @@ public class OperationConsumer {
     //Engine entities
     private final WorkflowManager workflowManager;
     private final ThreadingManager threadingManager;
-
-    //AMQP entities
-    private final RabbitTemplate rabbitTemplate;
-    private final DirectExchange resultExchange;
+    private final OperationProducer operationProducer;
 
     @Autowired
-    public OperationConsumer(WorkflowManager workflowManager, ThreadingManager threadingManager, RabbitTemplate rabbitTemplate, DirectExchange resultExchange) {
+    public OperationConsumer(WorkflowManager workflowManager, ThreadingManager threadingManager, OperationProducer operationProducer) {
         this.workflowManager = workflowManager;
         this.threadingManager = threadingManager;
-        this.rabbitTemplate = rabbitTemplate;
-        this.resultExchange = resultExchange;
+        this.operationProducer = operationProducer;
     }
 
     @RabbitListener(
@@ -81,9 +79,7 @@ public class OperationConsumer {
             final RawExecutionConfig asFinalCopy = rawExecutionConfig; //this ugly line is needed because lambda expressions require final variables
 
             CompletableFuture<Map<String, OperationResult>> workflowResult = workflowManager.executeWorkflow(workflow);
-            threadingManager.acceptAsync(workflowResult, map -> {
-                produceOperationResults(asFinalCopy, workflow, map, queueName, deliveryTag);
-            });
+            threadingManager.acceptAsync(workflowResult, map -> operationProducer.produceOperationResults(asFinalCopy, workflow, map, queueName, deliveryTag));
 
             successfullySubmitted = true;
         }
@@ -99,30 +95,6 @@ public class OperationConsumer {
             }
         } catch (IOException e) {
             logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue(), e);
-        }
-    }
-
-    private void produceOperationResults(RawExecutionConfig rawExecutionConfig, ParallelWorkflow composedWorkflow, Map<String, OperationResult> workflowResult, String queue, long deliveryTag) {
-        for (Operation operation : composedWorkflow.getParallelOperations()) {
-            OperationResult result = workflowResult.get(operation.getUUID());
-            rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
-            logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
-            logger.info("Result Message: " + result.getExpressionResult().getMessage());
-        }
-
-        String asJSON = "";
-        try {
-            asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize operation result for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: ", e);
-            logger.error("Check the engine logs for details about the operation and it's result ");
-        }
-
-        if (!asJSON.isEmpty()) {
-            Message response = MessageBuilder.withBody(asJSON.getBytes())
-                    .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
-                    .build();
-            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.OperationResultBindingKey, response);
         }
     }
 
@@ -150,9 +122,5 @@ public class OperationConsumer {
         } catch (IOException e) {
             logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue(), e);
         }
-    }
-
-    private void produceTerminationResults() {
-        //Not yet supported, but it should be...
     }
 }

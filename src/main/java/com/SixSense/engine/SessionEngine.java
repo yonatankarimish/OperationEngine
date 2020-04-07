@@ -296,7 +296,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             throw new NullPointerException("Cannot create a session using a null operation!");
         }
 
-        Session session = new Session(this.sshClient, operation.getChannelNames());
+        Session session = new Session(this.sshClient, operation.getChannelNames(), operation.getUUID());
         session.loadSessionVariables(sessionProperties);
         ThreadContext.put("sessionID", session.getSessionShellId());
         ThreadingUtils.updateSessionAndOperationIds(session.getShortSessionId(), operation.getShortUUID());

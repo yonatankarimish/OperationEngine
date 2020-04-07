@@ -1,5 +1,5 @@
 package com.SixSense.data.retention;
 
 public enum RetentionType {
-    File, Variable, Database, None
+    File, Variable, DatabaseEventual, DatabaseImmediate, None
 }

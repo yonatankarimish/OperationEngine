@@ -1,7 +1,6 @@
-package com.SixSense.api.http;
+package com.SixSense.api.http.controllers;
 
 import com.SixSense.data.commands.Operation;
-import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.threading.MonitoredThreadState;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.threading.ThreadingManager;
@@ -12,7 +11,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.*;
 
 @RestController
