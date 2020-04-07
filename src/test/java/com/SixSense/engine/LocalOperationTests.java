@@ -315,7 +315,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
     public void dynamicFieldLoading(){
         Command command = (Command)new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("echo " + DynamicFieldGlossary.$(DynamicFieldGlossary.var_cmd_text) + DynamicFieldGlossary.$(DynamicFieldGlossary.var_stack_text))
+            .withCommandText("echo " + DynamicFieldGlossary.$(DynamicFieldGlossary.var_cmd_text) + " " + DynamicFieldGlossary.$(DynamicFieldGlossary.var_stack_text))
             .addDynamicField(DynamicFieldGlossary.var_cmd_text, "command")
             .addDynamicField(DynamicFieldGlossary.var_stack_text, "command")
             .withExpectedOutcome(

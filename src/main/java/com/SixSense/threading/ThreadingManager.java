@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 @EnableConfigurationProperties(ThreadingConfig.class)
 public class ThreadingManager implements Closeable {
     private static final Logger logger = LogManager.getLogger(ThreadingManager.class);
+    private static final int ShutdownGraceSeconds = 5;
     private final ThreadPoolExecutor enginePool; //Executes all tasks originating from the engine itself (com.SixSense.*)
     private final HTTPThreadExecutor httpConnectionPool; //Executes all threads intercepting web requests (org.apache.catalina.*) [NOT all tomcat threads]
     private final ThreadPoolExecutor amqpConnectionPool;
@@ -130,7 +131,21 @@ public class ThreadingManager implements Closeable {
 
     @Override
     public void close() {
-        this.enginePool.shutdownNow();
+        boolean finishedShutdown = false;
+        this.enginePool.shutdown();
+        try {
+            if (this.enginePool.awaitTermination(ShutdownGraceSeconds, TimeUnit.SECONDS)) {
+                finishedShutdown = true;
+            }
+        }catch (InterruptedException e){
+            /*Intentionally empty - if interrupted, then obviously the shutdown hasn't finished*/
+        }
+
+        if(!finishedShutdown){
+            logger.warn("Engine pool did not finish terminating workers after the allotted time has elapsed. Shutting down forcefully now");
+            this.enginePool.shutdownNow();
+        }
+
         this.isClosed = true;
         logger.info("WorkerQueue closed");
     }

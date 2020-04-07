@@ -241,14 +241,28 @@ public class Session implements Closeable{
     /*We could theoretically just apply a ClearingPipe and then a WhitespacePipe
     * But then changes to the pipes could affect the session filtering methods*/
     private String filterRawOutput(List<String> output){
-        StringJoiner stringRepresentation = new StringJoiner(" ", "", "");
+        StringJoiner stringRepresentation = new StringJoiner(" ");
         for(String line : output){
-            stringRepresentation.add(line
+            String filteredLine = line
                     .replace(MessageLiterals.CarriageReturn+MessageLiterals.LineBreak, " ")
                     .replace(MessageLiterals.LineBreak, " ")
                     .replace(MessageLiterals.CarriageReturn, " ")
                     .replace(this.evaluatedCommand, "")
-            );
+                    .replace(this.currentPrompt, "");
+
+            /*we do not add blank lines to the string representation, to prevent redundant whitespace being inserted into the filtered output
+            * case 1 :
+            *   output = {"foo", "prompt"};
+            *   stringRepresentation (before filter) => "foo prompt"
+            *   stringRepresentation (after filter)=> "foo ", but the parsed output should be "foo"
+            *
+            * case 2 :
+             *   output = {"", "", ""};
+             *   stringRepresentation => "  " (two space characters), but the parsed output should be ""
+            * */
+            if(!filteredLine.isBlank()){
+                stringRepresentation.add(filteredLine);
+            }
         }
 
         return stringRepresentation.toString()
