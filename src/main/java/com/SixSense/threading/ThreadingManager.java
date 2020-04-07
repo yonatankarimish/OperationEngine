@@ -2,8 +2,8 @@ package com.SixSense.threading;
 
 import com.SixSense.api.http.overrides.HTTPThreadExecutor;
 import com.SixSense.config.ThreadingConfig;
-import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.threading.MonitoredThread;
+import com.SixSense.data.threading.MonitoredThreadState;
 import com.SixSense.data.threading.ThreadPool;
 import org.apache.catalina.connector.Connector;
 import org.apache.logging.log4j.Logger;
@@ -111,13 +111,13 @@ public class ThreadingManager implements Closeable {
         }
     }
 
-    public Map<String, EngineEventType> getEngineThreadStatus(){
+    public Map<String, MonitoredThreadState> getEngineThreadStatus(){
         IThreadMonitoingFactory monitoringThreadFactory = getMonitoringThreadFactory(ThreadPool.Engine);
         Set<MonitoredThread> currentThreads = monitoringThreadFactory.getMonitoredThreads();
 
-        Map<String, EngineEventType> threadStatus = new HashMap<>();
+        Map<String, MonitoredThreadState> threadStatus = new HashMap<>();
         for(MonitoredThread thread : currentThreads){
-            threadStatus.put(thread.getName(), thread.getCurrentLifecyclePhase());
+            threadStatus.put(thread.getName(), thread.getCurrentThreadState());
         }
 
         return threadStatus;

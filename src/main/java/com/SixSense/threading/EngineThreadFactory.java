@@ -1,7 +1,6 @@
 package com.SixSense.threading;
 
 import com.SixSense.config.ThreadingConfig;
-import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.threading.MonitoredThread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +56,7 @@ public class EngineThreadFactory implements ThreadFactory, IThreadMonitoingFacto
     @Override
     public boolean unwatch(MonitoredThread monitoredThread) {
         logger.debug("Unwatching thread " + monitoredThread.getName());
-        monitoredThread.setCurrentLifecyclePhase(EngineEventType.NotInSession);
+        monitoredThread.getCurrentThreadState().resetState();
         return this.monitoredThreads.remove(monitoredThread);
     }
 }

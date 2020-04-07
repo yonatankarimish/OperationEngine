@@ -1,6 +1,5 @@
 package com.SixSense.api.http.overrides;
 
-import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.threading.MonitoredThread;
 import com.SixSense.threading.IThreadMonitoingFactory;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +40,7 @@ public class HTTPThreadFactory extends TaskThreadFactory implements IThreadMonit
     @Override
     public boolean unwatch(MonitoredThread monitoredThread) {
         logger.debug("Unwatching thread " + monitoredThread.getName());
-        monitoredThread.setCurrentLifecyclePhase(EngineEventType.NotInSession);
+        monitoredThread.getCurrentThreadState().resetState();
         return this.monitoredThreads.remove(monitoredThread);
     }
 }

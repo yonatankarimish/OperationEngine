@@ -1,20 +1,23 @@
 package com.SixSense.data.threading;
 
-import com.SixSense.data.events.EngineEventType;
 import com.SixSense.threading.IThreadMonitoingFactory;
 
 //This class must extend the java.util.Thread class to allow returning MonitoredThread instances in library thread factories (tomcat, rabbitmq etc...)
 public class MonitoredThread extends Thread {
     private final IThreadMonitoingFactory monitoringFactory;
     private final Thread thread;
-    private EngineEventType currentLifecyclePhase;
+    private final MonitoredThreadState currentThreadState;
 
     public MonitoredThread(IThreadMonitoingFactory monitoringFactory, Thread thread) {
         this.monitoringFactory = monitoringFactory;
         this.thread = thread;
-        this.currentLifecyclePhase = EngineEventType.NotInSession;
+        this.currentThreadState = new MonitoredThreadState();
 
         setName("Monitor(" + this.thread.getName() + ")");
+    }
+
+    public MonitoredThreadState getCurrentThreadState() {
+        return currentThreadState;
     }
 
     @Override
@@ -22,13 +25,5 @@ public class MonitoredThread extends Thread {
         this.monitoringFactory.watch(this);
         this.thread.run();
         this.monitoringFactory.unwatch(this);
-    }
-
-    public EngineEventType getCurrentLifecyclePhase() {
-        return currentLifecyclePhase;
-    }
-
-    public void setCurrentLifecyclePhase(EngineEventType currentLifecyclePhase) {
-        this.currentLifecyclePhase = currentLifecyclePhase;
     }
 }

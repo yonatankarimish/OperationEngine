@@ -2,6 +2,7 @@ package com.SixSense.api.http;
 
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.events.EngineEventType;
+import com.SixSense.data.threading.MonitoredThreadState;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.DynamicFieldGlossary;
@@ -40,7 +41,7 @@ public class DiagnosticController {
     }
 
     @GetMapping("/status")
-    public Map<String, EngineEventType> getEngineStatus() {
+    public Map<String, MonitoredThreadState> getEngineStatus() {
         return threadingManager.getEngineThreadStatus();
     }
 

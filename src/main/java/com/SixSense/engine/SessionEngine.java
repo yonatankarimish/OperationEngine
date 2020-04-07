@@ -9,6 +9,7 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.retention.OperationResult;
+import com.SixSense.data.threading.MonitoredThread;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
 import com.SixSense.io.ShellChannel;
@@ -297,6 +298,11 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         Session session = new Session(this.sshClient, operation.getChannelNames());
         session.loadSessionVariables(sessionProperties);
         ThreadContext.put("sessionID", session.getSessionShellId());
+        if(Thread.currentThread() instanceof MonitoredThread){
+            MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
+            asMonitoredThread.getCurrentThreadState().setSessionId(session.getShortSessionId());
+            asMonitoredThread.getCurrentThreadState().setOperationId(operation.getShortUUID());
+        }
 
         try {
             List<ProcessStreamWrapper> wrappers = session.getShellChannels().values().stream()

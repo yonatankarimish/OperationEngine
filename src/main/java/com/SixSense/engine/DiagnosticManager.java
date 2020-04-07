@@ -119,7 +119,7 @@ public class DiagnosticManager{
 
         if(Thread.currentThread() instanceof MonitoredThread){
             MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
-            asMonitoredThread.setCurrentLifecyclePhase(event.getEventType());
+            asMonitoredThread.getCurrentThreadState().setCurrentLifecyclePhase(event.getEventType());
         }
 
         if(event.getSession() != null) {
