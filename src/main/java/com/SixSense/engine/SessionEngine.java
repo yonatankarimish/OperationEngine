@@ -16,6 +16,7 @@ import com.SixSense.io.ShellChannel;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.LogicalExpressionResolver;
 import com.SixSense.util.MessageLiterals;
+import com.SixSense.util.ThreadingUtils;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.logging.log4j.Logger;
@@ -298,11 +299,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         Session session = new Session(this.sshClient, operation.getChannelNames());
         session.loadSessionVariables(sessionProperties);
         ThreadContext.put("sessionID", session.getSessionShellId());
-        if(Thread.currentThread() instanceof MonitoredThread){
-            MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
-            asMonitoredThread.getCurrentThreadState().setSessionId(session.getShortSessionId());
-            asMonitoredThread.getCurrentThreadState().setOperationId(operation.getShortUUID());
-        }
+        ThreadingUtils.updateSessionAndOperationIds(session.getShortSessionId(), operation.getShortUUID());
 
         try {
             List<ProcessStreamWrapper> wrappers = session.getShellChannels().values().stream()

@@ -3,9 +3,9 @@ package com.SixSense.engine;
 import com.SixSense.data.events.AbstractEngineEvent;
 import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.events.IEngineEventHandler;
-import com.SixSense.data.threading.MonitoredThread;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.EventQueue;
+import com.SixSense.util.ThreadingUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,11 +116,7 @@ public class DiagnosticManager{
 
     public void emit(AbstractEngineEvent event){
         this.loggingManager.logEngineEvent(event);
-
-        if(Thread.currentThread() instanceof MonitoredThread){
-            MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
-            asMonitoredThread.getCurrentThreadState().setCurrentLifecyclePhase(event.getEventType());
-        }
+        ThreadingUtils.updateLifecyclePhase(event.getEventType());
 
         if(event.getSession() != null) {
             String sessionId = event.getSession().getSessionShellId();

@@ -44,5 +44,6 @@ public class MessageLiterals {
     public static final String InvalidExecutionBlock = "Execution block is not a valid block";
     public static final String OperationTerminated = "Operation has been terminated externally";
     public static final String UnsuportedBinaryRelation = "Expected outcome has an unsupported binary relation";
+    public static final String ThreadNotMonitored = "Attempted to update thread state for a non-monitored thread";
     public static final String TimeoutInCommand = "Command did not return within it's specified time limit";
 }
