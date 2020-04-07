@@ -106,12 +106,6 @@ public class OperationController {
         return aggregatedTerminations.join();
     }
 
-    @GetMapping("/debugMethod")
-    public void debugMethod(){
-        //This method body acts as a pastebin for development and debugging purposes. Method body is subject to change without notice
-        logger.info("Starting debug method now");
-    }
-
     private static String wrapForHtml(String text){
         return "<p style=\"white-space: pre;\">" + text + "</p>";
     }

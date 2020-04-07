@@ -104,7 +104,7 @@
              Each logger name should also have a matching enum constant in Loggers.java-->
         <Root level="info">
             <AppenderRef ref="std_out" level="info"/>
-            <AppenderRef ref="general_log" level="debug"/>
+            <AppenderRef ref="general_log" level="info"/>
         </Root>
         <Logger name="SessionLogger" level="info" additivity="false">
             <AppenderRef ref="std_out" level="warn"/>

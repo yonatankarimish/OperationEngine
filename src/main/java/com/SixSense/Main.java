@@ -15,7 +15,7 @@ public class Main {
     private static ConfigurableApplicationContext appContext;
 
     public static void main(String[] args) {
-        /*This has now been deprecated in favour of the OperationController.debugMethod()
+        /*This has now been deprecated in favour of the DiagnosticController.debugMethod()
          * To run remotely, enter the following command in cli (parameter order matters!):
          * java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -jar /sixsense/OperationEngine.jar
          * make sure your engine service is down, to avoid duplicate execution (service.engine.stop should do the trick)

@@ -2,6 +2,9 @@ package com.SixSense.threading;
 
 import com.SixSense.api.http.overrides.HTTPThreadExecutor;
 import com.SixSense.config.ThreadingConfig;
+import com.SixSense.data.events.EngineEventType;
+import com.SixSense.data.threading.MonitoredThread;
+import com.SixSense.data.threading.ThreadPool;
 import org.apache.catalina.connector.Connector;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +15,9 @@ import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
 import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,9 +46,12 @@ public class ThreadingManager implements Closeable {
         this.enginePool = generateThreadPool(this.engineProperties);
         this.httpConnectionPool = new HTTPThreadExecutor(this.httpProperties);
         this.amqpConnectionPool = generateThreadPool(this.amqpProperties);
+
+        this.enginePool.prestartAllCoreThreads();
+        this.amqpConnectionPool.prestartAllCoreThreads();
     }
 
-    public ThreadPoolExecutor generateThreadPool(ThreadingConfig.ThreadingProperties threadingProperties){
+    private ThreadPoolExecutor generateThreadPool(ThreadingConfig.ThreadingProperties threadingProperties){
         return new ThreadPoolExecutor(
                 threadingProperties.getMinimumThreads(),
                 threadingProperties.getMaximumThreads(),
@@ -92,6 +101,28 @@ public class ThreadingManager implements Closeable {
         connectionFactory.setConnectionCacheSize(this.amqpProperties.getMinimumConnections());
         connectionFactory.setChannelCacheSize(this.amqpProperties.getMinimumChannels());
     }
+
+    private IThreadMonitoingFactory getMonitoringThreadFactory(ThreadPool threadPool){
+        switch (threadPool){
+            case Engine: return (EngineThreadFactory)this.enginePool.getThreadFactory();
+            case HTTP: return this.httpConnectionPool.getThreadFactory();
+            case AMQP: return (EngineThreadFactory)this.amqpConnectionPool.getThreadFactory();
+            default: throw new IllegalArgumentException("No managed thread pool named " + threadPool.name() + " exists");
+        }
+    }
+
+    public Map<String, EngineEventType> getEngineThreadStatus(){
+        IThreadMonitoingFactory monitoringThreadFactory = getMonitoringThreadFactory(ThreadPool.Engine);
+        Set<MonitoredThread> currentThreads = monitoringThreadFactory.getMonitoredThreads();
+
+        Map<String, EngineEventType> threadStatus = new HashMap<>();
+        for(MonitoredThread thread : currentThreads){
+            threadStatus.put(thread.getName(), thread.getCurrentLifecyclePhase());
+        }
+
+        return threadStatus;
+    }
+
 
     public boolean isShutdown(){
         return enginePool.isShutdown();

@@ -1,7 +1,9 @@
 package com.SixSense.api.http;
 
 import com.SixSense.data.commands.Operation;
+import com.SixSense.data.events.EngineEventType;
 import com.SixSense.engine.SessionEngine;
+import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.DynamicFieldGlossary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,11 +19,13 @@ import java.util.*;
 public class DiagnosticController {
     private static final Logger logger = LogManager.getLogger(DiagnosticController.class);
     private final SessionEngine sessionEngine;
+    private final ThreadingManager threadingManager;
     private final CachingConnectionFactory amqpConnectionFactory;
 
     @Autowired
-    public DiagnosticController(SessionEngine sessionEngine, CachingConnectionFactory amqpConnectionFactory) {
+    public DiagnosticController(SessionEngine sessionEngine, ThreadingManager threadingManager, CachingConnectionFactory amqpConnectionFactory) {
         this.sessionEngine = sessionEngine;
+        this.threadingManager = threadingManager;
         this.amqpConnectionFactory = amqpConnectionFactory;
     }
 
@@ -31,14 +35,14 @@ public class DiagnosticController {
     }
 
     @PostMapping("/config")
-    public Map<String, String> updateEngineConfig(@RequestBody Map<String, String> updatedConfig) throws IOException {
+    public Map<String, String> updateEngineConfig(@RequestBody Map<String, String> updatedConfig) {
         return SessionEngine.addSessionProperties(updatedConfig);
     }
 
-    /*@GetMapping("/status")
-    public Map<String, String> getEngineStatus() {
-
-    }*/
+    @GetMapping("/status")
+    public Map<String, EngineEventType> getEngineStatus() {
+        return threadingManager.getEngineThreadStatus();
+    }
 
     @GetMapping("/operations")
     public Set<String> getRunningOperations() {
@@ -67,4 +71,10 @@ public class DiagnosticController {
     public Map<String, String> getSessionLogs() {
 
     }*/
+
+    @GetMapping("/debugMethod")
+    public void debugMethod(){
+        //This method body acts as a pastebin for development and debugging purposes. Method body is subject to change without notice
+        logger.info("Starting debug method now");
+    }
 }

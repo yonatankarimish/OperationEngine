@@ -3,6 +3,7 @@ package com.SixSense.engine;
 import com.SixSense.data.events.AbstractEngineEvent;
 import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.events.IEngineEventHandler;
+import com.SixSense.data.threading.MonitoredThread;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.EventQueue;
 import org.apache.logging.log4j.LogManager;
@@ -115,6 +116,11 @@ public class DiagnosticManager{
 
     public void emit(AbstractEngineEvent event){
         this.loggingManager.logEngineEvent(event);
+
+        if(Thread.currentThread() instanceof MonitoredThread){
+            MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
+            asMonitoredThread.setCurrentLifecyclePhase(event.getEventType());
+        }
 
         if(event.getSession() != null) {
             String sessionId = event.getSession().getSessionShellId();

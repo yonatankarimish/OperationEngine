@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TomcatServerConfig implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
-    public static TomcatWebServer embeddedServer;
     private final ThreadingManager threadingManager;
 
     public TomcatServerConfig(ThreadingManager threadingManager) {
@@ -17,9 +16,7 @@ public class TomcatServerConfig implements WebServerFactoryCustomizer<TomcatServ
 
     @Override
     public void customize(TomcatServletWebServerFactory factory) {
-        embeddedServer = (TomcatWebServer)factory.getWebServer();
-        this.threadingManager.injectServletWithPool(embeddedServer);
-
+        this.threadingManager.injectServletWithPool((TomcatWebServer)factory.getWebServer());
         /*factory.addConnectorCustomizers(connector -> {
 
         });*/

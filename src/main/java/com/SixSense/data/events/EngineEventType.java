@@ -2,6 +2,7 @@ package com.SixSense.data.events;
 
 //Nested according to command hierarchy
 public enum EngineEventType {
+    NotInSession,
     SessionCreated,
     OperationStart,
     BlockStart,
