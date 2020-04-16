@@ -1,11 +1,9 @@
 package com.SixSense.api.amqp;
 
-import com.SixSense.api.amqp.config.AMQPConfig;
-import com.SixSense.data.commands.Operation;
+import com.SixSense.api.ApiDebuggingAware;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
-import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.engine.WorkflowManager;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
@@ -19,7 +17,6 @@ import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
@@ -31,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class OperationConsumer {
+public class OperationConsumer extends ApiDebuggingAware {
     private static final Logger logger = LogManager.getLogger(OperationConsumer.class);
 
     //Engine entities
@@ -41,6 +38,7 @@ public class OperationConsumer {
 
     @Autowired
     public OperationConsumer(WorkflowManager workflowManager, ThreadingManager threadingManager, OperationProducer operationProducer) {
+        super();
         this.workflowManager = workflowManager;
         this.threadingManager = threadingManager;
         this.operationProducer = operationProducer;

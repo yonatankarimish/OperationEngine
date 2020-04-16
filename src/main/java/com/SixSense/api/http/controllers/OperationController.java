@@ -1,5 +1,6 @@
 package com.SixSense.api.http.controllers;
 
+import com.SixSense.api.ApiDebuggingAware;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.Credentials;
@@ -25,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/operations")
-public class OperationController extends DebuggableHttpController {
+public class OperationController extends ApiDebuggingAware {
     private static final Logger logger = LogManager.getLogger(OperationController.class);
     private final SessionEngine sessionEngine;
     private final WorkflowManager workflowManager;

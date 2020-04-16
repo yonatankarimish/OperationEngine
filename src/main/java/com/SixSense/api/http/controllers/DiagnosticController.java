@@ -1,5 +1,6 @@
 package com.SixSense.api.http.controllers;
 
+import com.SixSense.api.ApiDebuggingAware;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.threading.MonitoredThreadState;
 import com.SixSense.engine.SessionEngine;
@@ -15,7 +16,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/diagnostics")
-public class DiagnosticController extends DebuggableHttpController {
+public class DiagnosticController extends ApiDebuggingAware {
     private static final Logger logger = LogManager.getLogger(DiagnosticController.class);
     private final SessionEngine sessionEngine;
     private final ThreadingManager threadingManager;

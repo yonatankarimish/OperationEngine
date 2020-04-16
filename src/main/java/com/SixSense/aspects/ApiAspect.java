@@ -1,6 +1,6 @@
 package com.SixSense.aspects;
 
-import com.SixSense.api.http.controllers.DebuggableHttpController;
+import com.SixSense.api.ApiDebuggingAware;
 import com.SixSense.data.IDeepCloneable;
 import com.SixSense.data.aspects.MethodInvocation;
 import org.apache.logging.log4j.LogManager;
@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.stereotype.Service;
 
 @Aspect
@@ -21,13 +22,20 @@ public class ApiAspect {
     /*execution(modifiers-pattern? ret-type-pattern declaring-type-pattern?method-name-pattern(param-pattern) throws-pattern?)
     * params with question marks are optional
     *
-    * This is a really expensive aspect, which is why it should only be invoked if you know when to use it (debugging, diagnostics or test running)*/
-    @Around("execution(@org.springframework.web.bind.annotation.*Mapping public * com.SixSense.api.http.controllers.DebuggableHttpController+.*(..))")
+    * These are really expensive aspects, which is why they should only be invoked if you know when to use them (debugging, diagnostics or test running)*/
+    @Pointcut("execution(@org.springframework.web.bind.annotation.*Mapping public * com.SixSense.api.ApiDebuggingAware+.*(..))")
+    private void requestMappings(){}
+
+    @Pointcut("execution(@org.springframework.amqp.rabbit.annotation.RabbitListener public * com.SixSense.api.ApiDebuggingAware+.*(..))")
+    private void rabbitListeners(){}
+
+
+    @Around("requestMappings() || rabbitListeners()")
     public Object httpDiagnosticAspect(ProceedingJoinPoint pjp) throws Throwable{
         try {
             Object target = pjp.getTarget();
-            if(target instanceof DebuggableHttpController){
-                DebuggableHttpController controller = (DebuggableHttpController)target;
+            if(target instanceof ApiDebuggingAware){
+                ApiDebuggingAware controller = (ApiDebuggingAware)target;
                 if(controller.isUnderDebug()){
                     Object[] argumentDeepCopies = tryToDeepClone(pjp.getArgs());
 
@@ -65,7 +73,7 @@ public class ApiAspect {
         return argumentDeepCopies;
     }
 
-    private void updateAndWarn(DebuggableHttpController controller, MethodInvocation methodInvocation){
+    private void updateAndWarn(ApiDebuggingAware controller, MethodInvocation methodInvocation){
         boolean updateSuccessful = controller.updateMethodInvocations(methodInvocation);
         if(!updateSuccessful){
             logger.warn("Failed to update method invocation status for controller " + controller.getClass().getSimpleName() + " with " + methodInvocation.toString());

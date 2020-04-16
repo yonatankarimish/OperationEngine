@@ -1,37 +1,25 @@
 package com.SixSense.api.amqp;
 
+import com.SixSense.api.ApiDebuggingAware;
 import com.SixSense.api.amqp.config.AMQPConfig;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.commands.ParallelWorkflow;
 import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.data.retention.ResultRetention;
-import com.SixSense.engine.WorkflowManager;
-import com.SixSense.threading.ThreadingManager;
-import com.SixSense.util.CommandUtils;
 import com.SixSense.util.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.rabbitmq.client.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.annotation.Exchange;
-import org.springframework.amqp.rabbit.annotation.Queue;
-import org.springframework.amqp.rabbit.annotation.QueueBinding;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Component
-public class OperationProducer {
+public class OperationProducer extends ApiDebuggingAware {
     private static final Logger logger = LogManager.getLogger(OperationProducer.class);
 
     //AMQP entities
@@ -40,6 +28,7 @@ public class OperationProducer {
 
     @Autowired
     public OperationProducer(RabbitTemplate rabbitTemplate, DirectExchange resultExchange) {
+        super();
         this.rabbitTemplate = rabbitTemplate;
         this.resultExchange = resultExchange;
     }

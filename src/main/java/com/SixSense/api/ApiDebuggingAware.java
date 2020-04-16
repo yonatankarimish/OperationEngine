@@ -1,4 +1,4 @@
-package com.SixSense.api.http.controllers;
+package com.SixSense.api;
 
 import com.SixSense.data.aspects.MethodInvocation;
 import com.SixSense.data.logging.IDebuggable;
@@ -8,11 +8,11 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 
-public abstract class DebuggableHttpController implements IDebuggable {
+public abstract class ApiDebuggingAware implements IDebuggable {
     private boolean isUnderDebug = false;
     private Set<MethodInvocation> methodInvocations;
 
-    protected DebuggableHttpController(){
+    protected ApiDebuggingAware(){
         methodInvocations = Collections.synchronizedSet(new LinkedHashSet<>());
     }
 
