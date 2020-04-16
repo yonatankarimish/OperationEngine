@@ -1,5 +1,6 @@
 package com.SixSense.io;
 
+import com.SixSense.data.logging.IDebuggable;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.util.MessageLiterals;
 import org.apache.logging.log4j.Logger;
@@ -10,7 +11,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.function.Supplier;
 
-public class ProcessStreamWrapper implements Supplier<Boolean> {
+public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
     //Loggers
     private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
     private static final Logger terminalLogger = LogManager.getLogger(Loggers.TerminalLogger.name());
@@ -150,6 +151,12 @@ public class ProcessStreamWrapper implements Supplier<Boolean> {
         }
     }
 
+    @Override
+    public boolean isUnderDebug() {
+        return isUnderDebug;
+    }
+
+    @Override
     public void activateDebugMode() {
         isUnderDebug = true;
     }

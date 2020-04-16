@@ -8,6 +8,7 @@ import com.SixSense.data.events.InputSentEvent;
 import com.SixSense.data.events.OutcomeEvaluationEvent;
 import com.SixSense.data.events.OutputReceivedEvent;
 import com.SixSense.data.events.ResultRetentionEvent;
+import com.SixSense.data.logging.IDebuggable;
 import com.SixSense.data.logging.Loggers;
 import com.SixSense.data.logic.ExpressionResult;
 import com.SixSense.data.logic.ResultStatus;
@@ -33,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class Session implements Closeable{
+public class Session implements Closeable, IDebuggable {
     //Static members and injected beans
     private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
     @Autowired private ThreadingManager threadingManager;
@@ -472,10 +473,12 @@ public class Session implements Closeable{
         return Collections.unmodifiableMap(this.databaseVariables);
     }
 
+    @Override
     public boolean isUnderDebug() {
         return isUnderDebug;
     }
 
+    @Override
     public void activateDebugMode() {
         for(ShellChannel channel : getShellChannels().values()){
             channel.activateDebugMode();

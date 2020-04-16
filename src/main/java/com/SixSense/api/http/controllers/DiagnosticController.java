@@ -15,7 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/diagnostics")
-public class DiagnosticController {
+public class DiagnosticController extends AbstractHttpController {
     private static final Logger logger = LogManager.getLogger(DiagnosticController.class);
     private final SessionEngine sessionEngine;
     private final ThreadingManager threadingManager;

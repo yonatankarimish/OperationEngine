@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/operations")
-public class OperationController {
+public class OperationController extends AbstractHttpController {
     private static final Logger logger = LogManager.getLogger(OperationController.class);
     private final SessionEngine sessionEngine;
     private final WorkflowManager workflowManager;

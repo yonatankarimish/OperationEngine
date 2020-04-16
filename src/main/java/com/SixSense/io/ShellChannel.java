@@ -1,5 +1,6 @@
 package com.SixSense.io;
 
+import com.SixSense.data.logging.IDebuggable;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ShellChannel implements Closeable {
+public class ShellChannel implements Closeable, IDebuggable {
     private final String name; //Identifying name for current channel
     private final net.schmizz.sshj.connection.channel.direct.Session shellSession; //SSH session that generates the shell process
     private final Session.Shell shell; //The operating system process to which we perform I/O
@@ -67,10 +68,12 @@ public class ShellChannel implements Closeable {
         return channelOutput;
     }
 
+    @Override
     public boolean isUnderDebug() {
         return isUnderDebug;
     }
 
+    @Override
     public void activateDebugMode() {
         this.channelOutputWrapper.activateDebugMode();
         isUnderDebug = true;
