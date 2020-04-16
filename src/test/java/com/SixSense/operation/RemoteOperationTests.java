@@ -1,4 +1,4 @@
-package com.SixSense.engine;
+package com.SixSense.operation;
 
 import com.SixSense.RemoteConfig;
 import com.SixSense.SixSenseBaseTest;
@@ -18,7 +18,7 @@ import java.util.Collections;
 public class RemoteOperationTests extends SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(RemoteOperationTests.class);
 
-    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
+    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void f5BigIpBackup(String host, String username, String password){
         Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpBackup(
             Collections.singletonList(
@@ -29,12 +29,12 @@ public class RemoteOperationTests extends SixSenseBaseTest {
             )
         )).getParallelOperations().get(0); //We can get the first operation, since only one credential set was passed
 
-        OperationResult operationResult = EngineTestUtils.executeOperation(f5Backup);
+        OperationResult operationResult = OperationTestUtils.executeOperation(f5Backup);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
 
-    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
+    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void f5BigIpInventory(String host, String username, String password){
         Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
             Collections.singletonList(
@@ -45,7 +45,7 @@ public class RemoteOperationTests extends SixSenseBaseTest {
             )
         )).getParallelOperations().get(0); //We can get the first operation, since only one credential set was passed
 
-        OperationResult operationResult = EngineTestUtils.executeOperation(f5Backup);
+        OperationResult operationResult = OperationTestUtils.executeOperation(f5Backup);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }

@@ -16,17 +16,25 @@ import java.nio.file.Paths;
 
 public class FileUtils {
     private static final Logger logger = LogManager.getLogger(FileUtils.class);
+    static String localPartition;
     static int localPartitionBlockSize;
 
     //obtain block size for local installation partition to optimize buffered reads
     static{
         LocalShell localShell = new LocalShell();
         try {
-            LocalShellResult result = localShell.runCommand("blockdev --getbsz " + MessageLiterals.localPartitionName);
+            LocalShellResult result = localShell.runCommand("df -h | grep sixsense | awk '{print $1}'");
             if(result.getExitCode() == 0){
-                localPartitionBlockSize = Integer.valueOf(result.getOutput().get(0));
+                localPartition = result.getOutput().get(0);
             }else{
-                throw new Exception("Failed to obtain block size from local shell. Caused by: " + result.getErrors().get(0));
+                throw new Exception("Failed to obtain local partition from local shell. Caused by: " + result.getErrors().get(0));
+            }
+
+            result = localShell.runCommand("blockdev --getbsz " + localPartition);
+            if(result.getExitCode() == 0){
+                localPartitionBlockSize = Integer.parseInt(result.getOutput().get(0));
+            }else{
+                throw new Exception("Failed to obtain local partition block size from local shell. Caused by: " + result.getErrors().get(0));
             }
         } catch (Exception e) {
             logger.error("Failed to obtain block size for local partition name", e);
@@ -217,13 +225,17 @@ public class FileUtils {
         }
     }*/
 
-   static void finalizeCloseableResource(Closeable... closeables){
+   public static void finalizeCloseableResource(Closeable... closeables){
        for(Closeable resource : closeables) {
-           try {
-               resource.close();
-           } catch (Exception e) {
-               String resourceClassName = closeables.getClass().toString();
-               logger.error("Failed to close instance of " + resourceClassName, e);
+           if(resource == null){
+               logger.warn("Attempted to finalize a null resource");
+           }else{
+               try {
+                   resource.close();
+               } catch (Exception e) {
+                   String resourceClassName = closeables.getClass().toString();
+                   logger.error("Failed to close instance of " + resourceClassName, e);
+               }
            }
        }
    }

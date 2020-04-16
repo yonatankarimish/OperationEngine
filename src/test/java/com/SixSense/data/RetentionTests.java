@@ -1,6 +1,7 @@
-package com.SixSense.engine;
+package com.SixSense.data;
 
 import com.SixSense.SixSenseBaseTest;
+import com.SixSense.SixSenseBaseUtils;
 import com.SixSense.data.commands.*;
 import com.SixSense.data.events.AbstractEngineEvent;
 import com.SixSense.data.events.EngineEventType;
@@ -10,6 +11,7 @@ import com.SixSense.data.retention.OperationResult;
 import com.SixSense.data.retention.ResultRetention;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.io.Session;
+import com.SixSense.operation.OperationTestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
@@ -17,7 +19,7 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.Future;
 
-@Test(groups = {"engine"})
+@Test(groups = {"data"})
 public class RetentionTests extends SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(RetentionTests.class);
 
@@ -34,10 +36,10 @@ public class RetentionTests extends SixSenseBaseTest {
                 .withExecutionBlock(simpleCommand)
                 .addChannel(ChannelType.LOCAL);
 
-        Session session = EngineTestUtils.submitOperation(operation);
+        Session session = OperationTestUtils.submitOperation(operation);
         try{
-            Future<AbstractEngineEvent> textWrapper = EngineTestUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.ResultRetention);
-            ResultRetentionEvent retentionEvent = (ResultRetentionEvent)EngineTestUtils.resolveWithin(textWrapper, 5);
+            Future<AbstractEngineEvent> textWrapper = SixSenseBaseUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.ResultRetention);
+            ResultRetentionEvent retentionEvent = (ResultRetentionEvent) OperationTestUtils.resolveWithin(textWrapper, 5);
             ResultRetention resultRetention = retentionEvent.getResultRetention();
 
             Assert.assertNotNull(resultRetention);
@@ -50,7 +52,7 @@ public class RetentionTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = EngineTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
@@ -68,10 +70,10 @@ public class RetentionTests extends SixSenseBaseTest {
                 .withExecutionBlock(simpleCommand)
                 .addChannel(ChannelType.LOCAL);
 
-        Session session = EngineTestUtils.submitOperation(operation);
+        Session session = OperationTestUtils.submitOperation(operation);
         try{
-            Future<AbstractEngineEvent> textWrapper = EngineTestUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.ResultRetention);
-            ResultRetentionEvent retentionEvent = (ResultRetentionEvent)EngineTestUtils.resolveWithin(textWrapper, 5);
+            Future<AbstractEngineEvent> textWrapper = SixSenseBaseUtils.getDiagnosticManager().awaitAndConsume(session.getSessionShellId(), EngineEventType.ResultRetention);
+            ResultRetentionEvent retentionEvent = (ResultRetentionEvent) OperationTestUtils.resolveWithin(textWrapper, 5);
             ResultRetention resultRetention = retentionEvent.getResultRetention();
 
             Assert.assertNotNull(resultRetention);
@@ -84,7 +86,7 @@ public class RetentionTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = EngineTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }

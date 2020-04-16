@@ -31,7 +31,6 @@ public class MessageLiterals {
     public static final String DateTimeFormat = "dd-MM-yyyy HH:mm:ss";
     public static final DateTimeFormatter DateFormatter = DateTimeFormatter.ofPattern(DateTimeFormat);
 
-    public static final String localPartitionName = "/dev/mapper/vg_root-lv_tmp";
     public static final String configFilesPath = projectDirectory + "/config";
     public static final String SessionExecutionDir = projectDirectory + "/logs/sessions/";
 

@@ -147,27 +147,27 @@ public class LogicalExpressionResolver {
     }
 
     private static boolean expectLesserThan(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
-        double outputAsDouble = Double.valueOf(output);
-        double expectedOutcomeAsDouble = Double.valueOf(expectedOutcome.getExpectedValue());
+        double outputAsDouble = Double.parseDouble(output);
+        double expectedOutcomeAsDouble = Double.parseDouble(expectedOutcome.getExpectedValue());
         return outputAsDouble < expectedOutcomeAsDouble;
     }
 
     private static boolean expectLesserThanOrEqual(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
-        double outputAsDouble = Double.valueOf(output);
-        double expectedOutcomeAsDouble = Double.valueOf(expectedOutcome.getExpectedValue());
+        double outputAsDouble = Double.parseDouble(output);
+        double expectedOutcomeAsDouble = Double.parseDouble(expectedOutcome.getExpectedValue());
         return outputAsDouble <= expectedOutcomeAsDouble;
         
     }
 
     private static boolean expectGreaterThan(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
-        double outputAsDouble = Double.valueOf(output);
-        double expectedOutcomeAsDouble = Double.valueOf(expectedOutcome.getExpectedValue());
+        double outputAsDouble = Double.parseDouble(output);
+        double expectedOutcomeAsDouble = Double.parseDouble(expectedOutcome.getExpectedValue());
         return outputAsDouble > expectedOutcomeAsDouble;
     }
 
     private static boolean expectGreaterThanOrEqual(String output, IFlowConnector expectedOutcome) throws NumberFormatException {
-        double outputAsDouble = Double.valueOf(output);
-        double expectedOutcomeAsDouble = Double.valueOf(expectedOutcome.getExpectedValue());
+        double outputAsDouble = Double.parseDouble(output);
+        double expectedOutcomeAsDouble = Double.parseDouble(expectedOutcome.getExpectedValue());
         return outputAsDouble >= expectedOutcomeAsDouble;
     }
 

@@ -1,11 +1,9 @@
-package com.SixSense.engine;
+package com.SixSense.operation;
 
 import com.SixSense.RemoteConfig;
 import com.SixSense.SixSenseBaseTest;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.devices.Credentials;
-import com.SixSense.data.events.AbstractEngineEvent;
-import com.SixSense.data.logic.ResultStatus;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
@@ -14,7 +12,6 @@ import com.SixSense.util.CommandUtils;
 import com.SixSense.util.MessageLiterals;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -25,7 +22,7 @@ import java.util.Map;
 public class InputOutputTests extends SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(InputOutputTests.class);
 
-    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
+    @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void testChunkSubstitutionCriteria(String host, String username, String password){
         Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
             Collections.singletonList(
@@ -36,10 +33,10 @@ public class InputOutputTests extends SixSenseBaseTest {
             )
         )).getParallelOperations().get(0); //We can get the first operation, since only one credential set was passed
 
-        Session session = EngineTestUtils.submitOperation(f5Backup);
+        Session session = OperationTestUtils.submitOperation(f5Backup);
         ProcessStreamWrapper outputWrapper = session.getShellChannels().get("REMOTE").getChannelOutputWrapper();
 
-        OperationResult operationResult = EngineTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
         Map<String, String> substitutionCriteria = outputWrapper.getSubstitutionCriteria();
         List<String> rawChunks = outputWrapper.getRawChunks();
         List<String> afterSubstitutions = new ArrayList<>();

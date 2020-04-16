@@ -12,14 +12,14 @@
         <listener class-name="com.SixSense.TestListener" />
     </listeners>
 
-    <test name="engine-tests">
+    <test name="operation-tests">
         <groups>
             <run>
-                <include name="engine" />
+                <include name="operation" />
             </run>
         </groups>
         <packages>
-            <package name="com.SixSense.engine.*"/>
+            <package name="com.SixSense.operation.*"/>
         </packages>
     </test>
     <test name="data-tests">
