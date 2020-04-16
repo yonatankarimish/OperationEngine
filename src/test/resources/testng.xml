@@ -32,6 +32,16 @@
             <package name="com.SixSense.data.*"/>
         </packages>
     </test>
+    <test name="api-tests">
+        <groups>
+            <run>
+                <include name="api" />
+            </run>
+        </groups>
+        <packages>
+            <package name="com.SixSense.api.*"/>
+        </packages>
+    </test>
     <test name="util-tests">
         <groups>
             <run>

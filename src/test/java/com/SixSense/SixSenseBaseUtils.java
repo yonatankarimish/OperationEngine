@@ -36,6 +36,10 @@ public class SixSenseBaseUtils {
         }
     }
 
+    public static ConfigurableApplicationContext getAppContext() {
+        return appContext;
+    }
+
     public static DiagnosticManager getDiagnosticManager() {
         return diagnosticManager;
     }

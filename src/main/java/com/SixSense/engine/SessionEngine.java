@@ -9,7 +9,6 @@ import com.SixSense.data.commands.Block;
 import com.SixSense.data.commands.Command;
 import com.SixSense.data.commands.ICommand;
 import com.SixSense.data.retention.OperationResult;
-import com.SixSense.data.threading.MonitoredThread;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
 import com.SixSense.io.ShellChannel;
