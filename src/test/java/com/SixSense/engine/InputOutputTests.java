@@ -26,7 +26,7 @@ public class InputOutputTests extends SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(InputOutputTests.class);
 
     @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"engine"})
-    public void testChunkSubstiutionCriteria(String host, String username, String password){
+    public void testChunkSubstitutionCriteria(String host, String username, String password){
         Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
             Collections.singletonList(
                 new Credentials()
