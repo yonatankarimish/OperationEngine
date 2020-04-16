@@ -1,12 +1,13 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.OperationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow {
+public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow, IDeepCloneable<ParallelWorkflow> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<Operation> parallelOperations;
     private Map<String, OperationResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations. //key: operation id, value: operation result

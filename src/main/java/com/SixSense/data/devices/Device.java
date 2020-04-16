@@ -1,5 +1,6 @@
 package com.SixSense.data.devices;
 
+import com.SixSense.data.IDeepCloneable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collections;
@@ -7,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Device {
+public class Device implements IDeepCloneable<Device> {
     private final UUID uuid;
     private VendorProductVersion vpv;
     private Credentials credentials; //In a sense, just another set of dynamic fields; Acts as a convenience parameter
@@ -81,6 +82,7 @@ public class Device {
     }
 
     //Returns a new instance of the same device in its pristine state. That is - as if the new state was never executed
+    @Override
     public Device deepClone(){
         return new Device()
                 .withVpv(this.vpv.deepClone())

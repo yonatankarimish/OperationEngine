@@ -15,7 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/diagnostics")
-public class DiagnosticController extends AbstractHttpController {
+public class DiagnosticController extends DebuggableHttpController {
     private static final Logger logger = LogManager.getLogger(DiagnosticController.class);
     private final SessionEngine sessionEngine;
     private final ThreadingManager threadingManager;
@@ -23,6 +23,7 @@ public class DiagnosticController extends AbstractHttpController {
 
     @Autowired
     public DiagnosticController(SessionEngine sessionEngine, ThreadingManager threadingManager, CachingConnectionFactory amqpConnectionFactory) {
+        super();
         this.sessionEngine = sessionEngine;
         this.threadingManager = threadingManager;
         this.amqpConnectionFactory = amqpConnectionFactory;

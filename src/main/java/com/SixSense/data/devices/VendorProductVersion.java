@@ -1,8 +1,9 @@
 package com.SixSense.data.devices;
 
+import com.SixSense.data.IDeepCloneable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class VendorProductVersion {
+public class VendorProductVersion implements IDeepCloneable<VendorProductVersion> {
     private String vendor;
     private String product;
     private String version;
@@ -67,6 +68,7 @@ public class VendorProductVersion {
     }
 
     //Returns a new instance of the same vpv in its pristine state. That is - as if the new state was never executed
+    @Override
     public VendorProductVersion deepClone(){
         return new VendorProductVersion()
                 .withVendor(this.vendor)

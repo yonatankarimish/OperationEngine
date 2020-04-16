@@ -1,6 +1,8 @@
 package com.SixSense.data.devices;
 
-public class Credentials {
+import com.SixSense.data.IDeepCloneable;
+
+public class Credentials implements IDeepCloneable<Credentials> {
     private String host;
     private String username;
     private transient String password;
@@ -76,6 +78,7 @@ public class Credentials {
     }
 
     //Returns a new instance of the same credentials in its pristine state. That is - as if the new state was never executed
+    @Override
     public Credentials deepClone(){
         return new Credentials()
             .withHost(this.host)

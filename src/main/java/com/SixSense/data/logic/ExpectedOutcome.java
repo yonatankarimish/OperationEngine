@@ -1,8 +1,9 @@
 package com.SixSense.data.logic;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.util.ExpressionUtils;
 
-public class ExpectedOutcome implements IFlowConnector {
+public class ExpectedOutcome implements IFlowConnector, IDeepCloneable<ExpectedOutcome> {
     private BinaryRelation binaryRelation;
     private String expectedValue;
     private ExpressionResult expressionResult;

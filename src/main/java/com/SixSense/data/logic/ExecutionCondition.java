@@ -1,8 +1,9 @@
 package com.SixSense.data.logic;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.util.ExpressionUtils;
 
-public class ExecutionCondition implements IFlowConnector {
+public class ExecutionCondition implements IFlowConnector, IDeepCloneable<ExecutionCondition> {
     private String variable;
     private BinaryRelation binaryRelation;
     private String expectedValue;

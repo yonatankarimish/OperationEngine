@@ -1,6 +1,8 @@
 package com.SixSense.data.retention;
 
-public class ResultRetention {
+import com.SixSense.data.IDeepCloneable;
+
+public class ResultRetention implements IDeepCloneable<ResultRetention> {
     private RetentionType retentionType;
     private String name;
     private String value; //Value may be set either upon creation (preconfigured value) or when a command outputs (dynamic value)
@@ -73,6 +75,7 @@ public class ResultRetention {
     }
 
     //Returns a new instance of the same variable retention in its pristine state. That is - as if the new state was never saved
+    @Override
     public ResultRetention deepClone(){
         return new ResultRetention()
                 .withRetentionType(this.retentionType)

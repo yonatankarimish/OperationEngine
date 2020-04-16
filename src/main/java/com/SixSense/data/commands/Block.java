@@ -1,5 +1,6 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
@@ -13,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Block extends AbstractCommand implements ICommand {
+public class Block extends AbstractCommand implements ICommand, IDeepCloneable<Block> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<ICommand> childBlocks;
 

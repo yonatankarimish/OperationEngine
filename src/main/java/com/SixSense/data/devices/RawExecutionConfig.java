@@ -1,12 +1,13 @@
 package com.SixSense.data.devices;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.retention.OperationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class RawExecutionConfig {
+public class RawExecutionConfig implements IDeepCloneable<RawExecutionConfig> {
     private Operation operation;
     private List<Device> devices;
     private Map<String, OperationResult> results;
@@ -68,6 +69,7 @@ public class RawExecutionConfig {
     }
 
     //Returns a new instance of the same credentials in its pristine state. That is - as if the new state was never executed
+    @Override
     public RawExecutionConfig deepClone(){
         List<Device> clonedDevices = this.devices.stream().map(Device::deepClone).collect(Collectors.toList());
 

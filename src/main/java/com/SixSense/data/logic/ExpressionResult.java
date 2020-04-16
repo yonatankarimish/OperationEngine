@@ -1,6 +1,8 @@
 package com.SixSense.data.logic;
 
-public class ExpressionResult {
+import com.SixSense.data.IDeepCloneable;
+
+public class ExpressionResult implements IDeepCloneable<ExpressionResult> {
     private boolean resolved; //Did the logical expression turn out to be true?
     private ResultStatus outcome; //If the logical expression has been resolved, what should be the outcome of the command?
     private String message; //Arbitrary message, if the logical expression has been resolved
@@ -99,6 +101,7 @@ public class ExpressionResult {
     }
 
     //Returns a new instance of the same expected outcome in its pristine state. That is - as if the new state was never resolved
+    @Override
     public ExpressionResult deepClone(){
         return new ExpressionResult()
                 .withResolved(false)

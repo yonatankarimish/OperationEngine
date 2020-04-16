@@ -1,5 +1,6 @@
 package com.SixSense.data.commands;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
@@ -9,7 +10,7 @@ import com.SixSense.util.CommandUtils;
 
 import java.util.*;
 
-public class Command extends AbstractCommand implements ICommand{
+public class Command extends AbstractCommand implements ICommand, IDeepCloneable<Command> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private String channelName;
     private String commandText;

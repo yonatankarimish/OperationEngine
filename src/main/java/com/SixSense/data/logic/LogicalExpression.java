@@ -1,11 +1,12 @@
 package com.SixSense.data.logic;
 
+import com.SixSense.data.IDeepCloneable;
 import com.SixSense.util.ExpressionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class LogicalExpression<E extends IFlowConnector> implements IResolvable{
+public class LogicalExpression<E extends IFlowConnector> implements IResolvable, IDeepCloneable<LogicalExpression<E>> {
     private LinkedHashSet<IResolvable> resolvableExpressions; //specifically require LinkedHashSet, to preserve resolvable order (as argument order matters when evaluating the expression)
     private LogicalCondition logicalCondition;
     private ExpressionResult expressionResult;
