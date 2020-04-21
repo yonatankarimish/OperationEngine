@@ -40,7 +40,15 @@ public class SixSenseBaseUtils {
         return appContext;
     }
 
+    public static SessionEngine getSessionEngine() {
+        return sessionEngine;
+    }
+
     public static DiagnosticManager getDiagnosticManager() {
         return diagnosticManager;
+    }
+
+    public static ThreadingManager getThreadingManager() {
+        return threadingManager;
     }
 }

@@ -5,19 +5,19 @@ import com.SixSense.SixSenseBaseUtils;
 import com.SixSense.api.http.controllers.DiagnosticController;
 import com.SixSense.data.aspects.MethodInvocation;
 import com.SixSense.data.commands.*;
+import com.SixSense.data.events.EngineEventType;
 import com.SixSense.data.logic.ChannelType;
+import com.SixSense.data.threading.MonitoredThreadState;
 import com.SixSense.engine.SessionEngine;
-import com.SixSense.util.CommandUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 
 //It might be worth to add test cases for the cartesian product of chaining any two ICommands
 @Test(groups = {"api"})
@@ -37,7 +37,7 @@ public class DiagnosticTests extends SixSenseBaseTest {
     }
 
     public void testGetEngineConfig(){
-        //These two are (as of writing the test) obtained from the exact same point in code. This is more of an example os class usage than a truely meaningful test
+        //These two are (as of writing the test) obtained from the exact same point in code. This is more of an example of class usage than a truly meaningful test
         Map<String, String> configFromSessionEngine = SessionEngine.getSessionProperties();
         Map<String, String> configFromController = diagnosticController.getEngineConfig();
         Map<String, String> configFromMethodInvocation = null;
@@ -119,6 +119,31 @@ public class DiagnosticTests extends SixSenseBaseTest {
         }
 
         Assert.assertFalse(successfullyModified);
+    }
+
+    public void testEngineStatusIsNotEmpty(){
+        CompletableFuture<Void> waitForMeToFinish = new CompletableFuture<>();
+        try {
+            /*There is no guarantee that the engine will be running any thread at all
+             *We pass in a supplier which waits for a Future to complete. Until then, at least one worker thread will be required to run it*/
+            SixSenseBaseUtils.getThreadingManager().submit(() -> {
+                try {
+                    waitForMeToFinish.get();
+                } catch (Exception e) {
+                    /*Intentionally empty (who cares?)*/
+                }
+                return null;
+            });
+
+
+            Map<String, MonitoredThreadState> engineStatus = diagnosticController.getEngineStatus();
+            Assert.assertFalse(engineStatus.isEmpty());
+
+            MonitoredThreadState firstThreadState = engineStatus.values().iterator().next();
+            Assert.assertEquals(firstThreadState.getCurrentLifecyclePhase(), EngineEventType.NotInSession);
+        }finally {
+            waitForMeToFinish.complete(null);
+        }
     }
 
     private Command simpleWaitingCommand(){
