@@ -4,10 +4,9 @@ import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractWorkflow extends AbstractCommand implements ICommand, IWorkflow {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
@@ -97,6 +96,32 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
                 .addSequentialWorkflowsUponSuccess(successClone)
                 .addSequentialWorkflowsUponFailure(failClone)
                 .withSequenceExecutionStarted(false);
+    }
+
+    protected boolean weakEquals(AbstractWorkflow other){
+        return super.weakEquals(other) &&
+            this.sequentialWorkflowUponSuccess.equals(other.sequentialWorkflowUponSuccess) &&
+            this.sequentialWorkflowUponFailure.equals(other.sequentialWorkflowUponFailure);
+    }
+
+    protected boolean equals(AbstractWorkflow other){
+        return super.equals(other) &&
+            this.sequentialWorkflowUponSuccess.equals(other.sequentialWorkflowUponSuccess) &&
+            this.sequentialWorkflowUponFailure.equals(other.sequentialWorkflowUponFailure);
+    }
+
+    protected boolean strongEquals(AbstractWorkflow other){
+        return super.strongEquals(other) &&
+            this.sequentialWorkflowUponSuccess.equals(other.sequentialWorkflowUponSuccess) &&
+            this.sequentialWorkflowUponFailure.equals(other.sequentialWorkflowUponFailure) &&
+            this.sequenceExecutionStarted == other.sequenceExecutionStarted;
+    }
+
+    protected Object[] superMembers(){
+        Stream<Object> childStream = Arrays.stream(new Object[]{sequentialWorkflowUponSuccess, sequentialWorkflowUponFailure});
+        Stream<Object> superStream = Arrays.stream(super.superMembers());
+
+        return Stream.concat(superStream, childStream).toArray();
     }
 
     public String superToString() {

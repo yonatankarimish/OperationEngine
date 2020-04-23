@@ -1,8 +1,10 @@
 package com.SixSense.data.devices;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
 
-public class Credentials implements IDeepCloneable<Credentials> {
+import java.util.Objects;
+
+public class Credentials implements IDeepCloneable<Credentials>{
     private String host;
     private String username;
     private transient String password;
@@ -85,6 +87,29 @@ public class Credentials implements IDeepCloneable<Credentials> {
             .withUsername(this.username)
             .withPassword(this.password)
             .withPort(this.port);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.equals((Credentials) other);
+        }
+    }
+
+    public boolean equals(Credentials other){
+        return this.host.equals(other.host) &&
+            this.port == other.port &&
+            this.username.equals(other.username) &&
+            this.password.equals(other.password);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(host, username, password, port);
     }
 
     @Override

@@ -1,9 +1,12 @@
 package com.SixSense.data.logic;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.util.ExpressionUtils;
 
-public class ExecutionCondition implements IFlowConnector, IDeepCloneable<ExecutionCondition> {
+import java.util.Objects;
+
+public class ExecutionCondition implements IFlowConnector, IDeepCloneable<ExecutionCondition>, IEquatable<ExecutionCondition> {
     private String variable;
     private BinaryRelation binaryRelation;
     private String expectedValue;
@@ -97,6 +100,34 @@ public class ExecutionCondition implements IFlowConnector, IDeepCloneable<Execut
                 .withBinaryRelation(this.binaryRelation)
                 .withExpectedValue(this.expectedValue)
                 .withExpressionResult(this.expressionResult.deepClone());
+    }
+
+    @Override
+    public boolean weakEquals(ExecutionCondition other) {
+        return this.variable.equals(other.variable) &&
+            this.binaryRelation == other.binaryRelation &&
+            this.expectedValue.equals(other.expectedValue);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.weakEquals((ExecutionCondition)other);
+        }
+    }
+
+    @Override
+    public boolean strongEquals(ExecutionCondition other) {
+        return this.weakEquals(other) && this.expressionResult.equals(other.expressionResult);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(variable, binaryRelation, expectedValue);
     }
 
     @Override

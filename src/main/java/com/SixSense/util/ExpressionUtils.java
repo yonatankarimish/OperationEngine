@@ -33,6 +33,10 @@ public class ExpressionUtils {
                 .addExpression(additional);
     }
 
+    public static <T extends IFlowConnector> boolean equals(LogicalExpression<T> original, LogicalExpression<T> other){
+        return original.equals(other);
+    }
+
     //returns only the leaf nodes E of the logical expression, as an ordered list
     public static <T extends IFlowConnector> List<T> flatten(LogicalExpression<T> expression){
         List<T> flattened = new ArrayList<>();

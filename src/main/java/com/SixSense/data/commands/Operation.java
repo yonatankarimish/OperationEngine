@@ -1,18 +1,17 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Operation extends AbstractWorkflow implements ICommand, IWorkflow, IDeepCloneable<Operation> {
+public class Operation extends AbstractWorkflow implements ICommand, IWorkflow, IDeepCloneable<Operation>, IEquatable<Operation> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private String operationName;
     private ICommand executionBlock;
@@ -106,6 +105,43 @@ public class Operation extends AbstractWorkflow implements ICommand, IWorkflow, 
                 .withExecutionBlock(this.executionBlock.deepClone())
                 .addChannelNames(this.channelNames)
                 .withSuperCloneState(this);
+    }
+
+    @Override
+    public boolean weakEquals(Operation other) {
+        return super.weakEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            Operation otherAsOperation = (Operation) other;
+            return super.equals(otherAsOperation) && this.equals(otherAsOperation);
+        }
+    }
+
+    public boolean equals(Operation other) {
+        return this.operationName.equals(other.operationName) &&
+            this.executionBlock.equals(other.executionBlock) &&
+            this.channelNames.equals(other.channelNames);
+    }
+
+    @Override
+    public boolean strongEquals(Operation other) {
+        return super.strongEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        Stream<Object> childStream = Arrays.stream(new Object[]{operationName, executionBlock, channelNames});
+        Stream<Object> superStream = Arrays.stream(superMembers());
+
+        Object[] mergedMembers = Stream.concat(superStream, childStream).toArray();
+        return Arrays.hashCode(mergedMembers);
     }
 
     @Override

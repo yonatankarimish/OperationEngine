@@ -1,12 +1,13 @@
 package com.SixSense.data.logic;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.util.ExpressionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class LogicalExpression<E extends IFlowConnector> implements IResolvable, IDeepCloneable<LogicalExpression<E>> {
+public class LogicalExpression<E extends IFlowConnector> implements IResolvable, IDeepCloneable<LogicalExpression<E>>, IEquatable<LogicalExpression<E>> {
     private LinkedHashSet<IResolvable> resolvableExpressions; //specifically require LinkedHashSet, to preserve resolvable order (as argument order matters when evaluating the expression)
     private LogicalCondition logicalCondition;
     private ExpressionResult expressionResult;
@@ -107,6 +108,44 @@ public class LogicalExpression<E extends IFlowConnector> implements IResolvable,
                 .addResolvableExpressions(clonedExpressions)
                 .withLogicalCondition(this.logicalCondition)
                 .withExpressionResult(this.expressionResult.deepClone());
+    }
+
+    @Override
+    public boolean weakEquals(LogicalExpression<E> other) {
+        return this.resolvableExpressions.equals(other.resolvableExpressions) &&
+            this.logicalCondition == other.logicalCondition;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            LogicalExpression<E> otherAsExpression;
+            try {
+                otherAsExpression = (LogicalExpression<E>) other;
+            }catch (ClassCastException e){
+                return false;
+            }
+
+            return this.weakEquals(otherAsExpression);
+        }
+    }
+
+    public boolean equals(LogicalExpression<E> other){
+        return this.weakEquals(other);
+    }
+
+    @Override
+    public boolean strongEquals(LogicalExpression<E> other) {
+        return this.weakEquals(other) && this.expressionResult.equals(other.expressionResult);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(resolvableExpressions, logicalCondition);
     }
 
     @Override

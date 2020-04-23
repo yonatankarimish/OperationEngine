@@ -1,8 +1,11 @@
 package com.SixSense.data.logic;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 
-public class ExpressionResult implements IDeepCloneable<ExpressionResult> {
+import java.util.Objects;
+
+public class ExpressionResult implements IDeepCloneable<ExpressionResult>, IEquatable<ExpressionResult> {
     private boolean resolved; //Did the logical expression turn out to be true?
     private ResultStatus outcome; //If the logical expression has been resolved, what should be the outcome of the command?
     private String message; //Arbitrary message, if the logical expression has been resolved
@@ -79,27 +82,6 @@ public class ExpressionResult implements IDeepCloneable<ExpressionResult> {
         return this;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        else if (other == null || getClass() != other.getClass()) {
-            return false;
-        }
-        return equals((ExpressionResult) other);
-    }
-
-    public boolean equals(ExpressionResult otherOutcome) {
-        return this.resolved == otherOutcome.resolved
-                && this.outcome.equals(otherOutcome.outcome);
-    }
-
-    public boolean strongEquals(ExpressionResult otherOutcome) {
-        return equals(otherOutcome)
-                && this.message.equals(otherOutcome.message);
-    }
-
     //Returns a new instance of the same expected outcome in its pristine state. That is - as if the new state was never resolved
     @Override
     public ExpressionResult deepClone(){
@@ -107,6 +89,34 @@ public class ExpressionResult implements IDeepCloneable<ExpressionResult> {
                 .withResolved(false)
                 .withOutcome(this.outcome)
                 .withMessage(this.message);
+    }
+
+    @Override
+    public boolean weakEquals(ExpressionResult otherOutcome) {
+        return this.resolved == otherOutcome.resolved &&
+            this.outcome.equals(otherOutcome.outcome);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else{
+            return weakEquals((ExpressionResult) other);
+        }
+    }
+
+    @Override
+    public boolean strongEquals(ExpressionResult otherOutcome) {
+        return weakEquals(otherOutcome) &&
+            this.message.equals(otherOutcome.message);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(resolved, outcome);
     }
 
     @Override

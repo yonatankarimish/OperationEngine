@@ -148,6 +148,27 @@ public abstract class AbstractCommand implements ICommand{
                 .withSaveTo(creator.saveTo.deepClone());
     }
 
+    protected boolean weakEquals(AbstractCommand other){
+        return this.executionCondition.equals(other.executionCondition) &&
+            this.expectedOutcome.equals(other.expectedOutcome) &&
+            this.saveTo.equals(other.saveTo);
+    }
+
+    protected boolean equals(AbstractCommand other){
+        return this.weakEquals(other) &&
+            this.dynamicFields.keySet().equals(other.dynamicFields.keySet());
+    }
+
+    protected boolean strongEquals(AbstractCommand other){
+        return this.weakEquals(other) &&
+            this.alreadyExecuted == other.alreadyExecuted &&
+            this.dynamicFields.equals(other.dynamicFields);
+    }
+
+    protected Object[] superMembers(){
+        return new Object[]{executionCondition, expectedOutcome, saveTo};
+    }
+
     protected String superToString(){
         return  " uuid=" + uuid +
                 ", alreadyExecuted=" + alreadyExecuted +

@@ -1,7 +1,9 @@
 package com.SixSense.data.devices;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.Objects;
 
 public class VendorProductVersion implements IDeepCloneable<VendorProductVersion> {
     private String vendor;
@@ -74,6 +76,28 @@ public class VendorProductVersion implements IDeepCloneable<VendorProductVersion
                 .withVendor(this.vendor)
                 .withProduct(this.product)
                 .withVersion(this.version);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.equals((VendorProductVersion) other);
+        }
+    }
+
+    public boolean equals(VendorProductVersion other) {
+        return this.vendor.equals(other.vendor) &&
+            this.product.equals(other.product) &&
+            this.version.equals(other.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(vendor, product, version);
     }
 
     @Override

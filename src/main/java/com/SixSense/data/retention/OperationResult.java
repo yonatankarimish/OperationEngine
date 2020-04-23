@@ -1,12 +1,14 @@
 package com.SixSense.data.retention;
 
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.data.logic.ExpressionResult;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-public class OperationResult {
+public class OperationResult implements IEquatable<OperationResult> {
     private ExpressionResult expressionResult;
     private Map<String, String> databaseVariables;
 
@@ -45,6 +47,37 @@ public class OperationResult {
     public OperationResult addDatabaseVariables(Map<String, String> databaseVariables) {
         this.databaseVariables.putAll(databaseVariables);
         return this;
+    }
+
+    @Override
+    public boolean weakEquals(OperationResult other) {
+        return this.expressionResult.equals(other.expressionResult);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.equals((OperationResult) other);
+        }
+    }
+
+    public boolean equals(OperationResult other) {
+        return this.weakEquals(other) &&
+            this.databaseVariables.keySet().equals(other.databaseVariables.keySet());
+    }
+
+    @Override
+    public boolean strongEquals(OperationResult other) {
+        return this.weakEquals(other) && this.databaseVariables.equals(other.databaseVariables);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expressionResult, databaseVariables.keySet());
     }
 
     @Override

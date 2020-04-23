@@ -1,7 +1,7 @@
 package com.SixSense.aspects;
 
 import com.SixSense.api.ApiDebuggingAware;
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
 import com.SixSense.data.aspects.MethodInvocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

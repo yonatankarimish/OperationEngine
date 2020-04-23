@@ -1,14 +1,12 @@
 package com.SixSense.data.devices;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-public class Device implements IDeepCloneable<Device> {
+public class Device implements IDeepCloneable<Device>, IEquatable<Device> {
     private final UUID uuid;
     private VendorProductVersion vpv;
     private Credentials credentials; //In a sense, just another set of dynamic fields; Acts as a convenience parameter
@@ -88,6 +86,38 @@ public class Device implements IDeepCloneable<Device> {
                 .withVpv(this.vpv.deepClone())
                 .withCredentials(this.credentials.deepClone())
                 .addDynamicFields(this.dynamicFields);
+    }
+
+    @Override
+    public boolean weakEquals(Device other) {
+        return this.vpv.equals(other.vpv) &&
+            this.credentials.getHost().equals(other.credentials.getHost()) &&
+            this.credentials.getPort() == other.credentials.getPort();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.equals((Device) other);
+        }
+    }
+
+    public boolean equals(Device other) {
+        return this.vpv.equals(other.vpv) && this.credentials.equals(other.credentials);
+    }
+
+    @Override
+    public boolean strongEquals(Device other) {
+        return this.equals(other) && this.dynamicFields.equals(other.dynamicFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(vpv, credentials);
     }
 
     @Override

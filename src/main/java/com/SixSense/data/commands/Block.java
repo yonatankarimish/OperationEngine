@@ -1,6 +1,7 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
 import com.SixSense.data.logic.LogicalExpression;
@@ -8,13 +9,11 @@ import com.SixSense.io.Session;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.LogicalExpressionResolver;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Block extends AbstractCommand implements ICommand, IDeepCloneable<Block> {
+public class Block extends AbstractCommand implements ICommand, IDeepCloneable<Block>, IEquatable<Block> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<ICommand> childBlocks;
 
@@ -157,12 +156,46 @@ public class Block extends AbstractCommand implements ICommand, IDeepCloneable<B
     }
 
     @Override
+    public boolean weakEquals(Block other) {
+        return super.weakEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            Block asBlock = (Block) other;
+            return super.equals(asBlock) && this.equals(asBlock);
+        }
+    }
+
+    public boolean equals(Block other) {
+        return this.childBlocks.equals(other.childBlocks) &&
+            this.repeatCondition.equals(other.repeatCondition);
+    }
+
+    @Override
+    public boolean strongEquals(Block other) {
+        return super.strongEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        Stream<Object> childStream = Arrays.stream(new Object[]{childBlocks, repeatCondition});
+        Stream<Object> superStream = Arrays.stream(superMembers());
+
+        Object[] mergedMembers = Stream.concat(superStream, childStream).toArray();
+        return Arrays.hashCode(mergedMembers);
+    }
+
+    @Override
     public String toString() {
         return "Block{" +
                 "childBlocks=" + childBlocks +
                 ", repeatCondition=" + repeatCondition +
-                ", commandIterator=" + commandIterator +
-                ", currentCommand=" + currentCommand +
                 ", " + super.superToString() +
                 '}';
     }

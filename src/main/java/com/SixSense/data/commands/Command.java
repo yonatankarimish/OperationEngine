@@ -1,6 +1,7 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.data.logic.ChannelType;
 import com.SixSense.data.logic.ExecutionCondition;
 import com.SixSense.data.logic.ExpectedOutcome;
@@ -9,8 +10,9 @@ import com.SixSense.data.pipes.AbstractOutputPipe;
 import com.SixSense.util.CommandUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
-public class Command extends AbstractCommand implements ICommand, IDeepCloneable<Command> {
+public class Command extends AbstractCommand implements ICommand, IDeepCloneable<Command>, IEquatable<Command> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private String channelName;
     private String commandText;
@@ -192,6 +194,48 @@ public class Command extends AbstractCommand implements ICommand, IDeepCloneable
                 .addOutputPipes(this.outputPipes)
                 .addRetentionPipes(this.retentionPipes)
                 .withSuperCloneState(this);
+    }
+
+    @Override
+    public boolean weakEquals(Command other) {
+        return super.weakEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            Command otherAsCommand = (Command) other;
+            return super.equals(otherAsCommand) && this.equals(otherAsCommand);
+        }
+    }
+
+    public boolean equals(Command other) {
+        return this.minimalSecondsToResponse == other.minimalSecondsToResponse &&
+            this.secondsToTimeout == other.secondsToTimeout &&
+            this.requiresCleanup == other.requiresCleanup &&
+            this.useRawOutput == other.useRawOutput &&
+            this.channelName.equals(other.channelName) &&
+            this.commandText.equals(other.commandText) &&
+            this.outputPipes.equals(other.outputPipes) &&
+            this.retentionPipes.equals(other.retentionPipes);
+    }
+
+    @Override
+    public boolean strongEquals(Command other) {
+        return super.strongEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        Stream<Object> childStream = Arrays.stream(new Object[]{channelName, commandText, minimalSecondsToResponse, secondsToTimeout, requiresCleanup, useRawOutput, outputPipes, retentionPipes});
+        Stream<Object> superStream = Arrays.stream(superMembers());
+
+        Object[] mergedMembers = Stream.concat(superStream, childStream).toArray();
+        return Arrays.hashCode(mergedMembers);
     }
 
     @Override

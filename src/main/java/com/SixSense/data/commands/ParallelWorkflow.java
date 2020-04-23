@@ -1,13 +1,15 @@
 package com.SixSense.data.commands;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.OperationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow, IDeepCloneable<ParallelWorkflow> {
+public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWorkflow, IDeepCloneable<ParallelWorkflow>, IEquatable<ParallelWorkflow> {
     //When adding new variables or members, take care to update the assignDefaults() and toString() methods to avoid breaking cloning and serializing behaviour
     private List<Operation> parallelOperations;
     private Map<String, OperationResult> operationOutcomes; //will gradually fill with the resolved outcomes of parallel operations. //key: operation id, value: operation result
@@ -112,6 +114,43 @@ public class ParallelWorkflow extends AbstractWorkflow implements ICommand, IWor
                 .addParallelOperations(clonedOperations)
                 .addWorkflowPolicies(this.workflowPolicies)
                 .withSuperCloneState(this);
+    }
+
+    @Override
+    public boolean weakEquals(ParallelWorkflow other) {
+        return super.weakEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        } else {
+            ParallelWorkflow otherAsOperation = (ParallelWorkflow) other;
+            return super.equals(otherAsOperation) && this.equals(otherAsOperation);
+        }
+    }
+
+    public boolean equals(ParallelWorkflow other) {
+        return this.parallelOperations.equals(other.parallelOperations) &&
+            this.operationOutcomes.equals(other.operationOutcomes) &&
+            this.workflowPolicies.equals(other.workflowPolicies);
+    }
+
+    @Override
+    public boolean strongEquals(ParallelWorkflow other) {
+        return super.strongEquals(other) && this.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        Stream<Object> childStream = Arrays.stream(new Object[]{parallelOperations, operationOutcomes, workflowPolicies});
+        Stream<Object> superStream = Arrays.stream(superMembers());
+
+        Object[] mergedMembers = Stream.concat(superStream, childStream).toArray();
+        return Arrays.hashCode(mergedMembers);
     }
 
     @Override

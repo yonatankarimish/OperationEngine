@@ -1,6 +1,6 @@
 package com.SixSense.data.devices;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
 import com.SixSense.data.commands.Operation;
 import com.SixSense.data.retention.OperationResult;
 
@@ -76,6 +76,16 @@ public class RawExecutionConfig implements IDeepCloneable<RawExecutionConfig> {
         return new RawExecutionConfig()
             .withOperation(operation.deepClone())
             .addDevices(clonedDevices);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other; // Raw configs never equal each other; They are different configurations received in different points in time
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operation, devices, results);
     }
 
     @Override

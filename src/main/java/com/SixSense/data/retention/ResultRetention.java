@@ -1,6 +1,8 @@
 package com.SixSense.data.retention;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+
+import java.util.Objects;
 
 public class ResultRetention implements IDeepCloneable<ResultRetention> {
     private RetentionType retentionType;
@@ -82,6 +84,26 @@ public class ResultRetention implements IDeepCloneable<ResultRetention> {
                 .withName(this.name)
                 .withValue(this.value)
                 .withOverwriteParent(this.overwriteParent);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            ResultRetention otherAsResult = (ResultRetention) other;
+            return this.overwriteParent == otherAsResult.overwriteParent &&
+                this.retentionType == otherAsResult.retentionType &&
+                this.name.equals(otherAsResult.name) &&
+                this.value.equals(otherAsResult.value);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(retentionType, name, value, overwriteParent);
     }
 
     @Override

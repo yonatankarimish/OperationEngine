@@ -1,9 +1,12 @@
 package com.SixSense.data.logic;
 
-import com.SixSense.data.IDeepCloneable;
+import com.SixSense.data.interfaces.IDeepCloneable;
+import com.SixSense.data.interfaces.IEquatable;
 import com.SixSense.util.ExpressionUtils;
 
-public class ExpectedOutcome implements IFlowConnector, IDeepCloneable<ExpectedOutcome> {
+import java.util.Objects;
+
+public class ExpectedOutcome implements IFlowConnector, IDeepCloneable<ExpectedOutcome>, IEquatable<ExpectedOutcome> {
     private BinaryRelation binaryRelation;
     private String expectedValue;
     private ExpressionResult expressionResult;
@@ -80,6 +83,33 @@ public class ExpectedOutcome implements IFlowConnector, IDeepCloneable<ExpectedO
                 .withExpectedValue(this.expectedValue)
                 .withBinaryRelation(this.binaryRelation)
                 .withExpressionResult(this.expressionResult.deepClone());
+    }
+
+    @Override
+    public boolean weakEquals(ExpectedOutcome other) {
+        return binaryRelation == other.binaryRelation &&
+            this.expectedValue.equals(other.expectedValue);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (other == null || getClass() != other.getClass()) {
+            return false;
+        } else {
+            return this.weakEquals((ExpectedOutcome) other);
+        }
+    }
+
+    @Override
+    public boolean strongEquals(ExpectedOutcome other) {
+        return this.weakEquals(other) && this.expressionResult.equals(other.expressionResult);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(binaryRelation, expectedValue);
     }
 
     @Override
