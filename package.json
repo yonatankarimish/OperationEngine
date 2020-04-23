@@ -7,50 +7,16 @@
   "main": "web/index.js",
   "scripts": {
     "clean": "mvn clean",
-    "init-dev": "yarn && node ./scripts/init-dev.js",
-    "build-web": "rimraf ./src/main/resources/web/* && parcel build ./web/index.html --out-dir src/main/resources/web",
-    "build-jar": "mvn clean package -DskipTests=true",
-    "upload-ansible": "node ./scripts/ssh-upload.js --task=control",
-    "upload-jar": "node ./scripts/ssh-upload.js --task=jar",
-    "upload-tests": "node ./scripts/ssh-upload.js --task=tests",
-    "upload-dependencies": "node ./scripts/ssh-upload.js --task=dependencies",
-    "upload-all": "node ./scripts/ssh-upload.js --task=all",
-    "deploy": "yarn deploy-jar",
-    "deploy-web": "yarn build-web && yarn deploy-jar",
-    "deploy-jar": "yarn build-jar && yarn upload-jar",
-    "deploy-tests": "yarn build-jar && yarn upload-tests",
-    "deploy-full": "yarn build-web && yarn build-jar && yarn upload-all"
+    "deploy-jar": "yarn build-jar && yarn upload-jar"
   },
   "devDependencies": {
-    "@babel/core": "~7.8.3",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/preset-env": "~7.8.3",
-    "@babel/preset-react": "~7.8.3",
-    "eslint": "~6.8.0",
     "graceful-fs": "~4.1.15",
     "ncp": "~2.0.0",
-    "parcel-bundler": "~1.12.4",
     "promise": "~8.0.1",
-    "read-yaml": "^1.1.0",
     "rimraf": "~3.0.1",
     "ssh2": "~0.8.4",
     "ssh2-utils": "~1.0.28",
-    "stylus": "^0.54.7",
     "walk": "~2.3.9",
-    "write-yaml": "~1.0.0",
     "yargs": "~13.2.4"
-  },
-  "dependencies": {
-    "axios": "~0.19.2",
-    "bootstrap": "~4.4.1",
-    "jquery": "~3.4.1",
-    "popper.js": "~1.16.1",
-    "react": "~16.12.0",
-    "react-dom": "~16.12.0"
-  },
-  "browserslist": [
-    ">0.25% and last 2 versions",
-    "not ie 11",
-    "not op_mini all"
-  ]
+  }
 }
