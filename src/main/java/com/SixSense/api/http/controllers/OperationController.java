@@ -8,7 +8,7 @@ import com.SixSense.data.devices.RawExecutionConfig;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.engine.SessionEngine;
 import com.SixSense.engine.WorkflowManager;
-import com.SixSense.mocks.TestingMocks;
+import com.SixSense.mocks.OperationMocks;
 import com.SixSense.threading.ThreadingManager;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.PolymorphicJsonMapper;
@@ -42,7 +42,7 @@ public class OperationController extends ApiDebuggingAware {
 
     @GetMapping("/f5Config")
     public RawExecutionConfig f5Raw() {
-        return TestingMocks.f5BigIpBackup(
+        return OperationMocks.f5BigIpBackup(
             Collections.singletonList(
                 new Credentials()
                     .withHost("172.31.252.179")
@@ -55,7 +55,7 @@ public class OperationController extends ApiDebuggingAware {
     @GetMapping("/f5Json")
     public String f5Json() {
         try {
-            return wrapForHtml(PolymorphicJsonMapper.serialize(TestingMocks.f5BigIpBackup(
+            return wrapForHtml(PolymorphicJsonMapper.serialize(OperationMocks.f5BigIpBackup(
                 Collections.singletonList(
                     new Credentials()
                         .withHost("172.31.252.179")

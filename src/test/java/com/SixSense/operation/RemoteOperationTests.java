@@ -6,7 +6,7 @@ import com.SixSense.data.commands.Operation;
 import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.logic.*;
 import com.SixSense.data.retention.OperationResult;
-import com.SixSense.mocks.TestingMocks;
+import com.SixSense.mocks.OperationMocks;
 import com.SixSense.util.CommandUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +20,7 @@ public class RemoteOperationTests extends SixSenseBaseTest {
 
     @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void f5BigIpBackup(String host, String username, String password){
-        Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpBackup(
+        Operation f5Backup = CommandUtils.composeWorkflow(OperationMocks.f5BigIpBackup(
             Collections.singletonList(
                 new Credentials()
                     .withHost(host)
@@ -36,7 +36,7 @@ public class RemoteOperationTests extends SixSenseBaseTest {
 
     @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void f5BigIpInventory(String host, String username, String password){
-        Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
+        Operation f5Backup = CommandUtils.composeWorkflow(OperationMocks.f5BigIpInventory(
             Collections.singletonList(
                 new Credentials()
                     .withHost(host)

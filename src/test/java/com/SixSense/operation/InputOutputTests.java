@@ -7,7 +7,7 @@ import com.SixSense.data.devices.Credentials;
 import com.SixSense.data.retention.OperationResult;
 import com.SixSense.io.ProcessStreamWrapper;
 import com.SixSense.io.Session;
-import com.SixSense.mocks.TestingMocks;
+import com.SixSense.mocks.OperationMocks;
 import com.SixSense.util.CommandUtils;
 import com.SixSense.util.MessageLiterals;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +24,7 @@ public class InputOutputTests extends SixSenseBaseTest {
 
     @Test(dataProvider = "f5BigIpConfig", dataProviderClass = RemoteConfig.class, groups = {"operation"})
     public void testChunkSubstitutionCriteria(String host, String username, String password){
-        Operation f5Backup = CommandUtils.composeWorkflow(TestingMocks.f5BigIpInventory(
+        Operation f5Backup = CommandUtils.composeWorkflow(OperationMocks.f5BigIpInventory(
             Collections.singletonList(
                 new Credentials()
                     .withHost(host)

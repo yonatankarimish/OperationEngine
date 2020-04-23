@@ -15,7 +15,6 @@ import com.SixSense.data.pipes.LastLinePipe;
 import com.SixSense.data.pipes.WhitespacePipe;
 import com.SixSense.data.retention.RetentionType;
 import com.SixSense.data.retention.ResultRetention;
-import com.SixSense.util.FileUtils;
 import com.SixSense.util.InternalCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,28 +22,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TestingMocks {
-    private static final Logger logger = LogManager.getLogger(TestingMocks.class);
-
-    public static void testCompressionAndDecompression(){
-        String filename = "";
-        try {
-            filename = "/tmp/one_megabyte.txt";
-            FileUtils.compress(filename);
-            logger.info("File " + filename + " compressed successfully");
-        }catch (Exception e){
-            logger.error("Failed to compress file "+filename, e);
-        }
-
-        try {
-            filename = "/tmp/one_megabyte.txt";
-            String filenameCompressed = filename+".lz4";
-            FileUtils.decompress(filenameCompressed, "/tmp/one_megabyte_restored.txt");
-            logger.info("File " + filename + " compressed successfully");
-        }catch (Exception e){
-            logger.error("Failed to decompress file "+filename, e);
-        }
-    }
+public class OperationMocks {
+    private static final Logger logger = LogManager.getLogger(OperationMocks.class);
 
     public static RawExecutionConfig f5BigIpBackup(List<Credentials> credentialList){
         VendorProductVersion f5BigIp = new VendorProductVersion()
