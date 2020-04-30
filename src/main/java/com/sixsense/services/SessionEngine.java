@@ -72,7 +72,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             this.sshClient.connect(this.localhostConfig.getHost(), this.localhostConfig.getPort());
             this.sshClient.authPassword(this.localhostConfig.getUsername(), this.localhostConfig.getPassword());
         } catch (IOException e) {
-            logger.error("Session engine failed to initialize - failed to initialize ssh client. Caused by: " + e.getMessage());
+            logger.fatal("Session engine failed to initialize - failed to initialize ssh client. Caused by: " + e.getMessage());
             throw e;
         }
 
