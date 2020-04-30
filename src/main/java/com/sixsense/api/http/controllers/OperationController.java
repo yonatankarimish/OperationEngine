@@ -64,8 +64,7 @@ public class OperationController extends ApiDebuggingAware {
                 )
             )));
         } catch (JsonProcessingException e) {
-            logger.error(e);
-            return "Failed to serialize f5 json, check the logs for a full stack trace";
+            return "Failed to serialize f5 json and wrap for html display. Caused by: " + e.getMessage();
         }
     }
 

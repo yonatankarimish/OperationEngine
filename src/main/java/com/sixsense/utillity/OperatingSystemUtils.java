@@ -26,7 +26,7 @@ public class OperatingSystemUtils {
                 throw new Exception("Failed to obtain local partition block size from local shell. Caused by: " + result.getErrors().get(0));
             }
         } catch (Exception e) {
-            logger.error("Failed to obtain block size for local partition name", e);
+            logger.error("Failed to obtain block size for local partition name. Caused by: " + e.getMessage());
         }
     }
 }

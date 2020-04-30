@@ -54,7 +54,7 @@ public class ApiAspect {
                 throw new Exception("Http aspect target does not implement the AbstractHttpController class");
             }
         } catch (Throwable t) {
-            logger.error("Failed to wrap advice around http controller. Caused by:", t);
+            logger.error("Failed to wrap advice around http controller. Caused by:" + t.getMessage());
             throw t;
         }
     }

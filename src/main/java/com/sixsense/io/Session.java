@@ -166,7 +166,7 @@ public class Session implements Closeable, IDebuggable {
             channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
             channel.flush();
         }catch (IOException e){
-            sessionLogger.error("Failed to write command " + this.evaluatedCommand + " to channel " + channel.getName() + ". Caused by: ", e.getMessage());
+            sessionLogger.error("Failed to write command " + this.evaluatedCommand + " to channel " + channel.getName() + ". Caused by: " + e.getMessage());
             throw e;
         }
     }
@@ -334,7 +334,7 @@ public class Session implements Closeable, IDebuggable {
                 try {
                     this.threadingManager.submit(fileWriter);
                 } catch (Exception e) {
-                    sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: ", e.getMessage());
+                    sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: " + e.getMessage());
                 }
             }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseImmediate)){
                 operationProducer.produceRetentionResult(this.operationId, clonedRetention);
@@ -507,7 +507,7 @@ public class Session implements Closeable, IDebuggable {
                 this.channels.get(channelName).close();
             }catch (IOException e){
                 partialClosure = true;
-                sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channelName +". Caused by: ", e.getMessage());
+                sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channelName +". Caused by: " + e.getMessage());
             }
         }
 
@@ -516,7 +516,7 @@ public class Session implements Closeable, IDebuggable {
         try {
             this.newChunkReceived.signalAll();
         }catch(Exception e){
-            sessionLogger.error("Session " +  this.getShortSessionId() + " failed to terminate current command. Caused by: ", e.getMessage());
+            sessionLogger.error("Session " +  this.getShortSessionId() + " failed to terminate current command. Caused by: " + e.getMessage());
         }finally {
             this.commandLock.unlock();
             sessionLogger.debug(this.getTerminalIdentifier() + " close method released lock");

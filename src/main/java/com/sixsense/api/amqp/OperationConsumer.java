@@ -69,7 +69,7 @@ public class OperationConsumer extends ApiDebuggingAware {
             logger.info("Generated raw execution config by deserializing message with delivery tag " + deliveryTag + " from queue " + queueName);
         } catch (JsonProcessingException e) {
             rawExecutionConfig = null;
-            logger.error("Failed to deserialize message with delivery tag " + deliveryTag + " from queue " + queueName + ". Caused by: ", e);
+            logger.error("Failed to deserialize message with delivery tag " + deliveryTag + " from queue " + queueName + ". Caused by: " + e.getMessage());
         }
 
         if (rawExecutionConfig != null) {
@@ -92,7 +92,7 @@ public class OperationConsumer extends ApiDebuggingAware {
                 channel.basicNack(deliveryTag, false, false);
             }
         } catch (IOException e) {
-            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue(), e);
+            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue() + ". Caused by: " + e.getMessage());
         }
     }
 
@@ -118,7 +118,7 @@ public class OperationConsumer extends ApiDebuggingAware {
             //basicNack(long deliveryTag, boolean multiple, boolean requeue)
             channel.basicNack(deliveryTag, false, false);
         } catch (IOException e) {
-            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue(), e);
+            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue() + ". Caused by: " + e.getMessage());
         }
     }
 }

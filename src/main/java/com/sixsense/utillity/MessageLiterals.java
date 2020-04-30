@@ -16,7 +16,7 @@ public class MessageLiterals {
         try {
             tmpDirectory =  new File(MessageLiterals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
         } catch (URISyntaxException e) {
-            logger.error("Failed to resolve current project directory. Resolving as root directory. Caused by: ", e);
+            logger.error("Failed to resolve current project directory. Resolving as root directory. Caused by: " + e.getMessage());
         }finally {
             projectDirectory = tmpDirectory;
         }

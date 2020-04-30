@@ -28,7 +28,7 @@ public class RetentionFileWriter implements Supplier<Boolean> {
             logger.info(contents);
             return true;
         }catch (Exception e){
-            logger.error(e);
+            logger.error("Session " + this.sessionId + " failed to stream retention results to file " + this.fileName + ". Caused by: " + e.getMessage());
             return false;
         }finally {
             ThreadContext.clearAll();

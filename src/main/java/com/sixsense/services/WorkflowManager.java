@@ -78,7 +78,7 @@ public class WorkflowManager implements IEngineEventHandler {
         try {
             return threadingManager.submit(() -> sessionEngine.executeOperation(operation));
         }catch (Exception e){
-            logger.error("Failed to submit operation " + operation.getUUID() + " to worker queue. Caused by: ", e);
+            logger.error("Failed to submit operation " + operation.getUUID() + " to worker queue. Caused by: " + e.getMessage());
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -91,7 +91,7 @@ public class WorkflowManager implements IEngineEventHandler {
             OperationEndEvent operationEndEvent = (OperationEndEvent)event;
             notifyWorkflow(operationEndEvent.getOperation(), operationEndEvent.getResult());
         }catch (ClassCastException e){
-            logger.error("Failed to notify workflow manager that an operation has completed. Caused by: ", e);
+            logger.error("Failed to notify workflow manager that an operation has completed. Caused by: " + e.getMessage());
         }
     }
 
@@ -154,7 +154,7 @@ public class WorkflowManager implements IEngineEventHandler {
                 }
             }
         } catch (Exception e) {
-            logger.error("Failed to remove running operations from worker queue. Caused by: ", e);
+            logger.error("Failed to remove running operations from worker queue. Caused by: " + e.getMessage());
         }
     }
 }

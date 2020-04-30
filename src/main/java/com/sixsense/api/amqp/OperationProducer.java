@@ -45,7 +45,7 @@ public class OperationProducer extends ApiDebuggingAware {
         try {
             asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
         } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize operation result for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: ", e);
+            logger.error("Failed to serialize operation result for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: " + e.getMessage());
             logger.error("Check the engine logs for details about the operation and it's result ");
         }
 
@@ -62,7 +62,7 @@ public class OperationProducer extends ApiDebuggingAware {
         try {
             asJSON = PolymorphicJsonMapper.serialize(result);
         } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize database retention foroperation with id " + operationId + ". Caused by: ", e);
+            logger.error("Failed to serialize database retention foroperation with id " + operationId + ". Caused by: " + e.getMessage());
             logger.error("Check the engine logs for details about the failed database retention");
         }
 

@@ -62,7 +62,7 @@ public class SixSenseBaseUtils {
                     resource.close();
                 } catch (Exception e) {
                     String resourceClassName = closeables.getClass().toString();
-                    logger.error("Failed to close instance of " + resourceClassName, e);
+                    logger.error("Failed to close instance of " + resourceClassName + ". Caused by: " + e.getMessage());
                 }
             }
         }

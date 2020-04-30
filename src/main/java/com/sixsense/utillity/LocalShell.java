@@ -32,13 +32,13 @@ public class LocalShell {
             List<String> errors = processErrors.get();
             return new LocalShellResult(exitCode, output, errors);
         }catch (IOException e){
-            logger.error("Failed to run command " + commandText + ": Failed to start a shell process. Caused by: ", e);
+            logger.error("Failed to run command " + commandText + ": Failed to start a shell process. Caused by: " + e.getMessage());
             throw e;
         }catch (InterruptedException e){
-            logger.error("Failed to run command " + commandText + ": Interrupted while waiting for command result. Caused by: ", e);
+            logger.error("Failed to run command " + commandText + ": Interrupted while waiting for command result. Caused by: " + e.getMessage());
             throw e;
         }catch (ExecutionException e){
-            logger.error("Failed to run command " + commandText + ": Failed during interaction with IO channels. Caused by: ", e);
+            logger.error("Failed to run command " + commandText + ": Failed during interaction with IO channels. Caused by: " + e.getMessage());
             throw e;
         }finally {
             if(resultReader != null){
@@ -71,7 +71,7 @@ public class LocalShell {
                     Thread.sleep(3000);
                 }
             }catch (IOException e){
-                logger.error("Failed to write command " + lastCommand + ". Caused by: ", e);
+                logger.error("Failed to write command " + lastCommand + ". Caused by: " + e.getMessage());
                 throw new Exception(e);
             }
 
@@ -80,13 +80,13 @@ public class LocalShell {
             List<String> errors = processErrors.get();
             return new LocalShellResult(exitCode, output, errors);
         }catch (IOException e){
-            logger.error("Failed to run command " + referenceToScript + ": Failed to start a shell process. Caused by: ", e);
+            logger.error("Failed to run command " + referenceToScript + ": Failed to start a shell process. Caused by: " + e.getMessage());
             throw e;
         }catch (InterruptedException e){
-            logger.error("Failed to run command " + referenceToScript + ": Interrupted while waiting for command result. Caused by: ", e);
+            logger.error("Failed to run command " + referenceToScript + ": Interrupted while waiting for command result. Caused by: " + e.getMessage());
             throw e;
         }catch (ExecutionException e){
-            logger.error("Failed to run command " + referenceToScript + ": Failed during interaction with IO channels. Caused by: ", e);
+            logger.error("Failed to run command " + referenceToScript + ": Failed during interaction with IO channels. Caused by: " + e.getMessage());
             throw e;
         }finally {
             if(resultReader != null){
@@ -119,7 +119,7 @@ public class LocalShell {
 
                 return result;
             } catch (IOException e){
-                logger.error("Failed to process command " + lastResponse + ". Caused by: ", e);
+                logger.error("Failed to process command " + lastResponse + ". Caused by: " + e.getMessage());
                 throw new ExecutionException(e);
             }
         }

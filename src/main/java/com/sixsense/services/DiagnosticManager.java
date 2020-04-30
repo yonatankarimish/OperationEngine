@@ -155,7 +155,7 @@ public class DiagnosticManager{
                 try {
                     threadingManager.submit(() -> iEngineEventHandler.handleEngineEvent(event));
                 } catch (Exception e) {
-                    logger.error("Failed to emit task to event handler for engine event. Caused by: ", e);
+                    logger.error("Failed to emit task to event handler for engine event. Caused by: " + e.getMessage());
                 }
             }
         }
