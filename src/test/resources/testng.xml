@@ -9,7 +9,7 @@
     <!--<parameter name="environment" value="tests" />-->
 
     <listeners>
-        <listener class-name="com.SixSense.TestListener" />
+        <listener class-name="com.sixsense.TestListener" />
     </listeners>
 
     <test name="operation-tests">
@@ -19,17 +19,17 @@
             </run>
         </groups>
         <packages>
-            <package name="com.SixSense.operation.*"/>
+            <package name="com.sixsense.operation.*"/>
         </packages>
     </test>
-    <test name="data-tests">
+    <test name="model-tests">
         <groups>
             <run>
-                <include name="data" />
+                <include name="model" />
             </run>
         </groups>
         <packages>
-            <package name="com.SixSense.data.*"/>
+            <package name="com.sixsense.model.*"/>
         </packages>
     </test>
     <test name="api-tests">
@@ -39,7 +39,7 @@
             </run>
         </groups>
         <packages>
-            <package name="com.SixSense.api.*"/>
+            <package name="com.sixsense.api.*"/>
         </packages>
     </test>
 </suite>

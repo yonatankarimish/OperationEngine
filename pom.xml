@@ -48,7 +48,7 @@
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>dependency-jars/</classpathPrefix>
                             <!-- Jar file entry point (main method) -->
-                            <mainClass>com.SixSense.Main</mainClass>
+                            <mainClass>com.sixsense.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
