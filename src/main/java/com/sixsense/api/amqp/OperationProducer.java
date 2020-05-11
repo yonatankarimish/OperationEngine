@@ -2,6 +2,7 @@ package com.sixsense.api.amqp;
 
 import com.sixsense.api.ApiDebuggingAware;
 import com.sixsense.api.amqp.config.AMQPConfig;
+import com.sixsense.api.amqp.config.EngineCorrelationData;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.devices.RawExecutionConfig;
@@ -53,7 +54,16 @@ public class OperationProducer extends ApiDebuggingAware {
             Message response = MessageBuilder.withBody(asJSON.getBytes())
                     .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                     .build();
-            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.OperationResultBindingKey, response);
+
+            EngineCorrelationData correlationData = new EngineCorrelationData(
+                rawExecutionConfig.getOperation().getUUID() + "-result",
+                resultExchange.getName(),
+                AMQPConfig.OperationResultBindingKey,
+                "Operation " + rawExecutionConfig.getOperation().getShortUUID() + ", producing operation result",
+                response
+                );
+
+            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.OperationResultBindingKey, response, correlationData);
         }
     }
 
@@ -70,7 +80,16 @@ public class OperationProducer extends ApiDebuggingAware {
             Message response = MessageBuilder.withBody(asJSON.getBytes())
                     .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                     .build();
-            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.RetentionResultBindingKey, response);
+
+            EngineCorrelationData correlationData = new EngineCorrelationData(
+                operationId + "-retention-"+result.getName(),
+                resultExchange.getName(),
+                AMQPConfig.RetentionResultBindingKey,
+                "Operation " + operationId + ", producing retention value " + result.getName(),
+                response
+            );
+
+            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.RetentionResultBindingKey, response, correlationData);
         }
     }
 
@@ -81,6 +100,15 @@ public class OperationProducer extends ApiDebuggingAware {
         Message response = MessageBuilder.withBody(asJSON.getBytes())
                 .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                 .build();
+
+        EngineCorrelationData correlationData = new EngineCorrelationData(
+            "foo" + "-termination",
+            resultExchange.getName(),
+            "Operation " + "foo" + ", producing termination result",
+            AMQPConfig.TerminationResultBindingKey,
+            response
+        );
+
         rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.TerminationResultBindingKey, response);
     }
 }

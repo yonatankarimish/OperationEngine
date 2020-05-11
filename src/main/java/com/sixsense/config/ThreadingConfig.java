@@ -52,13 +52,25 @@ public class ThreadingConfig {
     }
 
     public static class AMQPThreadingProperties extends ThreadingProperties{
+        private final int maximumConsumeRetries;
+        private final int maximumProduceRetries;
         private final int minimumChannels;
         private final int minimumConnections;
 
-        public AMQPThreadingProperties(Duration allowedIdleTime, int maximumThreads, int minimumThreads, String threadNamePrefix, int minimumChannels, int minimumConnections) {
+        public AMQPThreadingProperties(Duration allowedIdleTime, int maximumConsumeRetries, int maximumProduceRetries, int maximumThreads, int minimumThreads, String threadNamePrefix, int minimumChannels, int minimumConnections) {
             super(allowedIdleTime, maximumThreads, minimumThreads, threadNamePrefix);
+            this.maximumConsumeRetries = maximumConsumeRetries;
+            this.maximumProduceRetries = maximumProduceRetries;
             this.minimumChannels = minimumChannels;
             this.minimumConnections = minimumConnections;
+        }
+
+        public int getMaximumConsumeRetries() {
+            return maximumConsumeRetries;
+        }
+
+        public int getMaximumProduceRetries() {
+            return maximumProduceRetries;
         }
 
         public int getMinimumChannels() {

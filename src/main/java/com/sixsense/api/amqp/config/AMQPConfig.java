@@ -16,6 +16,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /*https://www.rabbitmq.com/tutorials/tutorial-four-spring-amqp.html
 * Should explain the whole class, read the article through
 *
@@ -31,13 +35,17 @@ public class AMQPConfig {
 
     private final ThreadingManager threadingManager;
     private final HostConfig.RabbitHost rabbitHost;
-    private final ThreadingConfig.ThreadingProperties amqpThreadingProperties;
+    private final ThreadingConfig.AMQPThreadingProperties amqpThreadingProperties;
+
+    private final Map<String, Integer> publishingRetryCounter;
 
     @Autowired
     public AMQPConfig(ThreadingManager threadingManager, HostConfig hostConfig, ThreadingConfig threadingConfig){
         this.threadingManager = threadingManager;
         this.rabbitHost = hostConfig.getRabbit();
         this.amqpThreadingProperties = threadingConfig.getAmqp();
+
+        this.publishingRetryCounter = Collections.synchronizedMap(new HashMap<>());
     }
 
 
@@ -98,8 +106,40 @@ public class AMQPConfig {
         template.setUsePublisherConnection(true); //uses a separate connection(s) from separate connection factories for publishing and consuming (to avoid blocking consumers while publishing)
         template.setConfirmCallback((CorrelationData correlationData, boolean ack, String cause) -> {
             if(!ack){
-                logger.error("Failed to publish message to rabbitmq broker. Caused by: " + cause);
+                if(correlationData != null) {
+                    EngineCorrelationData asEngineCorrelationData = (EngineCorrelationData)correlationData;
+                    String correlationId = asEngineCorrelationData.getId();
+                    logger.error(asEngineCorrelationData.getLogText() + ", Failed to publish to AMQP broker. Caused by: " + cause);
+
+                    publishingRetryCounter.putIfAbsent(correlationId, 1); //remember the first produce(); (the one to start the producing cycle) also counts towards the max-retries
+                    if(publishingRetryCounter.get(correlationId) < amqpThreadingProperties.getMaximumProduceRetries()){
+                        /*According to https://www.rabbitmq.com/tutorials/tutorial-seven-java.html (under Re-publishing nack-ed Messages?)
+                        * The thread used for confirm callbacks is low-performance thread dedicated for callbacks.
+                        * It is recommended to delegate the publishing retry to the standard publishing threads (in our case, via ThreadingManager)*/
+                        try {
+                            threadingManager.submit(() -> {
+                                publishingRetryCounter.put(correlationId, publishingRetryCounter.get(correlationId) + 1);
+                                template.convertAndSend(
+                                    asEngineCorrelationData.getExchangeName(),
+                                    asEngineCorrelationData.getBindingKey(),
+                                    asEngineCorrelationData.getReturnedMessage(),
+                                    correlationData
+                                );
+                            });
+                        } catch (Exception e) {
+                            logger.error("Failed to submit message for re-publishing to threading manager. Caused by: " + e.getMessage());
+                        }
+                    }else{
+                        publishingRetryCounter.remove(correlationId);
+                        logger.warn("Maximum publishing retries reached for operation " + correlationId + ". No more retries will be made.");
+                    }
+                }else{
+                    logger.warn("Failed to publish a message to AMQP broker. Caused by: " + cause);
+                    logger.warn("The failed message does not have a correlation id. No more retries will be made.");
+                }
             }
+
+
         });
         template.setReturnCallback((Message message, int replyCode, String replyText, String exchange, String routingKey) -> {
             if(replyCode != 200){

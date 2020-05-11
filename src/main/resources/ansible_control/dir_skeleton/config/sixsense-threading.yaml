@@ -13,6 +13,8 @@ sixsense:
       threadNamePrefix: "engine-http-listener-"
     amqp:
       allowed-idle-time: 30s
+      maximum-consume-retries: 2
+      maximum-produce-retries: 2
       maximum-threads: 2147483647
       minimum-channels: 25
       minimum-connections: 1
