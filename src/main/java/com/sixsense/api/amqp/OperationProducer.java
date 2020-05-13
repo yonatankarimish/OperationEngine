@@ -42,18 +42,12 @@ public class OperationProducer extends ApiDebuggingAware {
             logger.info("Result Message: " + result.getExpressionResult().getMessage());
         }
 
-        String asJSON = "";
         try {
-            asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize operation result for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: " + e.getMessage());
-            logger.error("Check the engine logs for details about the operation and it's result ");
-        }
+            String asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
 
-        if (!asJSON.isEmpty()) {
             Message response = MessageBuilder.withBody(asJSON.getBytes())
-                    .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
-                    .build();
+                .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
+                .build();
 
             EngineCorrelationData correlationData = new EngineCorrelationData(
                 rawExecutionConfig.getOperation().getUUID() + "-result",
@@ -61,25 +55,22 @@ public class OperationProducer extends ApiDebuggingAware {
                 AMQPConfig.OperationResultBindingKey,
                 "Operation " + rawExecutionConfig.getOperation().getShortUUID() + ", producing operation result",
                 response
-                );
+            );
 
             rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.OperationResultBindingKey, response, correlationData);
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize operation result for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: " + e.getMessage());
+            logger.error("Check the engine logs for details about the operation and it's result ");
         }
     }
 
     public void produceRetentionResult(String operationId, ResultRetention result){
-        String asJSON = "";
         try {
-            asJSON = PolymorphicJsonMapper.serialize(result);
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize database retention foroperation with id " + operationId + ". Caused by: " + e.getMessage());
-            logger.error("Check the engine logs for details about the failed database retention");
-        }
+            String asJSON = PolymorphicJsonMapper.serialize(result);
 
-        if (!asJSON.isEmpty()) {
             Message response = MessageBuilder.withBody(asJSON.getBytes())
-                    .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
-                    .build();
+                .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
+                .build();
 
             EngineCorrelationData correlationData = new EngineCorrelationData(
                 operationId + "-retention-"+result.getName(),
@@ -90,6 +81,9 @@ public class OperationProducer extends ApiDebuggingAware {
             );
 
             rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.RetentionResultBindingKey, response, correlationData);
+    } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize database retention foroperation with id " + operationId + ". Caused by: " + e.getMessage());
+            logger.error("Check the engine logs for details about the failed database retention");
         }
     }
 

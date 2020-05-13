@@ -3,9 +3,7 @@ package com.sixsense.api.amqp;
 import com.sixsense.api.ApiDebuggingAware;
 import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.devices.RawExecutionConfig;
-import com.sixsense.model.retention.OperationResult;
 import com.sixsense.services.WorkflowManager;
-import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,8 +22,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Component
 public class OperationConsumer extends ApiDebuggingAware {
@@ -33,14 +29,12 @@ public class OperationConsumer extends ApiDebuggingAware {
 
     //Engine entities
     private final WorkflowManager workflowManager;
-    private final ThreadingManager threadingManager;
     private final OperationProducer operationProducer;
 
     @Autowired
-    public OperationConsumer(WorkflowManager workflowManager, ThreadingManager threadingManager, OperationProducer operationProducer) {
+    public OperationConsumer(WorkflowManager workflowManager, OperationProducer operationProducer) {
         super();
         this.workflowManager = workflowManager;
-        this.threadingManager = threadingManager;
         this.operationProducer = operationProducer;
     }
 
@@ -61,7 +55,6 @@ public class OperationConsumer extends ApiDebuggingAware {
         String operationJSON = new String(message.getBody(), StandardCharsets.UTF_8);
         String queueName = message.getMessageProperties().getConsumerQueue();
         RawExecutionConfig rawExecutionConfig;
-        boolean successfullySubmitted = false;
 
         try {
             logger.info("Consumed message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue());
@@ -76,23 +69,26 @@ public class OperationConsumer extends ApiDebuggingAware {
             ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
             final RawExecutionConfig asFinalCopy = rawExecutionConfig; //this ugly line is needed because lambda expressions require final variables
 
-            CompletableFuture<Map<String, OperationResult>> workflowResult = workflowManager.executeWorkflow(workflow);
-            threadingManager.acceptAsync(workflowResult, map -> operationProducer.produceOperationResults(asFinalCopy, workflow, map, queueName, deliveryTag));
-
-            successfullySubmitted = true;
-        }
-
-        //TODO: Manual acknowledgement should happen only after publisher confirm is received (and not after sending for submission)
-        try {
-            if (successfullySubmitted) {
-                //basicAck(long deliveryTag, boolean multiple)
-                channel.basicAck(deliveryTag, false);
-            } else {
-                //basicNack(long deliveryTag, boolean multiple, boolean requeue)
-                channel.basicNack(deliveryTag, false, false);
-            }
-        } catch (IOException e) {
-            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue() + ". Caused by: " + e.getMessage());
+            workflowManager.executeWorkflow(workflow).thenApply(map -> {
+                operationProducer.produceOperationResults(asFinalCopy, workflow, map, queueName, deliveryTag);
+                /* As of writing this comment, the only checked exception thrown by the operation producer is JsonProcessingException,
+                 * which is highly unlikely (unless the serializer is configured wrong)
+                 * If such an exception does occur, it is pointless to retry consuming a message, since it will continuously fail to serialize
+                 * So we currently just return true (and ack(); the message)*/
+                return true;
+            }).thenAccept(successful -> {
+                try {
+                    if (successful) {
+                        //basicAck(long deliveryTag, boolean multiple)
+                        channel.basicAck(deliveryTag, false);
+                    } else {
+                        //basicNack(long deliveryTag, boolean multiple, boolean requeue)
+                        channel.basicNack(deliveryTag, false, false);
+                    }
+                } catch (IOException e) {
+                    logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + message.getMessageProperties().getConsumerQueue() + ". Caused by: " + e.getMessage());
+                }
+            });
         }
     }
 
