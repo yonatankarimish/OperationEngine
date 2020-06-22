@@ -6,7 +6,8 @@ import com.sixsense.model.commands.ICommand;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.devices.Credentials;
 import com.sixsense.model.devices.Device;
-import com.sixsense.model.devices.RawExecutionConfig;
+import com.sixsense.model.wrappers.AdministrativeConfig;
+import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.devices.VendorProductVersion;
 import com.sixsense.model.logic.*;
 import com.sixsense.model.pipes.ClearingPipe;
@@ -32,6 +33,18 @@ public class OperationMocks {
             .withVersion("11 and above");
 
         return new RawExecutionConfig()
+            .withAdministrativeConfig(
+                new AdministrativeConfig()
+                    .addDevices(
+                        credentialList.stream()
+                            .map(
+                                credentials -> new Device()
+                                    .withCredentials(credentials)
+                                    .withVpv(f5BigIp.deepClone())
+                            )
+                            .collect(Collectors.toList())
+                    )
+            )
             .withOperation(
                 new Operation()
                     .withOperationName("Configuration Backup")
@@ -46,15 +59,6 @@ public class OperationMocks {
                     .addChannel(ChannelType.LOCAL)
                     .addChannel(ChannelType.REMOTE)
                     .addChannel(ChannelType.DOWNLOAD)
-            )
-            .addDevices(
-                credentialList.stream()
-                    .map(
-                        credentials -> new Device()
-                            .withCredentials(credentials)
-                            .withVpv(f5BigIp.deepClone())
-                    )
-                    .collect(Collectors.toList())
             );
     }
 
@@ -65,6 +69,18 @@ public class OperationMocks {
             .withVersion("11 and above");
 
         return new RawExecutionConfig()
+            .withAdministrativeConfig(
+                new AdministrativeConfig()
+                    .addDevices(
+                        credentialList.stream()
+                            .map(
+                                credentials -> new Device()
+                                    .withCredentials(credentials)
+                                    .withVpv(f5BigIp.deepClone())
+                            )
+                            .collect(Collectors.toList())
+                    )
+            )
             .withOperation(
                 new Operation()
                     .withOperationName("Configuration Backup")
@@ -76,15 +92,6 @@ public class OperationMocks {
                     )
                     .addChannel(ChannelType.LOCAL)
                     .addChannel(ChannelType.REMOTE)
-            )
-            .addDevices(
-                credentialList.stream()
-                    .map(
-                        credentials -> new Device()
-                            .withCredentials(credentials)
-                            .withVpv(f5BigIp.deepClone())
-                    )
-                    .collect(Collectors.toList())
             );
     }
 

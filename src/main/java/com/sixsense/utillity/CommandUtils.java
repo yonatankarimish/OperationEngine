@@ -2,7 +2,7 @@ package com.sixsense.utillity;
 
 import com.sixsense.model.commands.*;
 import com.sixsense.model.devices.Device;
-import com.sixsense.model.devices.RawExecutionConfig;
+import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.pipes.AbstractOutputPipe;
 import com.sixsense.io.Session;
 
@@ -60,7 +60,7 @@ public class CommandUtils {
 
     public static ParallelWorkflow composeWorkflow(RawExecutionConfig rawConfig){
         ParallelWorkflow parallelNode = new ParallelWorkflow();
-        for(Device device : rawConfig.getDevices()){
+        for(Device device : rawConfig.getAdministrativeConfig().getDevices()){
             parallelNode.addParallelOperation(
                 (Operation)rawConfig.getOperation().deepClone()
                     .addDynamicFields(device.getDynamicFields())

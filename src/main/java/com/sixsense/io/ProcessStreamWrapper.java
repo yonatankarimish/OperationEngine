@@ -45,7 +45,7 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
     @Override
     public Boolean get(){
         try {
-            ThreadContext.put("sessionID", this.session.getSessionShellId());
+            ThreadContext.put("sessionID", this.session.getShortSessionId());
             logger.debug("started reading from stream for session " + this.session.getSessionShellId());
             byte[] rawData = new byte[1024];
             int bytesRead;

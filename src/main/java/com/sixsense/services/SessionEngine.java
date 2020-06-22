@@ -297,7 +297,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
         Session session = new Session(this.sshClient, operation.getChannelNames(), operation.getUUID());
         session.loadSessionVariables(sessionProperties);
-        ThreadContext.put("sessionID", session.getSessionShellId());
+        ThreadContext.put("sessionID", session.getShortSessionId());
         ThreadingUtils.updateSessionAndOperationIds(session.getShortSessionId(), operation.getShortUUID());
 
         try {
