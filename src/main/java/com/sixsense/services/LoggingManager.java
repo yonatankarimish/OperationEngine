@@ -23,18 +23,12 @@ import java.util.*;
 @Service
 /*Manages all logging operations that are done from a session's context*/
 public class LoggingManager  {
-    private static final Map<String, String> loggerProperties = new HashMap<>();
     private static final EnumMap<Loggers, Logger> loggers = new EnumMap<>(Loggers.class);
 
     private LoggingManager(){
-        loggerProperties.putAll(((LoggerContext)LogManager.getContext()).getConfiguration().getProperties());
         for(Loggers logger : EnumSet.allOf(Loggers.class)){
             loggers.put(logger, LogManager.getLogger(logger.name()));
         }
-    }
-
-    public Map<String, String> getLoggingProperties(){
-        return Collections.unmodifiableMap(loggerProperties);
     }
 
     public void logEngineEvent(AbstractEngineEvent event) {
