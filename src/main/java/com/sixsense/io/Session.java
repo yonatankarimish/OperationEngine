@@ -12,6 +12,7 @@ import com.sixsense.model.logging.IDebuggable;
 import com.sixsense.model.logging.Loggers;
 import com.sixsense.model.logic.ExpressionResult;
 import com.sixsense.model.logic.ResultStatus;
+import com.sixsense.model.retention.DatabaseVariable;
 import com.sixsense.model.retention.RetentionType;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.services.DiagnosticManager;
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -62,11 +64,11 @@ public class Session implements Closeable, IDebuggable {
 
     //Dynamic fields
     private final Map<String, Deque<ResultRetention>> sessionVariables;
-    private final Map<String, String> databaseVariables;
+    private final Set<DatabaseVariable> databaseVariables;
 
     public Session(SSHClient connectedSSHClient, Set<String> channelNames, String operationId) throws IOException{
         this.sessionVariables = new HashMap<>();
-        this.databaseVariables = new HashMap<>();
+        this.databaseVariables = new HashSet<>();
         this.channels = new HashMap<>();
         for(String channelName : channelNames){
             ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
@@ -75,7 +77,7 @@ public class Session implements Closeable, IDebuggable {
 
         //Logging configurations
         this.operationId = operationId;
-        this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + this.getSessionShellId()));
+        this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId()));
     }
 
     /*Extract the data needed to execute the command with the correct channel and prompt
@@ -319,10 +321,17 @@ public class Session implements Closeable, IDebuggable {
                 clonedRetention.setValue(CommandUtils.pipeCommandRetention(this, clonedRetention.getValue()));
             }
 
-            diagnosticManager.emit(new ResultRetentionEvent(this, clonedRetention));
+            //Then parse any dynamic fields declared in the name and value of the cloned retention
+            clonedRetention.setName(CommandUtils.evaluateAgainstDynamicFields(clonedRetention.getName(), this.getCurrentSessionVariables()));
+            clonedRetention.setValue(CommandUtils.evaluateAgainstDynamicFields(clonedRetention.getValue(), this.getCurrentSessionVariables()));
+
+            //Handle the retention according to the retention type
             if(clonedRetention.getRetentionType().equals(RetentionType.Variable)){
                 String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
+
+                /*Note that variables are scoped to the ICommand in question (unless overwriting)
+                * and therefore do NOT generate a database variable */
                 Deque<ResultRetention> varStack = this.sessionVariables.get(variable);
                 if(!varStack.isEmpty()) {
                     varStack.pop();
@@ -330,17 +339,36 @@ public class Session implements Closeable, IDebuggable {
                 varStack.push(clonedRetention);
             }else if(clonedRetention.getRetentionType().equals(RetentionType.File)){
                 clonedRetention.setValue(filterFileOutput(clonedRetention.getValue()));
-                RetentionFileWriter fileWriter = new RetentionFileWriter(this.getSessionShellId(), clonedRetention.getName(), clonedRetention.getValue());
+                RetentionFileWriter fileWriter = new RetentionFileWriter(this.getShortSessionId(), clonedRetention.getName(), clonedRetention.getValue());
+
                 try {
                     this.threadingManager.submit(fileWriter);
+                    this.databaseVariables.add(
+                        new DatabaseVariable()
+                            .withName(clonedRetention.getName())
+                            .withValue(MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
+                            .withCollectedAt(Instant.now())
+                    );
                 } catch (Exception e) {
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: " + e.getMessage());
                 }
             }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseImmediate)){
-                operationProducer.produceRetentionResult(this.operationId, clonedRetention);
+                operationProducer.produceRetentionResult(this.operationId, new DatabaseVariable()
+                    .withName(clonedRetention.getName())
+                    .withValue(clonedRetention.getValue())
+                    .withCollectedAt(Instant.now())
+                );
             }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseEventual)){
-                this.databaseVariables.put(clonedRetention.getName(), clonedRetention.getValue());
+                this.databaseVariables.add(
+                    new DatabaseVariable()
+                        .withName(clonedRetention.getName())
+                        .withValue(clonedRetention.getValue())
+                        .withCollectedAt(Instant.now())
+                );
             }
+
+            //And emit a result retention event
+            diagnosticManager.emit(new ResultRetentionEvent(this, clonedRetention));
         }else if(terminatedExternally){
             //If terminated externally, the session must stop and the method will return a failure
             resolvedOutcome.setMessage(MessageLiterals.OperationTerminated);
@@ -469,8 +497,8 @@ public class Session implements Closeable, IDebuggable {
         return "";
     }
 
-    public Map<String, String> getDatabaseVariables(){
-        return Collections.unmodifiableMap(this.databaseVariables);
+    public Set<DatabaseVariable> getDatabaseVariables(){
+        return Collections.unmodifiableSet(this.databaseVariables);
     }
 
     @Override
