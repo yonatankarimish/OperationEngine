@@ -1,5 +1,6 @@
 package com.sixsense.utillity;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sixsense.model.commands.ICommand;
 import com.sixsense.model.logic.IResolvable;
 import com.sixsense.model.pipes.AbstractOutputPipe;
@@ -22,8 +23,12 @@ public class PolymorphicJsonMapper {
             .build();
 
         mapper = JsonMapper.builder()
+            .addModule(new JavaTimeModule())
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+            .configure(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS, true)
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+            .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
             .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
             //.activateDefaultTyping(baseTypeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE) //keep this commented out in the meantime to avoid exposing/requiring full type data for pojo <=> json conversions
             .build();
