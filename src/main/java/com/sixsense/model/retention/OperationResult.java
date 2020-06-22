@@ -3,21 +3,18 @@ package com.sixsense.model.retention;
 import com.sixsense.model.interfaces.IEquatable;
 import com.sixsense.model.logic.ExpressionResult;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class OperationResult implements IEquatable<OperationResult> {
     private ExpressionResult expressionResult;
-    private Map<String, String> databaseVariables;
+    private Set<DatabaseVariable> databaseVariables;
 
     public OperationResult() {
         this.expressionResult = new ExpressionResult();
-        this.databaseVariables = new HashMap<>();
+        this.databaseVariables = new HashSet<>();
     }
 
-    public OperationResult(ExpressionResult expressionResult, Map<String, String> databaseVariables) {
+    public OperationResult(ExpressionResult expressionResult, Set<DatabaseVariable> databaseVariables) {
         this.expressionResult = expressionResult;
         this.databaseVariables = databaseVariables;
     }
@@ -35,17 +32,17 @@ public class OperationResult implements IEquatable<OperationResult> {
         return this;
     }
 
-    public Map<String, String> getDatabaseVariables() {
-        return Collections.unmodifiableMap(databaseVariables);
+    public Set<DatabaseVariable> getDatabaseVariables() {
+        return Collections.unmodifiableSet(databaseVariables);
     }
 
-    public OperationResult addDatabaseVariable(String key, String value) {
-        this.databaseVariables.put(key, value);
+    public OperationResult addDatabaseVariable(DatabaseVariable databaseVariable) {
+        this.databaseVariables.add(databaseVariable);
         return this;
     }
 
-    public OperationResult addDatabaseVariables(Map<String, String> databaseVariables) {
-        this.databaseVariables.putAll(databaseVariables);
+    public OperationResult addDatabaseVariables(Set<DatabaseVariable> databaseVariables) {
+        this.databaseVariables.addAll(databaseVariables);
         return this;
     }
 
@@ -66,8 +63,7 @@ public class OperationResult implements IEquatable<OperationResult> {
     }
 
     public boolean equals(OperationResult other) {
-        return this.weakEquals(other) &&
-            this.databaseVariables.keySet().equals(other.databaseVariables.keySet());
+        return this.weakEquals(other) && this.databaseVariables.equals(other.databaseVariables);
     }
 
     @Override
@@ -77,7 +73,7 @@ public class OperationResult implements IEquatable<OperationResult> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(expressionResult, databaseVariables.keySet());
+        return Objects.hash(expressionResult, databaseVariables);
     }
 
     @Override

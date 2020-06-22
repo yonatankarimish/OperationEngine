@@ -5,9 +5,9 @@ import com.sixsense.api.amqp.config.AMQPConfig;
 import com.sixsense.api.amqp.config.EngineCorrelationData;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.commands.ParallelWorkflow;
-import com.sixsense.model.devices.RawExecutionConfig;
+import com.sixsense.model.retention.DatabaseVariable;
+import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.retention.OperationResult;
-import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
@@ -17,6 +17,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Component
@@ -43,6 +44,7 @@ public class OperationProducer extends ApiDebuggingAware {
         }
 
         try {
+            rawExecutionConfig.getAdministrativeConfig().setEndTime(Instant.now());
             String asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
 
             Message response = MessageBuilder.withBody(asJSON.getBytes())
@@ -64,7 +66,7 @@ public class OperationProducer extends ApiDebuggingAware {
         }
     }
 
-    public void produceRetentionResult(String operationId, ResultRetention result){
+    public void produceRetentionResult(String operationId, DatabaseVariable result){
         try {
             String asJSON = PolymorphicJsonMapper.serialize(result);
 
