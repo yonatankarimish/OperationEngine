@@ -4,7 +4,7 @@ import com.sixsense.api.ApiDebuggingAware;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.devices.Credentials;
-import com.sixsense.model.devices.RawExecutionConfig;
+import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.retention.OperationResult;
 import com.sixsense.services.SessionEngine;
 import com.sixsense.services.WorkflowManager;
@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +71,7 @@ public class OperationController extends ApiDebuggingAware {
 
     @PostMapping("/execute")
     public RawExecutionConfig execute(@RequestBody RawExecutionConfig rawExecutionConfig){
+        rawExecutionConfig.getAdministrativeConfig().setStartTime(Instant.now());
         ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
 
         Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
@@ -80,6 +82,7 @@ public class OperationController extends ApiDebuggingAware {
             logger.info("Result Message: " + result.getExpressionResult().getMessage());
         }
 
+        rawExecutionConfig.getAdministrativeConfig().setEndTime(Instant.now());
         return rawExecutionConfig;
     }
 

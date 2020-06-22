@@ -74,13 +74,9 @@ class App extends React.Component {
     validateConfig(jsonString){
         try{
             let parsedConfig = JSON.parse(jsonString);
-            if(parsedConfig.hasOwnProperty("devices")
+            return parsedConfig.hasOwnProperty("administrativeConfig")
                 && parsedConfig.hasOwnProperty("operation")
-                && parsedConfig.hasOwnProperty("results")){
-                return true;
-            }else{
-                return false;
-            }
+                && parsedConfig.hasOwnProperty("results");
         }catch(e){
             return false;
         }

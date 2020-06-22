@@ -2,7 +2,7 @@ package com.sixsense.api.amqp;
 
 import com.sixsense.api.ApiDebuggingAware;
 import com.sixsense.model.commands.ParallelWorkflow;
-import com.sixsense.model.devices.RawExecutionConfig;
+import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.services.WorkflowManager;
 import com.sixsense.utillity.CommandUtils;
 import com.sixsense.utillity.PolymorphicJsonMapper;
@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 @Component
 public class OperationConsumer extends ApiDebuggingAware {
@@ -66,6 +67,7 @@ public class OperationConsumer extends ApiDebuggingAware {
         }
 
         if (rawExecutionConfig != null) {
+            rawExecutionConfig.getAdministrativeConfig().setStartTime(Instant.now());
             ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
             final RawExecutionConfig asFinalCopy = rawExecutionConfig; //this ugly line is needed because lambda expressions require final variables
 

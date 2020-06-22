@@ -109,10 +109,10 @@ public class ResultRetention implements IDeepCloneable<ResultRetention> {
     @Override
     public String toString() {
         return "ResultRetention{" +
-                "retentionType=" + retentionType +
-                ", name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                ", overwriteParent=" + overwriteParent +
-                '}';
+            "retentionType=" + retentionType +
+            ", name='" + name + '\'' +
+            ", value='" + value + '\'' +
+            ", overwriteParent=" + overwriteParent +
+            '}';
     }
 }
