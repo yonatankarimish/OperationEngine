@@ -3,6 +3,7 @@ package com.sixsense.services;
 import com.sixsense.model.events.*;
 import com.sixsense.model.logging.Loggers;
 import com.sixsense.model.logic.ExpressionResult;
+import com.sixsense.model.retention.DatabaseVariable;
 import com.sixsense.model.retention.RetentionType;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.io.Session;
@@ -12,24 +13,28 @@ import com.sixsense.utillity.MessageLiterals;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.Map;
+import java.util.*;
 
 @Service
 /*Manages all logging operations that are done from a session's context*/
 public class LoggingManager  {
+    private static final Map<String, String> loggerProperties = new HashMap<>();
     private static final EnumMap<Loggers, Logger> loggers = new EnumMap<>(Loggers.class);
 
     private LoggingManager(){
+        loggerProperties.putAll(((LoggerContext)LogManager.getContext()).getConfiguration().getProperties());
         for(Loggers logger : EnumSet.allOf(Loggers.class)){
             loggers.put(logger, LogManager.getLogger(logger.name()));
         }
+    }
+
+    public Map<String, String> getLoggingProperties(){
+        return Collections.unmodifiableMap(loggerProperties);
     }
 
     public void logEngineEvent(AbstractEngineEvent event) {
@@ -57,6 +62,7 @@ public class LoggingManager  {
     }
 
     private void logSessionCreated(SessionCreatedEvent event){
+        String indentation = getIndentation(event.getSession());
         String creationDate = Instant.now().atZone(ZoneId.of("CET")).toLocalDateTime().format(MessageLiterals.DateFormatter);
 
         jointLog(
@@ -64,25 +70,25 @@ public class LoggingManager  {
             Level.INFO,
             "Session " +  event.getSession().getSessionShellId() + " has been created at " + creationDate
         );
-        logDynamicFields(event.getSession(), SessionEngine.getSessionProperties(), '+');
+        logDynamicFields(indentation, SessionEngine.getSessionProperties(), MessageLiterals.PlusSign);
     }
 
     private void logOperationStart(OperationStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation " + event.getOperation().getShortUUID() + " Start");
-        logDynamicFields(event.getSession(), event.getOperation().getDynamicFields(), '+');
+        logDynamicFields(indentation, event.getOperation().getDynamicFields(), MessageLiterals.PlusSign);
     }
 
     private void logBlockStart(BlockStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Block " + event.getBlock().getShortUUID() + " Start");
-        logDynamicFields(event.getSession(), event.getBlock().getDynamicFields(), '+');
+        logDynamicFields(indentation, event.getBlock().getDynamicFields(), MessageLiterals.PlusSign);
     }
 
     private void logCommandStart(CommandStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Command " + event.getCommand().getShortUUID() + " Start");
-        logDynamicFields(event.getSession(), event.getCommand().getDynamicFields(), '+');
+        logDynamicFields(indentation, event.getCommand().getDynamicFields(), MessageLiterals.PlusSign);
     }
 
     private void logInputSent(InputSentEvent event){
@@ -102,27 +108,28 @@ public class LoggingManager  {
 
     private void logCommandEnd(CommandEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(event.getSession(), event.getCommand().getDynamicFields(), '-');
+        logDynamicFields(indentation, event.getCommand().getDynamicFields(), MessageLiterals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Command result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Command " + event.getCommand().getShortUUID() + " End");
     }
 
     private void logBlockEnd(BlockEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(event.getSession(), event.getBlock().getDynamicFields(), '-');
+        logDynamicFields(indentation, event.getBlock().getDynamicFields(), MessageLiterals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Block result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Block " + event.getBlock().getShortUUID() + " End");
     }
 
     private void logOperationEnd(OperationEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(event.getSession(), event.getOperation().getDynamicFields(), '-');
+        logDynamicFields(indentation, event.getOperation().getDynamicFields(), MessageLiterals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation " + event.getOperation().getShortUUID() + " End");
     }
 
     private void logSessionClosed(SessionClosedEvent event){
-        logDynamicFields(event.getSession(), SessionEngine.getSessionProperties(), '-');
+        String indentation = getIndentation(event.getSession());
+        logDynamicFields(indentation, SessionEngine.getSessionProperties(), MessageLiterals.MinusSign);
         jointLog(
             EnumSet.of(Loggers.SessionLogger, Loggers.CommandLogger),
             Level.INFO,
@@ -151,34 +158,33 @@ public class LoggingManager  {
         String indentation = getIndentation(session);
         ResultRetention retention = event.getResultRetention();
         RetentionType retentionType = retention.getRetentionType();
+
         loggers.get(Loggers.SessionLogger).info(indentation + "Result retention of type [" + retentionType.name() + "]");
         switch (retentionType){
             case Variable:{
                 Map<String, String> oldSessionVarState = session.getCurrentSessionVariables();
                 if(oldSessionVarState.containsKey(retention.getName())) {
-                    Map<String, String> oldValue = Collections.singletonMap(retention.getName(), oldSessionVarState.get(retention.getName()));
-                    logDynamicFields(session, oldValue, '-');
+                    logDynamicFields(indentation, retention.getName(), oldSessionVarState.get(retention.getName()), MessageLiterals.MinusSign);
                 }
 
-                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
-                logDynamicFields(session, newValue, '+');
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
             }break;
             case File:{
                 loggers.get(Loggers.SessionLogger).info(indentation + "Added results to file " + retention.getName());
             }break;
             case DatabaseEventual:{
-                Map<String, String> oldDatabaseVarState = session.getDatabaseVariables();
-                if(oldDatabaseVarState.containsKey(retention.getName())) {
-                    Map<String, String> oldValue = Collections.singletonMap(retention.getName(), oldDatabaseVarState.get(retention.getName()));
-                    logDynamicFields(session, oldValue, '-');
+                Set<DatabaseVariable> oldDatabaseVarState = session.getDatabaseVariables();
+                for(DatabaseVariable var : oldDatabaseVarState) {
+                    if (var.getName().equals(retention.getName())) {
+                        logDynamicFields(indentation, retention.getName(), var.getValue(), MessageLiterals.MinusSign);
+                        break;
+                    }
                 }
 
-                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
-                logDynamicFields(session, newValue, '+');
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
             }break;
             case DatabaseImmediate:{
-                Map<String, String> newValue = Collections.singletonMap(retention.getName(), retention.getValue());
-                logDynamicFields(session, newValue, '+');
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
             }break;
             default:{
                 loggers.get(Loggers.SessionLogger).info(indentation + "No result retention was performed");
@@ -196,13 +202,16 @@ public class LoggingManager  {
     }
 
     //The dynamic fields should be from the ICommand in question, and not all fields in session context. because we log loading and removal of the relevant fields by the ICommand
-    private void logDynamicFields(Session session, Map<String, String> dynamicFields, Character sign){
+    private void logDynamicFields(String indentation, Map<String, String> dynamicFields, String sign){
         if(dynamicFields.size() > 0) {
-            String indentation = getIndentation(session);
             for (String dynamicField : dynamicFields.keySet()) {
-                loggers.get(Loggers.SessionLogger).info(indentation + sign + " " + dynamicField + " = \"" + dynamicFields.get(dynamicField) + "\"");
+                logDynamicFields(indentation, dynamicField, dynamicFields.get(dynamicField), sign);
             }
         }
+    }
+
+    private void logDynamicFields(String indentation, String key, String value, String sign){
+        loggers.get(Loggers.SessionLogger).info(indentation + sign + " " + key + " = \"" + value + "\"");
     }
 
     private void jointLog(EnumSet<Loggers> loggerNames, Level logLevel, String message){

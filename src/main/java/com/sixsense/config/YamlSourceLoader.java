@@ -31,7 +31,7 @@ public class YamlSourceLoader {
         //Iterate the project configuration directory, and add any yaml file found to the list of path resources
         List<PathResource> yamlFiles = new ArrayList<>();
         try {
-            DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(MessageLiterals.configFilesPath));
+            DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(MessageLiterals.ConfigFilesPath));
             for (Path child : configRoot) {
                 if (Files.isRegularFile(child) && child.toString().endsWith(".yaml")) {
                     yamlFiles.add(new PathResource(child));

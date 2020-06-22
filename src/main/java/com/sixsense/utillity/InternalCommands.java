@@ -130,6 +130,12 @@ public class InternalCommands {
                                 .withMessage("File does not exist")
                         )
                     )
+            ).withSaveTo(new ResultRetention()
+                /*Because the file copy does not pass through the engine JVM (this is the intended behaviour)
+                  we save the file name and location to the database, for future reference*/
+                .withRetentionType(RetentionType.DatabaseEventual)
+                .withName("$var.scp.destination")
+                .withValue("$sixsense.session.workingDir/$var.scp.destination")
             );
 
         String[] splitSourceFileName = sourceFile.split("/");
