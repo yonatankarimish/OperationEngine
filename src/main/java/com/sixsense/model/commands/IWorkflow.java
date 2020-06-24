@@ -4,17 +4,17 @@ import java.util.List;
 
 public interface IWorkflow {
 
-    List<ParallelWorkflow> getSequentialWorkflowUponSuccess();
+    List<ParallelWorkflow> getSequenceUponSuccess();
 
-    AbstractWorkflow addSequentialWorkflowUponSuccess(ParallelWorkflow sequentialWorkflow);
+    AbstractWorkflow addSequenceUponSuccess(ParallelWorkflow sequentialWorkflow);
 
-    AbstractWorkflow addSequentialWorkflowsUponSuccess(List<ParallelWorkflow> sequentialWorkflow);
+    AbstractWorkflow addSequencesUponSuccess(List<ParallelWorkflow> sequentialWorkflow);
 
-    List<ParallelWorkflow> getSequentialWorkflowUponFailure();
+    List<ParallelWorkflow> getSequenceUponFailure();
 
-    AbstractWorkflow addSequentialWorkflowUponFailure(ParallelWorkflow sequentialWorkflow);
+    AbstractWorkflow addSequenceUponFailure(ParallelWorkflow sequentialWorkflow);
 
-    AbstractWorkflow addSequentialWorkflowsUponFailure(List<ParallelWorkflow> sequentialWorkflow);
+    AbstractWorkflow addSequencesUponFailure(List<ParallelWorkflow> sequentialWorkflow);
 
     boolean isSequenceExecutionStarted();
 

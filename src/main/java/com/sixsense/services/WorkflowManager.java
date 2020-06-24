@@ -99,11 +99,11 @@ public class WorkflowManager implements IEngineEventHandler {
         //Operations always use SELF_SEQUENCE_EAGER. Therefore, execute their sequential workflows
         resolvedOperation.setSequenceExecutionStarted(true);
         if(operationOutcome.getExpressionResult().getOutcome().equals(ResultStatus.SUCCESS)) {
-            for (ParallelWorkflow sequence : resolvedOperation.getSequentialWorkflowUponSuccess()) {
+            for (ParallelWorkflow sequence : resolvedOperation.getSequenceUponSuccess()) {
                 executeWorkflow(sequence);
             }
         }else{
-            for (ParallelWorkflow sequence : resolvedOperation.getSequentialWorkflowUponFailure()) {
+            for (ParallelWorkflow sequence : resolvedOperation.getSequenceUponFailure()) {
                 executeWorkflow(sequence);
             }
         }
@@ -125,11 +125,11 @@ public class WorkflowManager implements IEngineEventHandler {
         if(!parentWorkflow.isSequenceExecutionStarted()) { //to avoid executing the same sequence more than once per workflow
             if (operationSuccessful) {
                 if (workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
-                    executeSequence(parentWorkflow, parentWorkflow.getSequentialWorkflowUponSuccess());
+                    executeSequence(parentWorkflow, parentWorkflow.getSequenceUponSuccess());
                 }
             } else {
                 if (workflowPolicies.contains(WorkflowPolicy.SELF_SEQUENCE_EAGER) || allChildrenCompleted) {
-                    executeSequence(parentWorkflow, parentWorkflow.getSequentialWorkflowUponFailure());
+                    executeSequence(parentWorkflow, parentWorkflow.getSequenceUponFailure());
                 }
 
                 if (workflowPolicies.contains(WorkflowPolicy.OPERATIONS_DEPENDENT)) {
