@@ -108,7 +108,7 @@ public class OperationMocks {
                         .withExpectedValue("assword:")
                     ).addResolvable(new ExpectedOutcome()
                     .withBinaryRelation(BinaryRelation.CONTAINS)
-                    .withExpectedValue("connecting (yes/no)")
+                    .withExpectedValue("connecting (yes/no")
                 ).addResolvable(new ExpectedOutcome()
                     .withBinaryRelation(BinaryRelation.CONTAINS)
                     .withExpectedValue("connecting")
@@ -160,7 +160,7 @@ public class OperationMocks {
                     .addResolvable(new ExecutionCondition()
                         .withVariable("$ssh.connect.response")
                         .withBinaryRelation(BinaryRelation.CONTAINS)
-                        .withExpectedValue("connecting (yes/no)")
+                        .withExpectedValue("connecting (yes/no")
                     )
             )
             .withExpectedOutcome(
