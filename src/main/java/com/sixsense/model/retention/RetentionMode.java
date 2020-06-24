@@ -1,5 +1,5 @@
 package com.sixsense.model.retention;
 
-public enum RetentionType {
+public enum RetentionMode {
     File, Variable, DatabaseEventual, DatabaseImmediate, None
 }

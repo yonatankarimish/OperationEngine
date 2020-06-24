@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class DatabaseVariable implements IEquatable<DatabaseVariable> {
+    private DataType dataType;
     private String name;
     private String value;
     private Instant collectedAt;
@@ -15,12 +16,14 @@ public class DatabaseVariable implements IEquatable<DatabaseVariable> {
      * The empty constructor is for using the 'with' design pattern
      * The parameterized constructor is for complete constructors - where all arguments are known */
     public DatabaseVariable() {
+        this.dataType = DataType.String;
         this.name = "";
         this.value = "";
         this.collectedAt = Instant.now();
     }
 
-    public DatabaseVariable(String name, String value, Instant collectedAt) {
+    public DatabaseVariable(DataType dataType, String name, String value, Instant collectedAt) {
+        this.dataType = dataType;
         this.name = name;
         this.value = value;
         this.collectedAt = collectedAt;
@@ -29,6 +32,19 @@ public class DatabaseVariable implements IEquatable<DatabaseVariable> {
     //Convenience method for declaring empty variables
     public static DatabaseVariable Empty(){
         return new DatabaseVariable();
+    }
+
+    public DataType getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(DataType dataType) {
+        this.dataType = dataType;
+    }
+
+    public DatabaseVariable withDataType(DataType dataType) {
+        this.dataType = dataType;
+        return this;
     }
 
     public String getName() {
@@ -92,7 +108,7 @@ public class DatabaseVariable implements IEquatable<DatabaseVariable> {
     }
 
     public boolean equals(DatabaseVariable other) {
-        return this.weakEquals(other) && this.value.equals(other.value);
+        return this.weakEquals(other) && this.dataType.equals(other.dataType) && this.value.equals(other.value);
     }
 
     @Override
@@ -102,13 +118,14 @@ public class DatabaseVariable implements IEquatable<DatabaseVariable> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, value, collectedAt);
+        return Objects.hash(dataType, name, value, collectedAt);
     }
 
     @Override
     public String toString() {
         return "DatabaseVariable{" +
-            "name='" + name + '\'' +
+            "dataType=" + dataType +
+            ", name='" + name + '\'' +
             ", value='" + value + '\'' +
             ", collectedAt=" + collectedAt +
             '}';

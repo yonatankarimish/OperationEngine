@@ -14,7 +14,7 @@ import com.sixsense.model.pipes.ClearingPipe;
 import com.sixsense.model.pipes.FirstLinePipe;
 import com.sixsense.model.pipes.LastLinePipe;
 import com.sixsense.model.pipes.WhitespacePipe;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.utillity.InternalCommands;
 import org.apache.logging.log4j.LogManager;
@@ -146,7 +146,7 @@ public class OperationMocks {
                     )
                 )
             ).withSaveTo(new ResultRetention()
-                .withRetentionType(RetentionType.Variable)
+                .withRetentionMode(RetentionMode.Variable)
                 .withName("ssh.connect.response")
             );
 
@@ -222,7 +222,7 @@ public class OperationMocks {
                 )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Variable)
+                    .withRetentionMode(RetentionMode.Variable)
                     .withName("ssh.connect.response")
             );
 
@@ -379,7 +379,7 @@ public class OperationMocks {
                 )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.memory")
             );
 
@@ -402,7 +402,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.cpu")
             );
 
@@ -448,7 +448,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.space.root")
             );
 
@@ -494,7 +494,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.space.var")
             );
 
@@ -522,7 +522,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.uptime")
             );
 
@@ -562,7 +562,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Variable)
+                    .withRetentionMode(RetentionMode.Variable)
                     .withName("var.parsing.chassis")
             );
 
@@ -589,7 +589,7 @@ public class OperationMocks {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.DatabaseEventual)
+                    .withRetentionMode(RetentionMode.DatabaseEventual)
                     .withName("var.inventory.chassis")
             );
 

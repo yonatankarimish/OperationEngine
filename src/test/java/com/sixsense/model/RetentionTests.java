@@ -10,7 +10,7 @@ import com.sixsense.model.logic.*;
 import com.sixsense.model.retention.DatabaseVariable;
 import com.sixsense.model.retention.OperationResult;
 import com.sixsense.model.retention.ResultRetention;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.io.Session;
 import com.sixsense.operation.OperationTestUtils;
 import com.sixsense.utillity.MessageLiterals;
@@ -30,7 +30,7 @@ public class RetentionTests extends SixSenseBaseTest {
         ICommand simpleCommand = simpleRetainingCommand()
                 .withSaveTo(
                     new ResultRetention()
-                    .withRetentionType(RetentionType.Variable)
+                    .withRetentionMode(RetentionMode.Variable)
                     .withName("var.test.retention")
                 );
 
@@ -46,7 +46,7 @@ public class RetentionTests extends SixSenseBaseTest {
             ResultRetention resultRetention = retentionEvent.getResultRetention();
 
             Assert.assertNotNull(resultRetention);
-            Assert.assertEquals(resultRetention.getRetentionType(), RetentionType.Variable);
+            Assert.assertEquals(resultRetention.getRetentionMode(), RetentionMode.Variable);
             Assert.assertEquals(resultRetention.getName(), "var.test.retention");
             Assert.assertEquals(resultRetention.getValue(), "lorem ipsum dolor sit amet");
         }catch (ClassCastException e){
@@ -64,7 +64,7 @@ public class RetentionTests extends SixSenseBaseTest {
         ICommand simpleCommand = simpleRetainingCommand()
                 .withSaveTo(
                     new ResultRetention()
-                        .withRetentionType(RetentionType.DatabaseEventual)
+                        .withRetentionMode(RetentionMode.DatabaseEventual)
                         .withName("var.test.retention")
                 );
 
@@ -80,7 +80,7 @@ public class RetentionTests extends SixSenseBaseTest {
             ResultRetention resultRetention = retentionEvent.getResultRetention();
 
             Assert.assertNotNull(resultRetention);
-            Assert.assertEquals(resultRetention.getRetentionType(), RetentionType.DatabaseEventual);
+            Assert.assertEquals(resultRetention.getRetentionMode(), RetentionMode.DatabaseEventual);
             Assert.assertEquals(resultRetention.getName(), "var.test.retention");
             Assert.assertEquals(resultRetention.getValue(), "lorem ipsum dolor sit amet");
         }catch (ClassCastException e){
@@ -98,7 +98,7 @@ public class RetentionTests extends SixSenseBaseTest {
         ICommand simpleCommand = simpleRetainingCommand()
             .withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.Variable)
+                    .withRetentionMode(RetentionMode.Variable)
                     .withName("$var.retention.dynamic.key")
                     .withValue("$var.retention.dynamic.value")
             );
@@ -134,7 +134,7 @@ public class RetentionTests extends SixSenseBaseTest {
         ICommand simpleCommand = simpleRetainingCommand()
             .withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.File)
+                    .withRetentionMode(RetentionMode.File)
                     .withName("file_name_pointer.txt")
                     .withValue("Lorem ipsum dolor sit amet")
             );

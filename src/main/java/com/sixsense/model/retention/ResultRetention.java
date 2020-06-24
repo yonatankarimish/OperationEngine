@@ -5,35 +5,51 @@ import com.sixsense.model.interfaces.IDeepCloneable;
 import java.util.Objects;
 
 public class ResultRetention implements IDeepCloneable<ResultRetention> {
-    private RetentionType retentionType;
+    private RetentionMode retentionMode;
+    private DataType dataType;
     private String name;
     private String value; //Value may be set either upon creation (preconfigured value) or when a command outputs (dynamic value)
     private boolean overwriteParent; //If true, will overwrite it's entire variable stack, ignoring variable scoping considerations
 
     public ResultRetention() {
-        this.retentionType = RetentionType.None;
+        this.retentionMode = RetentionMode.None;
+        this.dataType = DataType.String;
         this.name = "";
         this.value = "";
         this.overwriteParent = false;
     }
 
-    public ResultRetention(RetentionType retentionType, String name, String value, boolean overwriteParent) {
-        this.retentionType = retentionType;
+    public ResultRetention(RetentionMode retentionMode, DataType dataType, String name, String value, boolean overwriteParent) {
+        this.retentionMode = retentionMode;
+        this.dataType = dataType;
         this.name = value;
         this.value = name;
         this.overwriteParent = overwriteParent;
     }
 
-    public RetentionType getRetentionType() {
-        return retentionType;
+    public RetentionMode getRetentionMode() {
+        return retentionMode;
     }
 
-    public void setRetentionType(RetentionType retentionType) {
-        this.retentionType = retentionType;
+    public void setRetentionMode(RetentionMode retentionMode) {
+        this.retentionMode = retentionMode;
     }
 
-    public ResultRetention withRetentionType(RetentionType retentionType) {
-        this.retentionType = retentionType;
+    public ResultRetention withRetentionMode(RetentionMode retentionMode) {
+        this.retentionMode = retentionMode;
+        return this;
+    }
+
+    public DataType getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(DataType dataType) {
+        this.dataType = dataType;
+    }
+
+    public ResultRetention withDataType(DataType dataType) {
+        this.dataType = dataType;
         return this;
     }
 
@@ -80,7 +96,8 @@ public class ResultRetention implements IDeepCloneable<ResultRetention> {
     @Override
     public ResultRetention deepClone(){
         return new ResultRetention()
-                .withRetentionType(this.retentionType)
+                .withRetentionMode(this.retentionMode)
+                .withDataType(this.dataType)
                 .withName(this.name)
                 .withValue(this.value)
                 .withOverwriteParent(this.overwriteParent);
@@ -95,7 +112,8 @@ public class ResultRetention implements IDeepCloneable<ResultRetention> {
         } else {
             ResultRetention otherAsResult = (ResultRetention) other;
             return this.overwriteParent == otherAsResult.overwriteParent &&
-                this.retentionType == otherAsResult.retentionType &&
+                this.retentionMode == otherAsResult.retentionMode &&
+                this.dataType == otherAsResult.dataType &&
                 this.name.equals(otherAsResult.name) &&
                 this.value.equals(otherAsResult.value);
         }
@@ -103,13 +121,14 @@ public class ResultRetention implements IDeepCloneable<ResultRetention> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(retentionType, name, value, overwriteParent);
+        return Objects.hash(retentionMode, dataType, name, value, overwriteParent);
     }
 
     @Override
     public String toString() {
         return "ResultRetention{" +
-            "retentionType=" + retentionType +
+            "retentionType=" + retentionMode +
+            ", dataType=" + dataType +
             ", name='" + name + '\'' +
             ", value='" + value + '\'' +
             ", overwriteParent=" + overwriteParent +

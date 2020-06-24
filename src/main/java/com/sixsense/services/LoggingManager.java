@@ -4,7 +4,7 @@ import com.sixsense.model.events.*;
 import com.sixsense.model.logging.Loggers;
 import com.sixsense.model.logic.ExpressionResult;
 import com.sixsense.model.retention.DatabaseVariable;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.io.Session;
 import com.sixsense.utillity.CommandUtils;
@@ -13,7 +13,6 @@ import com.sixsense.utillity.MessageLiterals;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -151,10 +150,10 @@ public class LoggingManager  {
         Session session = event.getSession();
         String indentation = getIndentation(session);
         ResultRetention retention = event.getResultRetention();
-        RetentionType retentionType = retention.getRetentionType();
+        RetentionMode retentionMode = retention.getRetentionMode();
 
-        loggers.get(Loggers.SessionLogger).info(indentation + "Result retention of type [" + retentionType.name() + "]");
-        switch (retentionType){
+        loggers.get(Loggers.SessionLogger).info(indentation + "Result retention of type [" + retentionMode.name() + "]");
+        switch (retentionMode){
             case Variable:{
                 Map<String, String> oldSessionVarState = session.getCurrentSessionVariables();
                 if(oldSessionVarState.containsKey(retention.getName())) {

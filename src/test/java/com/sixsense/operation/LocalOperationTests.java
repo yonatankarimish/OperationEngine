@@ -12,7 +12,7 @@ import com.sixsense.model.events.OutputReceivedEvent;
 import com.sixsense.model.logic.*;
 import com.sixsense.model.pipes.DrainingPipe;
 import com.sixsense.model.retention.OperationResult;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.io.Session;
 import com.sixsense.utillity.DynamicFieldGlossary;
@@ -179,7 +179,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                     )
             ).withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.File)
+                    .withRetentionMode(RetentionMode.File)
                     .withName("hosts.txt")
             );
 
@@ -288,7 +288,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
                     )
                     .withSaveTo(
                         new ResultRetention()
-                        .withRetentionType(RetentionType.Variable)
+                        .withRetentionMode(RetentionMode.Variable)
                         .withName("var.command.finished")
                     )
                 )
@@ -471,7 +471,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
             )
             .withSaveTo(
                 new ResultRetention()
-                    .withRetentionType(RetentionType.File)
+                    .withRetentionMode(RetentionMode.File)
                     .withName("iptable.daily.log")
             );
     }

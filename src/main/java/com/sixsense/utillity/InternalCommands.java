@@ -6,7 +6,8 @@ import com.sixsense.model.logic.*;
 import com.sixsense.model.pipes.FirstLinePipe;
 import com.sixsense.model.pipes.LastLinePipe;
 import com.sixsense.model.pipes.WhitespacePipe;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.DataType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 
 public class InternalCommands {
@@ -34,7 +35,7 @@ public class InternalCommands {
                     )
             )
             .withSaveTo(new ResultRetention()
-                .withRetentionType(RetentionType.Variable)
+                .withRetentionMode(RetentionMode.Variable)
                 .withName("sixsense.session.lastLine")
             );
 
@@ -59,7 +60,7 @@ public class InternalCommands {
                     )
             )
             .withSaveTo(new ResultRetention()
-                .withRetentionType(RetentionType.Variable)
+                .withRetentionMode(RetentionMode.Variable)
                 .withName("sixsense.session.prompt." + channelType.toLowerCase())
             );
 
@@ -80,7 +81,7 @@ public class InternalCommands {
                 )
             )
             .withSaveTo(new ResultRetention()
-                .withRetentionType(RetentionType.Variable)
+                .withRetentionMode(RetentionMode.Variable)
                 .withName(assignedField)
                 .withOverwriteParent(true)
             );
@@ -133,7 +134,8 @@ public class InternalCommands {
             ).withSaveTo(new ResultRetention()
                 /*Because the file copy does not pass through the engine JVM (this is the intended behaviour)
                   we save the file name and location to the database, for future reference*/
-                .withRetentionType(RetentionType.DatabaseEventual)
+                .withRetentionMode(RetentionMode.DatabaseEventual)
+                .withDataType(DataType.Path)
                 .withName("$var.scp.destination")
                 .withValue("$sixsense.session.workingDir/$var.scp.destination")
             );

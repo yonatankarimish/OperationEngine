@@ -12,8 +12,9 @@ import com.sixsense.model.logging.IDebuggable;
 import com.sixsense.model.logging.Loggers;
 import com.sixsense.model.logic.ExpressionResult;
 import com.sixsense.model.logic.ResultStatus;
+import com.sixsense.model.retention.DataType;
 import com.sixsense.model.retention.DatabaseVariable;
-import com.sixsense.model.retention.RetentionType;
+import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.services.DiagnosticManager;
 import com.sixsense.threading.ThreadingManager;
@@ -326,7 +327,7 @@ public class Session implements Closeable, IDebuggable {
             clonedRetention.setValue(CommandUtils.evaluateAgainstDynamicFields(clonedRetention.getValue(), this.getCurrentSessionVariables()));
 
             //Handle the retention according to the retention type
-            if(clonedRetention.getRetentionType().equals(RetentionType.Variable)){
+            if(clonedRetention.getRetentionMode().equals(RetentionMode.Variable)){
                 String variable = clonedRetention.getName();
                 this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
 
@@ -337,7 +338,7 @@ public class Session implements Closeable, IDebuggable {
                     varStack.pop();
                 }
                 varStack.push(clonedRetention);
-            }else if(clonedRetention.getRetentionType().equals(RetentionType.File)){
+            }else if(clonedRetention.getRetentionMode().equals(RetentionMode.File)){
                 clonedRetention.setValue(filterFileOutput(clonedRetention.getValue()));
                 RetentionFileWriter fileWriter = new RetentionFileWriter(this.getShortSessionId(), clonedRetention.getName(), clonedRetention.getValue());
 
@@ -345,6 +346,7 @@ public class Session implements Closeable, IDebuggable {
                     this.threadingManager.submit(fileWriter);
                     this.databaseVariables.add(
                         new DatabaseVariable()
+                            .withDataType(DataType.Path)
                             .withName(clonedRetention.getName())
                             .withValue(MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
                             .withCollectedAt(Instant.now())
@@ -352,15 +354,17 @@ public class Session implements Closeable, IDebuggable {
                 } catch (Exception e) {
                     sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: " + e.getMessage());
                 }
-            }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseImmediate)){
+            }else if(clonedRetention.getRetentionMode().equals(RetentionMode.DatabaseImmediate)){
                 operationProducer.produceRetentionResult(this.operationId, new DatabaseVariable()
+                    .withDataType(clonedRetention.getDataType())
                     .withName(clonedRetention.getName())
                     .withValue(clonedRetention.getValue())
                     .withCollectedAt(Instant.now())
                 );
-            }else if(clonedRetention.getRetentionType().equals(RetentionType.DatabaseEventual)){
+            }else if(clonedRetention.getRetentionMode().equals(RetentionMode.DatabaseEventual)){
                 this.databaseVariables.add(
                     new DatabaseVariable()
+                        .withDataType(clonedRetention.getDataType())
                         .withName(clonedRetention.getName())
                         .withValue(clonedRetention.getValue())
                         .withCollectedAt(Instant.now())
@@ -450,7 +454,7 @@ public class Session implements Closeable, IDebuggable {
                 new ResultRetention()
                     .withName(propertyName)
                     .withValue(properties.get(propertyName))
-                    .withRetentionType(RetentionType.Variable)
+                    .withRetentionMode(RetentionMode.Variable)
                     .withOverwriteParent(false)
             );
         }
