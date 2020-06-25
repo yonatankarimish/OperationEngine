@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Set;
 
 public class ExpressionUtils {
+    private ExpressionUtils(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     //wraps both resolvables with a single logical expression;
     public static <T extends IFlowConnector> LogicalExpression<T> mergeExpressions(T original, T additional){
         return new LogicalExpression<T>()

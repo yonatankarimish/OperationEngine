@@ -7,6 +7,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LogicalExpressionResolver {
+    private LogicalExpressionResolver(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     //resolves logical expressions composed of execution conditions
     public static ExpressionResult resolveLogicalExpression(Map<String, String> sessionFields, LogicalExpression<? extends IResolvable> logicalExpression){
         return resolveLogicalExpression("", sessionFields, logicalExpression);

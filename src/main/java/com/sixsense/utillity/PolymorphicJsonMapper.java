@@ -15,6 +15,10 @@ import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 public class PolymorphicJsonMapper {
     private static final ObjectMapper mapper;
 
+    private PolymorphicJsonMapper(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     static{
         PolymorphicTypeValidator baseTypeValidator = BasicPolymorphicTypeValidator.builder()
             .allowIfBaseType(ICommand.class)

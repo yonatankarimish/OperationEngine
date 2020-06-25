@@ -12,6 +12,10 @@ public class MessageLiterals {
     private static final Logger logger = LogManager.getLogger(MessageLiterals.class);
     public static final String projectDirectory;
 
+    private MessageLiterals(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     static{
         String tmpDirectory = "/";
         try {

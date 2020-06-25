@@ -8,6 +8,10 @@ public class OperatingSystemUtils {
     static String localPartition;
     static int localPartitionBlockSize;
 
+    private OperatingSystemUtils(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     //obtain block size for local installation partition to optimize buffered reads
     static{
         LocalShell localShell = new LocalShell();
@@ -16,14 +20,14 @@ public class OperatingSystemUtils {
             if(result.getExitCode() == 0){
                 localPartition = result.getOutput().get(0);
             }else{
-                throw new Exception("Failed to obtain local partition from local shell. Caused by: " + result.getErrors().get(0));
+                throw new RuntimeException("Failed to obtain local partition from local shell. Caused by: " + result.getErrors().get(0));
             }
 
             result = localShell.runCommand("blockdev --getbsz " + localPartition);
             if(result.getExitCode() == 0){
                 localPartitionBlockSize = Integer.parseInt(result.getOutput().get(0));
             }else{
-                throw new Exception("Failed to obtain local partition block size from local shell. Caused by: " + result.getErrors().get(0));
+                throw new RuntimeException("Failed to obtain local partition block size from local shell. Caused by: " + result.getErrors().get(0));
             }
         } catch (Exception e) {
             logger.warn("Failed to obtain block size for local partition name. Caused by: " + e.getMessage());

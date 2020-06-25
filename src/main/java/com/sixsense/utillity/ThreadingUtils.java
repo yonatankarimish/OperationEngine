@@ -8,6 +8,10 @@ import org.apache.logging.log4j.Logger;
 public class ThreadingUtils {
     private static final Logger logger = LogManager.getLogger(ThreadingUtils.class);
 
+    private ThreadingUtils(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     public static void updateLifecyclePhase(EngineEventType currentLifecyclePhase){
         if(Thread.currentThread() instanceof MonitoredThread){
             MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();

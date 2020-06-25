@@ -43,8 +43,9 @@ public class InputOutputTests extends SixSenseBaseTest {
         List<String> afterParse = new ArrayList<>();
 
         for(String chunk : rawChunks){
-            for(String pattern : substitutionCriteria.keySet()) {
-                String replacement = substitutionCriteria.get(pattern);
+            for(Map.Entry<String, String> criterion: substitutionCriteria.entrySet()) {
+                String pattern = criterion.getKey();
+                String replacement = criterion.getValue();
                 chunk = chunk.replaceAll(pattern, replacement);
             }
             afterSubstitutions.add(chunk);

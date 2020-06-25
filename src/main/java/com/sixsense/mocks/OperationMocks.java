@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class OperationMocks {
-    private static final Logger logger = LogManager.getLogger(OperationMocks.class);
+    private OperationMocks(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
 
     public static RawExecutionConfig f5BigIpBackup(List<Credentials> credentialList){
         VendorProductVersion f5BigIp = new VendorProductVersion()

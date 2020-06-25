@@ -14,9 +14,11 @@ import java.util.List;
 //Drains the contents of the output list to the file provided in the ResultRetention of the current command
 public class DrainingPipe extends AbstractOutputPipe {
     private static final Logger logger = LogManager.getLogger(Loggers.FileLogger.name());
-    private final String DEFAULT_DRAIN_FILE = "current_file.txt";
+    private static final String DEFAULT_DRAIN_FILE = "current_file.txt";
 
-    public DrainingPipe(){}
+    public DrainingPipe(){
+        /*Empty default constructor*/
+    }
 
     @Override
     public List<String> pipe(Session session, List<String> output) {

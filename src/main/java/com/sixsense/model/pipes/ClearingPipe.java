@@ -7,6 +7,11 @@ import java.util.List;
 
 //Clears the current prompt and the current command from the contents of the output list
 public class ClearingPipe extends AbstractOutputPipe {
+
+    public ClearingPipe(){
+        /*Empty default constructor*/
+    }
+
     @Override
     public List<String> pipe(Session session, List<String> output) {
         List<String> pipedOutput = new ArrayList<>();

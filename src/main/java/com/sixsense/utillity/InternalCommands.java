@@ -11,6 +11,10 @@ import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 
 public class InternalCommands {
+    private InternalCommands(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+    
     public static ICommand invalidateCurrentPrompt(String channelType) {
         ICommand lastChunk = new Command()
             .withChannelName(channelType)

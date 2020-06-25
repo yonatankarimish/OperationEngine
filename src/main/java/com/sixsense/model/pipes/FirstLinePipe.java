@@ -7,7 +7,9 @@ import java.util.List;
 
 public class FirstLinePipe extends AbstractOutputPipe {
 
-    public FirstLinePipe(){}
+    public FirstLinePipe(){
+        /*Empty default constructor*/
+    }
 
     @Override
     public String pipe(Session session, String output) {

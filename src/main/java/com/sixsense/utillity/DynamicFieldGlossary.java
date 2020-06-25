@@ -1,9 +1,12 @@
 package com.sixsense.utillity;
 
+/*Tracks all dynamic fields that are provided by the OperationEngine module
+ * Dynamic field format is: public static final name_of_field = "name.of.field"
+ * This helps us modify common dynamic fields in a central location*/
 public class DynamicFieldGlossary {
-    /*Tracks all dynamic fields that are provided by the OperationEngine module
-    * Dynamic field format is: public static final name_of_field = "name.of.field"
-    * This helps us modify common dynamic fields in a central location*/
+    private DynamicFieldGlossary(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
 
     public static final String device_host = "device.host";
     public static final String device_internal_id = "device.internal.id";

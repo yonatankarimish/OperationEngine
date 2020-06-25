@@ -117,6 +117,7 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
             this.sequenceExecutionStarted == other.sequenceExecutionStarted;
     }
 
+    @Override
     protected Object[] superMembers(){
         Stream<Object> childStream = Arrays.stream(new Object[]{sequenceUponSuccess, sequenceUponFailure});
         Stream<Object> superStream = Arrays.stream(super.superMembers());
@@ -124,6 +125,7 @@ public abstract class AbstractWorkflow extends AbstractCommand implements IComma
         return Stream.concat(superStream, childStream).toArray();
     }
 
+    @Override
     public String superToString() {
         return " sequentialWorkflowUponSuccess=" + sequenceUponSuccess +
                 ", sequentialWorkflowUponFailure=" + sequenceUponFailure +

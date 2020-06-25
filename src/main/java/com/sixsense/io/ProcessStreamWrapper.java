@@ -89,8 +89,9 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
     /*Execute the substitution criteria against the current chunk*/
     private String executeSubstitutionCriteria(String currentChunk){
         synchronized (this.substitutionCriteria) {
-            for(String pattern : this.substitutionCriteria.keySet()) {
-                String replacement = this.substitutionCriteria.get(pattern);
+            for(Map.Entry<String, String> criterion : this.substitutionCriteria.entrySet()) {
+                String pattern = criterion.getKey();
+                String replacement = criterion.getValue();
                 currentChunk = currentChunk.replaceAll(pattern, replacement);
             }
         }

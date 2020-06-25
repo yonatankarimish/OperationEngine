@@ -7,7 +7,7 @@ import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.io.PathResource;
+import org.springframework.core.io.FileSystemResource;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -29,12 +29,11 @@ public class YamlSourceLoader {
         YamlPropertiesFactoryBean yamlFactory = new YamlPropertiesFactoryBean();
 
         //Iterate the project configuration directory, and add any yaml file found to the list of path resources
-        List<PathResource> yamlFiles = new ArrayList<>();
-        try {
-            DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(MessageLiterals.ConfigFilesPath));
+        List<FileSystemResource> yamlFiles = new ArrayList<>();
+        try (DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(MessageLiterals.ConfigFilesPath))){
             for (Path child : configRoot) {
                 if (Files.isRegularFile(child) && child.toString().endsWith(".yaml")) {
-                    yamlFiles.add(new PathResource(child));
+                    yamlFiles.add(new FileSystemResource(child));
                 }
             }
         }catch (IOException e){
@@ -43,8 +42,8 @@ public class YamlSourceLoader {
 
         /*setResources() can use any of the spring io resource types
         * the method signature accepts any number of resources, but subsequent calls will override any existing resources, so call this method once*/
-        yamlFactory.setResources(new PathResource(MessageLiterals.projectDirectory + "default.yaml"));
-        yamlFactory.setResources(yamlFiles.toArray(new PathResource[yamlFiles.size()]));
+        yamlFactory.setResources(new FileSystemResource(MessageLiterals.projectDirectory + "default.yaml"));
+        yamlFactory.setResources(yamlFiles.toArray(new FileSystemResource[yamlFiles.size()]));
 
         /*calling yamlFactory.getObject() checks internally if there are any properties (yamlFactory.properties != null)
         * because we haven't set them, the method invokes yamlFactory.createProperties(), which parses the .yaml files into a java.util.Properties object*/

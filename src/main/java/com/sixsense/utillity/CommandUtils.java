@@ -12,6 +12,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommandUtils {
+    private CommandUtils(){
+        /*Empty private constructor - no instances of this class should be created */
+    }
+
     //Merge an additional Block of commands to the current block of commands;
     // the new blocks child commands will be added to the current block, ignoring any settings on the chained block.
     public static ICommand chainCommands(ICommand original, ICommand additional){
@@ -46,7 +50,7 @@ public class CommandUtils {
                 Operation additionalAsOperation = (Operation)additional;
                 ICommand additionalExecutionBlock = additionalAsOperation.getExecutionBlock();
                 return additionalAsOperation.withExecutionBlock(chainCommands(original, additionalExecutionBlock));
-            }if(additional instanceof Block){
+            }else if(additional instanceof Block){
                 Block additionalAsBlock = (Block) additional;
                 additionalAsBlock.prependChildBlock(original);
                 return additionalAsBlock;

@@ -23,18 +23,18 @@ public abstract class AbstractEngineEvent implements IEquatable<AbstractEngineEv
     }
 
     @Override
-    public boolean weakEquals(AbstractEngineEvent other){
+    public final boolean weakEquals(AbstractEngineEvent other){
         return this.eventType == other.eventType &&
             this.session == other.session;
     }
 
     @Override
-    public boolean equals(Object other) {
+    public final boolean equals(Object other) {
         return this == other; //No two events are equal (even if they are of the same type on the same session, they were fired at different points in time)
     }
 
     @Override
-    public boolean strongEquals(AbstractEngineEvent other){
+    public final boolean strongEquals(AbstractEngineEvent other){
         return this == other; //for the same reason as in equals();
     }
 

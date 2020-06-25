@@ -58,8 +58,10 @@ public class WorkflowManager implements IEngineEventHandler {
             ).thenApply(voidStub -> {
                 //and map each operation id to the operation result
                 Map<String, OperationResult> resultMap = new HashMap<>();
-                for(String operationId : runningOperations.keySet()){
-                    resultMap.put(operationId, runningOperations.get(operationId).join());
+                for(Map.Entry<String, CompletableFuture<OperationResult>> operationResult : runningOperations.entrySet()){
+                    String operationId = operationResult.getKey();
+                    CompletableFuture<OperationResult> result = operationResult.getValue();
+                    resultMap.put(operationId, result.join());
                 }
                 return resultMap;
             });

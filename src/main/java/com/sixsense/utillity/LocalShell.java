@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.concurrent.*;
 
 
-//Used for running shell commands in linux enviromnents
+/* A simple shell instance, intended to be easier than generating a Session instance
+ * can run shell commands supported in linux environments*/
 public class LocalShell {
     private static final Logger logger = LogManager.getLogger(LocalShell.class);
     private ProcessBuilder builder = new ProcessBuilder();
 
     public LocalShell() {
+        /*Empty default constructor*/
     }
 
     //Runs a single command, or a series of chained commands
@@ -50,7 +52,7 @@ public class LocalShell {
     //Executes an entire script, one command after the other.
     //Commands are independent of each other. i.e. the operation is not atomic or transactional
     //Returns an LocalShellResult with the output and error returned by the operating system for the entire script
-    public LocalShellResult runScript(List<String> scriptCommands) throws Exception {
+    public LocalShellResult runScript(List<String> scriptCommands) throws RuntimeException {
         String referenceToScript = "[shell-script], starting with: "+ scriptCommands.get(0);
         ExecutorService resultReader = null;
 
@@ -65,14 +67,14 @@ public class LocalShell {
                 //This implementation currently writes the command and then flushes it. If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
                 //Keep your commands short
                 for(String command : scriptCommands){
-                    logger.debug("Writing command "+command);
+                    logger.debug("LocalShell: Writing command "+command);
                     writer.write(command + MessageLiterals.LineBreak);
                     writer.flush();
                     Thread.sleep(3000);
                 }
             }catch (IOException e){
-                logger.error("Failed to write command " + lastCommand + ". Caused by: " + e.getMessage());
-                throw new Exception(e);
+                logger.error("LocalShell: Failed to write command " + lastCommand + ". Caused by: " + e.getMessage());
+                throw new RuntimeException(e);
             }
 
             int exitCode = process.waitFor();
@@ -80,14 +82,14 @@ public class LocalShell {
             List<String> errors = processErrors.get();
             return new LocalShellResult(exitCode, output, errors);
         }catch (IOException e){
-            logger.error("Failed to run command " + referenceToScript + ": Failed to start a shell process. Caused by: " + e.getMessage());
-            throw e;
+            logger.error("LocalShell: Failed to run command " + referenceToScript + " - Failed to start a shell process. Caused by: " + e.getMessage());
+            throw new RuntimeException(e);
         }catch (InterruptedException e){
-            logger.error("Failed to run command " + referenceToScript + ": Interrupted while waiting for command result. Caused by: " + e.getMessage());
-            throw e;
+            logger.error("LocalShell: Failed to run command " + referenceToScript + " - Interrupted while waiting for command result. Caused by: " + e.getMessage());
+            throw new RuntimeException(e);
         }catch (ExecutionException e){
-            logger.error("Failed to run command " + referenceToScript + ": Failed during interaction with IO channels. Caused by: " + e.getMessage());
-            throw e;
+            logger.error("LocalShell: Failed to run command " + referenceToScript + " - Failed during interaction with IO channels. Caused by: " + e.getMessage());
+            throw new RuntimeException(e);
         }finally {
             if(resultReader != null){
                 resultReader.shutdown();

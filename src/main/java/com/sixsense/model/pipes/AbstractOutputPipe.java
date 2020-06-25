@@ -32,7 +32,7 @@ public abstract class AbstractOutputPipe {
     public abstract boolean equals(Object obj);
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(pipeType);
     }
 }

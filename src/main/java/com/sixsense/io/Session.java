@@ -176,7 +176,7 @@ public class Session implements Closeable, IDebuggable {
 
     private void sleepMinimalSecondsToResponse(){
         try {
-            Thread.sleep(this.currentCommand.getMinimalSecondsToResponse() * 1000);
+            Thread.sleep(this.currentCommand.getMinimalSecondsToResponse() * 1000L);
         } catch (InterruptedException e) {
             sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted during the minimal seconds to response for command " + this.commandOrdinal, e.getMessage());
         }
@@ -200,7 +200,7 @@ public class Session implements Closeable, IDebuggable {
 
         String firstLineOfCommand;
         if(this.evaluatedCommand.contains("\n")){
-            firstLineOfCommand = this.evaluatedCommand.substring(0, this.evaluatedCommand.indexOf("\n")+1); //if the command contains multiple lines, only search for the first line in the output
+            firstLineOfCommand = this.evaluatedCommand.substring(0, this.evaluatedCommand.indexOf('\n')+1); //if the command contains multiple lines, only search for the first line in the output
         }else{
             firstLineOfCommand = this.evaluatedCommand;
         }
@@ -328,47 +328,13 @@ public class Session implements Closeable, IDebuggable {
 
             //Handle the retention according to the retention type
             if(clonedRetention.getRetentionMode().equals(RetentionMode.Variable)){
-                String variable = clonedRetention.getName();
-                this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
-
-                /*Note that variables are scoped to the ICommand in question (unless overwriting)
-                * and therefore do NOT generate a database variable */
-                Deque<ResultRetention> varStack = this.sessionVariables.get(variable);
-                if(!varStack.isEmpty()) {
-                    varStack.pop();
-                }
-                varStack.push(clonedRetention);
+                retainToVariable(clonedRetention);
             }else if(clonedRetention.getRetentionMode().equals(RetentionMode.File)){
-                clonedRetention.setValue(filterFileOutput(clonedRetention.getValue()));
-                RetentionFileWriter fileWriter = new RetentionFileWriter(this.getShortSessionId(), clonedRetention.getName(), clonedRetention.getValue());
-
-                try {
-                    this.threadingManager.submit(fileWriter);
-                    this.databaseVariables.add(
-                        new DatabaseVariable()
-                            .withDataType(DataType.Path)
-                            .withName(clonedRetention.getName())
-                            .withValue(MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
-                            .withCollectedAt(Instant.now())
-                    );
-                } catch (Exception e) {
-                    sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: " + e.getMessage());
-                }
+                retainToFile(clonedRetention);
             }else if(clonedRetention.getRetentionMode().equals(RetentionMode.DatabaseImmediate)){
-                operationProducer.produceRetentionResult(this.operationId, new DatabaseVariable()
-                    .withDataType(clonedRetention.getDataType())
-                    .withName(clonedRetention.getName())
-                    .withValue(clonedRetention.getValue())
-                    .withCollectedAt(Instant.now())
-                );
+                retainToDatabaseImmediately(clonedRetention);
             }else if(clonedRetention.getRetentionMode().equals(RetentionMode.DatabaseEventual)){
-                this.databaseVariables.add(
-                    new DatabaseVariable()
-                        .withDataType(clonedRetention.getDataType())
-                        .withName(clonedRetention.getName())
-                        .withValue(clonedRetention.getValue())
-                        .withCollectedAt(Instant.now())
-                );
+                retainToDatabaseEventually(clonedRetention);
             }
 
             //And emit a result retention event
@@ -382,10 +348,60 @@ public class Session implements Closeable, IDebuggable {
         }
     }
 
+    private void retainToVariable(ResultRetention clonedRetention){
+        String variable = clonedRetention.getName();
+        this.sessionVariables.putIfAbsent(variable, new ArrayDeque<>());
+
+        /*Note that variables are scoped to the ICommand in question (unless overwriting)
+         * and therefore do NOT generate a database variable */
+        Deque<ResultRetention> varStack = this.sessionVariables.get(variable);
+        if(!varStack.isEmpty()) {
+            varStack.pop();
+        }
+        varStack.push(clonedRetention);
+    }
+
+    private void retainToFile(ResultRetention clonedRetention){
+        clonedRetention.setValue(filterFileOutput(clonedRetention.getValue()));
+        RetentionFileWriter fileWriter = new RetentionFileWriter(this.getShortSessionId(), clonedRetention.getName(), clonedRetention.getValue());
+
+        try {
+            this.threadingManager.submit(fileWriter);
+            this.databaseVariables.add(
+                new DatabaseVariable()
+                    .withDataType(DataType.Path)
+                    .withName(clonedRetention.getName())
+                    .withValue(MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
+                    .withCollectedAt(Instant.now())
+            );
+        } catch (Exception e) {
+            sessionLogger.error("Failed to save file " + clonedRetention.getName() + " to file system. Caused by: " + e.getMessage());
+        }
+    }
+
+    private void retainToDatabaseImmediately(ResultRetention clonedRetention){
+        operationProducer.produceRetentionResult(this.operationId, new DatabaseVariable()
+            .withDataType(clonedRetention.getDataType())
+            .withName(clonedRetention.getName())
+            .withValue(clonedRetention.getValue())
+            .withCollectedAt(Instant.now())
+        );
+    }
+
+    private void retainToDatabaseEventually(ResultRetention clonedRetention){
+        this.databaseVariables.add(
+            new DatabaseVariable()
+                .withDataType(clonedRetention.getDataType())
+                .withName(clonedRetention.getName())
+                .withValue(clonedRetention.getValue())
+                .withCollectedAt(Instant.now())
+        );
+    }
+
     /*Perform a cleanup on the process output if a cleanup is required (by default or if commandEndReached is true)
      * If commandEndReached is true, the last line is the current prompt; we can safely remove all preceding lines
      * If a cleanup is required, we have no guarantee the last line is not being edited; but we can still safely remove all preceding lines*/
-    private void cleanOutput(List<String> processOutput){
+    private void cleanOutput(final List<String> processOutput){
         synchronized (processOutput) {
             int cleanupCounter = processOutput.size() - 1; //all lines before this index (zero-based) will be cleared
             while (cleanupCounter > 0) {
@@ -448,12 +464,14 @@ public class Session implements Closeable, IDebuggable {
     }
 
     public void loadSessionVariables(Map<String, String> properties){
-        for(String propertyName : properties.keySet()){
-            this.sessionVariables.putIfAbsent(propertyName, new ArrayDeque<>());
-            this.sessionVariables.get(propertyName).push(
+        for(Map.Entry<String, String> property : properties.entrySet()){
+            String name = property.getKey();
+            String value = property.getValue();
+            this.sessionVariables.putIfAbsent(name, new ArrayDeque<>());
+            this.sessionVariables.get(name).push(
                 new ResultRetention()
-                    .withName(propertyName)
-                    .withValue(properties.get(propertyName))
+                    .withName(name)
+                    .withValue(value)
                     .withRetentionMode(RetentionMode.Variable)
                     .withOverwriteParent(false)
             );
@@ -482,10 +500,12 @@ public class Session implements Closeable, IDebuggable {
 
     public Map<String, String> getCurrentSessionVariables(){
         Map<String, String> currentSessionFields = new HashMap<>();
-        for(String field : this.sessionVariables.keySet()){
-            ResultRetention currentValue = this.sessionVariables.get(field).peek();
-            if(currentValue != null) {
-                currentSessionFields.put(field, currentValue.getValue());
+        for(Map.Entry<String, Deque<ResultRetention>> sessionVariable : this.sessionVariables.entrySet()){
+            String propertyName = sessionVariable.getKey();
+            ResultRetention topmostVariable = sessionVariable.getValue().peek();
+
+            if(topmostVariable != null) {
+                currentSessionFields.put(propertyName, topmostVariable.getValue());
             }
         }
         return currentSessionFields;
@@ -493,9 +513,9 @@ public class Session implements Closeable, IDebuggable {
 
     private String getSessionVariableValue(String sessionVar){
         if(this.sessionVariables.containsKey(sessionVar) && !this.sessionVariables.get(sessionVar).isEmpty()){
-            ResultRetention latestValue = this.sessionVariables.get(sessionVar).peek();
-            if(latestValue != null) {
-                return latestValue.getValue();
+            ResultRetention topmostVariable = this.sessionVariables.get(sessionVar).peek();
+            if(topmostVariable != null) {
+                return topmostVariable.getValue();
             }
         }
         return "";
@@ -533,13 +553,13 @@ public class Session implements Closeable, IDebuggable {
     @Override
     public void close() throws IOException{
         boolean partialClosure = false;
-        for(String channelName : this.channels.keySet()){
+        for(Map.Entry<String, ShellChannel> channel : this.channels.entrySet()){
             //Try to close each channel in it's own try block, so failure in one channel will not affect other channels
             try {
-                this.channels.get(channelName).close();
+                channel.getValue().close();
             }catch (IOException e){
                 partialClosure = true;
-                sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channelName +". Caused by: " + e.getMessage());
+                sessionLogger.error("Session " +  this.getShortSessionId() + " failed to close channel with name " + channel.getKey() +". Caused by: " + e.getMessage());
             }
         }
 

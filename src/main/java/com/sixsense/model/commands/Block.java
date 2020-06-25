@@ -92,7 +92,7 @@ public class Block extends AbstractCommand implements ICommand, IDeepCloneable<B
         }
     }
 
-    public LogicalExpression getRepeatCondition() {
+    public LogicalExpression<ExecutionCondition> getRepeatCondition() {
         return repeatCondition;
     }
 

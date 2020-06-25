@@ -63,8 +63,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         this.localhostConfig = hostConfig.getLocal();
 
         sessionProperties.put("sixsense.session.version", this.sessionConfig.getVersion());
-        for(String promptName : this.sessionConfig.getPrompt().keySet()){
-            sessionProperties.put("sixsense.session.prompt." + promptName, this.sessionConfig.getPrompt().get(promptName));
+        for(Map.Entry<String, String> prompt : this.sessionConfig.getPrompt().entrySet()){
+            String promptName = prompt.getKey();
+            String promptText = prompt.getValue();
+            sessionProperties.put("sixsense.session.prompt." + promptName, promptText);
         }
 
         try {
@@ -274,14 +276,14 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     }
 
     //Attempts to create a new session
-    public Session initializeSession(Operation operation) throws Exception{
+    public Session initializeSession(Operation operation) throws InstantiationException{
         Session session;
         try{
             session = (Session) this.appContext.getBean("sixSenseSession", operation);
             diagnosticManager.emit(new SessionCreatedEvent(session));
         } catch (BeansException e){
             logger.error("SessionEngine - Failed to initialize a new session for operation " + operation.getOperationName() + ". Caused by: " + e.getMessage());
-            throw new Exception(e);
+            throw new InstantiationException(e.getMessage());
         }
 
         return session;

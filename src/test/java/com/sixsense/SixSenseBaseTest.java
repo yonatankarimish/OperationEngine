@@ -8,7 +8,7 @@ import org.testng.annotations.BeforeMethod;
 
 import java.lang.reflect.Method;
 
-public class SixSenseBaseTest {
+public abstract class SixSenseBaseTest {
     private static final Logger logger = LogManager.getLogger(SixSenseBaseTest.class);
     private static final String spacer = "==============================================";
 

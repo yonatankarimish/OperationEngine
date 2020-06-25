@@ -1,7 +1,7 @@
 package com.sixsense.model.exceptions;
 
 public class EngineException extends Exception {
-    private EngineExceptionType exceptionType;
+    private final EngineExceptionType exceptionType;
 
     public EngineException(EngineExceptionType exceptionType) {
         super();

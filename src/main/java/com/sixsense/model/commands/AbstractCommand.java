@@ -154,6 +154,9 @@ public abstract class AbstractCommand implements ICommand{
             this.saveTo.equals(other.saveTo);
     }
 
+    @Override
+    public abstract boolean equals(Object other);
+
     protected boolean equals(AbstractCommand other){
         return this.weakEquals(other) &&
             this.dynamicFields.keySet().equals(other.dynamicFields.keySet());
@@ -164,6 +167,9 @@ public abstract class AbstractCommand implements ICommand{
             this.alreadyExecuted == other.alreadyExecuted &&
             this.dynamicFields.equals(other.dynamicFields);
     }
+
+    @Override
+    public abstract int hashCode();
 
     protected Object[] superMembers(){
         return new Object[]{executionCondition, expectedOutcome, saveTo};

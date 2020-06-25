@@ -197,8 +197,8 @@ public class LoggingManager  {
     //The dynamic fields should be from the ICommand in question, and not all fields in session context. because we log loading and removal of the relevant fields by the ICommand
     private void logDynamicFields(String indentation, Map<String, String> dynamicFields, String sign){
         if(dynamicFields.size() > 0) {
-            for (String dynamicField : dynamicFields.keySet()) {
-                logDynamicFields(indentation, dynamicField, dynamicFields.get(dynamicField), sign);
+            for (Map.Entry<String, String> dynamicField : dynamicFields.entrySet()) {
+                logDynamicFields(indentation, dynamicField.getKey(), dynamicField.getValue(), sign);
             }
         }
     }

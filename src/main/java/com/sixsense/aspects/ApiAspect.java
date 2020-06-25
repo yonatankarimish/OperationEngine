@@ -24,10 +24,10 @@ public class ApiAspect {
     *
     * These are really expensive aspects, which is why they should only be invoked if you know when to use them (debugging, diagnostics or test running)*/
     @Pointcut("execution(@org.springframework.web.bind.annotation.*Mapping public * com.sixsense.api.ApiDebuggingAware+.*(..))")
-    private void requestMappings(){}
+    private void requestMappings(){/*Pointcut methods do not need a body*/}
 
     @Pointcut("execution(@org.springframework.amqp.rabbit.annotation.RabbitListener public * com.sixsense.api.ApiDebuggingAware+.*(..))")
-    private void rabbitListeners(){}
+    private void rabbitListeners(){/*Pointcut methods do not need a body*/}
 
 
     @Around("requestMappings() || rabbitListeners()")
@@ -51,7 +51,7 @@ public class ApiAspect {
                     return pjp.proceed();
                 }
             }else{
-                throw new Exception("Http aspect target does not implement the AbstractHttpController class");
+                throw new VerifyError("Http aspect target does not implement the AbstractHttpController class");
             }
         } catch (Throwable t) {
             logger.error("Failed to wrap advice around http controller. Caused by:" + t.getMessage());

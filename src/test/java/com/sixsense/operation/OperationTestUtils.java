@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 
 public class OperationTestUtils extends SixSenseBaseUtils {
     private static final Logger logger = LogManager.getLogger(OperationTestUtils.class);
-    private static Map<String, Future<OperationResult>> futureOutcomesBySessionId;
+    private static Map<String, CompletableFuture<OperationResult>> futureOutcomesBySessionId;
 
     @BeforeGroups(groups = "operation")
     public void initSpringBeans() {
@@ -39,16 +39,30 @@ public class OperationTestUtils extends SixSenseBaseUtils {
     }
 
     public static Session submitOperation(Operation operation){
+        /*We split the future session from the operation execution for two reasons:
+        * 1) better granularity and control over failures
+        * 2) initializing sessions emits a SessionCreated event, which logs a warning when invoked outside of a non-monitored thread*/
+        CompletableFuture<Session> preInitSession = threadingManager.submit(() -> {
+            try {
+                Session session = sessionEngine.initializeSession(operation);
+                session.activateDebugMode();
+                diagnosticManager.registerSession(session.getSessionShellId());
+                return session;
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e); //rethrow as a runtime exception
+            }
+        });
+
+        CompletableFuture<OperationResult> operationResult = threadingManager.applyFutureCallback(preInitSession,
+            session -> sessionEngine.executeOperation(session, operation)
+        );
+
         try {
-            Session session = sessionEngine.initializeSession(operation);
-            session.activateDebugMode();
-            diagnosticManager.registerSession(session.getSessionShellId());
-            Future<OperationResult> operationResult = threadingManager.submit(() -> sessionEngine.executeOperation(session, operation));
+            Session session = preInitSession.get();
             futureOutcomesBySessionId.put(session.getSessionShellId(), operationResult);
             return session;
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-            throw new NullPointerException(e.getMessage()); //should not be reached, as Assert.fail() will throw an assertion error
+        } catch (InterruptedException | ExecutionException e) {
+            throw new AssertionError(e); //equivalent to Assert.error(e), but does not trigger a compile-time exception
         }
     }
 
@@ -56,22 +70,27 @@ public class OperationTestUtils extends SixSenseBaseUtils {
         return awaitOperation(session, futureOutcomesBySessionId.get(session.getSessionShellId()));
     }
 
-    private static OperationResult awaitOperation(Session session, Future<OperationResult> runningOperation){
-        OperationResult resolvedOutcome = null;
-        try {
-            resolvedOutcome = runningOperation.get();
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        } finally {
-            try {
-                futureOutcomesBySessionId.remove(session.getSessionShellId());
-                sessionEngine.finalizeSession(session);
-            } catch (IOException ioex) {
-                Assert.fail(ioex.getMessage());
-            }
-        }
+    private static OperationResult awaitOperation(Session session, CompletableFuture<OperationResult> runningOperation){
+        /*We add the thenApply() block for two reasons:
+         * 1) ensure resolved outcomes are always removed from futureOutcomesBySessionId
+         * 2) finalizing sessions emits a SessionClosed event, which logs a warning when invoked outside of a non-monitored thread*/
+        CompletableFuture<OperationResult> postTeardownOperation = threadingManager.applyFutureCallback(runningOperation, resolvedOutcome -> {
+            futureOutcomesBySessionId.remove(session.getSessionShellId());
 
-        return resolvedOutcome;
+            try {
+                sessionEngine.finalizeSession(session);
+            } catch (IOException e) {
+                throw new RuntimeException(e); //rethrow as a runtime exception
+            }
+
+            return resolvedOutcome;
+        });
+
+        try {
+            return postTeardownOperation.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new AssertionError(e); //equivalent to Assert.error(e), but does not trigger a compile-time exception
+        }
     }
 
     //Will throw an assertion error if the future is not already resolved, and does not resolved within the specified time limit
