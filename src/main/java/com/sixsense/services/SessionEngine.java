@@ -113,7 +113,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             );
         }else if(session.isClosed()){
             operationResult.setExpressionResult(
-                handleExecutionAnomaly(session, MessageLiterals.OperationTerminated)
+                handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed)
             );
         }else if(operation.getExecutionBlock() == null){
             operationResult.setExpressionResult(
@@ -128,11 +128,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             diagnosticManager.emit(new OperationStartEvent(session, operation));
 
             try {
+                preExecute(session, operation);
                 ICommand executionBlock = operation.getExecutionBlock();
-                session.incrementDrilldownRank();
-                session.loadSessionDynamicFields(operation);
 
-                diagnosticManager.emit(new ConditionEvaluationEvent(session, operation.getExecutionCondition()));
                 if (executionConditionsMet(session, operation)) {
                     operationResult.setExpressionResult(
                         executeBlock(session, executionBlock)
@@ -146,10 +144,8 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                     );
                 }
 
+                postExecute(session, operation);
                 diagnosticManager.emit(new OutcomeEvaluationEvent(session, "", operation.getExpectedOutcome()));
-                session.removeSessionDynamicFields(operation);
-                session.decrementDrilldownRank();
-                operation.setAlreadyExecuted(true);
             } catch (Exception e) {
                 String errorMessage = "SessionEngine - Failed to execute operation " + operation.getOperationName() + ". Caused by: " + e.getMessage();
                 logger.error(errorMessage);
@@ -175,7 +171,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         if(this.isClosed){
             blockResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
         }else if(session.isClosed()){
-            blockResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
+            blockResult = handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed);
         }else if (executionBlock instanceof Command) {
             blockResult = executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
@@ -185,11 +181,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             * progressive + success = success*/
             Block parentBlock = (Block)executionBlock;
             ExpressionResult progressiveResult = ExpressionResult.defaultOutcome();
-            diagnosticManager.emit(new BlockStartEvent(session, parentBlock));
 
-            session.incrementDrilldownRank();
-            session.loadSessionDynamicFields(parentBlock);
-            diagnosticManager.emit(new ConditionEvaluationEvent(session, parentBlock.getExecutionCondition()));
+            diagnosticManager.emit(new BlockStartEvent(session, parentBlock));
+            preExecute(session, parentBlock);
+
             if(executionConditionsMet(session, parentBlock)) {
                 while (!parentBlock.hasExhaustedCommands(session)) {
                     ICommand nextCommand = parentBlock.getNextCommand(session);
@@ -207,9 +202,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 progressiveResult = ExpressionResult.skip();
             }
 
-            session.removeSessionDynamicFields(parentBlock);
-            session.decrementDrilldownRank();
-            parentBlock.setAlreadyExecuted(true);
+            postExecute(session, parentBlock);
             if(blockResult == null) {// which (before this line) can only be assigned if commandResult has ResultStatus.FAILURE
                 blockResult = expectedResult(progressiveResult, parentBlock.getExpectedOutcome().getExpressionResult());
             }
@@ -228,22 +221,18 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         if(this.isClosed){
             commandResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
         }else if(session.isClosed()){
-            commandResult = handleExecutionAnomaly(session, MessageLiterals.OperationTerminated);
+            commandResult = handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed);
         }else{
             diagnosticManager.emit(new CommandStartEvent(session, currentCommand));
+            preExecute(session, currentCommand);
 
-            session.incrementDrilldownRank();
-            session.loadSessionDynamicFields(currentCommand);
-            diagnosticManager.emit(new ConditionEvaluationEvent(session, currentCommand.getExecutionCondition()));
             if (executionConditionsMet(session, currentCommand)) {
                 commandResult = session.executeCommand(currentCommand);
             } else {
                 commandResult = ExpressionResult.skip();
             }
 
-            session.removeSessionDynamicFields(currentCommand);
-            session.decrementDrilldownRank();
-            currentCommand.setAlreadyExecuted(true);
+            postExecute(session, currentCommand);
             diagnosticManager.emit(new CommandEndEvent(session, currentCommand, commandResult));
         }
 
@@ -287,6 +276,18 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         }
 
         return session;
+    }
+
+    public void preExecute(Session session, ICommand currentCommand){
+        session.incrementDrilldownRank();
+        session.loadSessionDynamicFields(currentCommand);
+        diagnosticManager.emit(new ConditionEvaluationEvent(session, currentCommand.getExecutionCondition()));
+    }
+
+    public void postExecute(Session session, ICommand currentCommand){
+        session.removeSessionDynamicFields(currentCommand);
+        session.decrementDrilldownRank();
+        currentCommand.setAlreadyExecuted(true);
     }
 
     //Create a prototype session bean, generate the required I/O channels and load session variables. If fails, will finalize the session to prevent it from executing commands

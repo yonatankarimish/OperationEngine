@@ -47,6 +47,7 @@ public class Session implements Closeable, IDebuggable {
     //Connection, synchronization and debugging
     private final Map<String, ShellChannel> channels;
     private final Lock commandLock =  new ReentrantLock();
+    private final Condition minimalSleepTerminated = commandLock.newCondition();
     private final Condition newChunkReceived = commandLock.newCondition();
     private boolean isUnderDebug = false;
     private boolean isClosed = false;
@@ -174,10 +175,12 @@ public class Session implements Closeable, IDebuggable {
         }
     }
 
+    //This method assumes we are holding the commandLock for this session
     private void sleepMinimalSecondsToResponse(){
         try {
-            Thread.sleep(this.currentCommand.getMinimalSecondsToResponse() * 1000L);
-        } catch (InterruptedException e) {
+            this.minimalSleepTerminated.await(this.currentCommand.getMinimalSecondsToResponse(), TimeUnit.SECONDS);
+        }catch (InterruptedException e){
+            //Basically this shouldn't happen, as we use newChunkReceived.signalAll() to interrupt the await() clause
             sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted during the minimal seconds to response for command " + this.commandOrdinal, e.getMessage());
         }
     }
@@ -304,6 +307,7 @@ public class Session implements Closeable, IDebuggable {
             try {
                 this.newChunkReceived.await(this.currentCommand.getSecondsToTimeout() - this.elapsedSeconds, TimeUnit.SECONDS);
             }catch (InterruptedException e){
+                //Basically this shouldn't happen, as we use newChunkReceived.signalAll() to interrupt the await() clause
                 sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + " to return. Caused by:", e.getMessage());
             }
 
@@ -313,7 +317,17 @@ public class Session implements Closeable, IDebuggable {
 
     /*If the command has been resolved, check if the result should be retained in any way, and save it if necessary*/
     private void retainResult(String output, ExpressionResult resolvedOutcome){
-        if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
+        if(terminatedExternally){
+            //If terminated externally, the session must stop and the method will return a failure
+            resolvedOutcome.withResolved(false)
+                .withOutcome(ResultStatus.FAILURE)
+                .withMessage(MessageLiterals.OperationTerminated);
+        }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && this.elapsedSeconds >= this.currentCommand.getSecondsToTimeout()){
+            //If a timeout occurred, the command failed to execute and the method will return a failure
+            resolvedOutcome.withResolved(false)
+                .withOutcome(ResultStatus.FAILURE)
+                .withMessage(MessageLiterals.TimeoutInCommand);
+        }else if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
             //We clone the retention so that if the command is called again, any action we take within this code block will not affect subsequent executions
             ResultRetention clonedRetention = this.currentCommand.getSaveTo().deepClone();
             if(clonedRetention.getValue().isEmpty()){
@@ -339,12 +353,6 @@ public class Session implements Closeable, IDebuggable {
 
             //And emit a result retention event
             diagnosticManager.emit(new ResultRetentionEvent(this, clonedRetention));
-        }else if(terminatedExternally){
-            //If terminated externally, the session must stop and the method will return a failure
-            resolvedOutcome.setMessage(MessageLiterals.OperationTerminated);
-        }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && this.elapsedSeconds >= this.currentCommand.getSecondsToTimeout()){
-            //If a timeout occured, the command failed to execute and the method will return a failure
-            resolvedOutcome.setMessage(MessageLiterals.TimeoutInCommand);
         }
     }
 
@@ -566,6 +574,8 @@ public class Session implements Closeable, IDebuggable {
         this.commandLock.lock();
         sessionLogger.debug(this.getTerminalIdentifier() + " close method acquired lock");
         try {
+            //Immediately interrupt the session if it is currently waiting for anything (minimal seconds / new data from process stream wrapper)
+            this.minimalSleepTerminated.signalAll();
             this.newChunkReceived.signalAll();
         }catch(Exception e){
             sessionLogger.error("Session " +  this.getShortSessionId() + " failed to terminate current command. Caused by: " + e.getMessage());

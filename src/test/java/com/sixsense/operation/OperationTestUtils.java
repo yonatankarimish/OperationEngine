@@ -53,6 +53,10 @@ public class OperationTestUtils extends SixSenseBaseUtils {
             }
         });
 
+        /*threadingManager.applyFutureCallback ensures the following running order, in the engine thread pool:
+        * 1) session is initialized (returning preInitSession future)
+        * 2) operation execution starts (submitted to thread pool)
+        * 3) preInitSession future completes, returning the session object we generated*/
         CompletableFuture<OperationResult> operationResult = threadingManager.applyFutureCallback(preInitSession,
             session -> sessionEngine.executeOperation(session, operation)
         );
@@ -73,7 +77,12 @@ public class OperationTestUtils extends SixSenseBaseUtils {
     private static OperationResult awaitOperation(Session session, CompletableFuture<OperationResult> runningOperation){
         /*We add the thenApply() block for two reasons:
          * 1) ensure resolved outcomes are always removed from futureOutcomesBySessionId
-         * 2) finalizing sessions emits a SessionClosed event, which logs a warning when invoked outside of a non-monitored thread*/
+         * 2) finalizing sessions emits a SessionClosed event, which logs a warning when invoked outside of a non-monitored thread
+         *
+         * The comment on threadingManager.applyFutureCallback also applies here. Running order is:
+         * 1) operationResult future completes
+         * 2) matching session is finalized
+         * 3) postTeardownOperation future completes, returning the operation result we obtained*/
         CompletableFuture<OperationResult> postTeardownOperation = threadingManager.applyFutureCallback(runningOperation, resolvedOutcome -> {
             futureOutcomesBySessionId.remove(session.getSessionShellId());
 

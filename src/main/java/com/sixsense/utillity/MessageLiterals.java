@@ -42,14 +42,15 @@ public class MessageLiterals {
     public static final String LoggingDirectory = projectDirectory + "/logs";
     public static final String SessionExecutionDir = LoggingDirectory + "/sessions";
 
+    public static final String CommandDidNotMatchConditions = "Command did not match it's execution conditions";
+    public static final String CommandDidNotReachOutcome = "Command did not reach it's expected outcome";
     public static final String EngineShutdown = "Session services has been shut down";
     public static final String ExceptionEncountered = "Session services encountered an error";
     public static final String ExpectedOutcomeNotNumeric = "Expected outcome is not a number";
-    public static final String CommandDidNotMatchConditions = "Command did not match it's execution conditions";
-    public static final String CommandDidNotReachOutcome = "Command did not reach it's expected outcome";
     public static final String InvalidCommandParameters = "Command has invalid parameters";
     public static final String InvalidExecutionBlock = "Execution block is not a valid block";
     public static final String OperationTerminated = "Operation has been terminated externally";
+    public static final String SessionAlreadyClosed = "Session has already been closed";
     public static final String UnsuportedBinaryRelation = "Expected outcome has an unsupported binary relation";
     public static final String ThreadNotMonitored = "Attempted to update thread state for a non-monitored thread";
     public static final String TimeoutInCommand = "Command did not return within it's specified time limit";
