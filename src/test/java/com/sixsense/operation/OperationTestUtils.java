@@ -15,23 +15,23 @@ import java.util.concurrent.*;
 
 public class OperationTestUtils extends SixSenseBaseUtils {
     private static final Logger logger = LogManager.getLogger(OperationTestUtils.class);
-    private static Map<String, CompletableFuture<OperationResult>> futureOutcomesBySessionId;
+    private static Map<String, CompletableFuture<OperationResult>> futureOutcomesByOperationId;
 
     @BeforeGroups(groups = "operation")
     public void initSpringBeans() {
-        futureOutcomesBySessionId = new ConcurrentHashMap<>();
+        futureOutcomesByOperationId = new ConcurrentHashMap<>();
     }
 
     @AfterMethod(groups = "operation")
     public void engineTestCleanup(){
         diagnosticManager.clearDiagnosedSessions();
-        futureOutcomesBySessionId.clear();
+        futureOutcomesByOperationId.clear();
     }
 
 
     public static OperationResult executeOperation(Operation operation) throws AssertionError {
-        Session session = submitOperation(operation);
-        OperationResult resolvedOutcome = awaitOperation(session);
+        submitOperation(operation);
+        OperationResult resolvedOutcome = awaitOperation(operation);
 
         logger.info("Operation " + operation.getOperationName() + " Completed with result " + resolvedOutcome.getExpressionResult().getOutcome());
         logger.info("Result Message: " + resolvedOutcome.getExpressionResult().getMessage());
@@ -39,9 +39,8 @@ public class OperationTestUtils extends SixSenseBaseUtils {
     }
 
     public static Session submitOperation(Operation operation){
-        /*We split the future session from the operation execution for two reasons:
-        * 1) better granularity and control over failures
-        * 2) initializing sessions emits a SessionCreated event, which logs a warning when invoked outside of a non-monitored thread*/
+        /* We use threadingManager.submit() because initializing sessions emits a SessionCreated event,
+         * which logs a warning when invoked outside of a non-monitored thread*/
         CompletableFuture<Session> preInitSession = threadingManager.submit(() -> {
             try {
                 Session session = sessionEngine.initializeSession(operation);
@@ -53,43 +52,34 @@ public class OperationTestUtils extends SixSenseBaseUtils {
             }
         });
 
-        /*threadingManager.applyFutureCallback ensures the following running order, in the engine thread pool:
-        * 1) session is initialized (returning preInitSession future)
-        * 2) operation execution starts (submitted to thread pool)
-        * 3) preInitSession future completes, returning the session object we generated*/
-        CompletableFuture<OperationResult> operationResult = threadingManager.applyFutureCallback(preInitSession,
-            session -> sessionEngine.executeOperation(session, operation)
-        );
-
         try {
             Session session = preInitSession.get();
-            futureOutcomesBySessionId.put(session.getSessionShellId(), operationResult);
+            CompletableFuture<OperationResult> operationResult = threadingManager.submit(() -> sessionEngine.executeOperation(session, operation));
+            futureOutcomesByOperationId.put(operation.getUUID(), operationResult);
             return session;
         } catch (InterruptedException | ExecutionException e) {
             throw new AssertionError(e); //equivalent to Assert.error(e), but does not trigger a compile-time exception
         }
     }
 
-    public static OperationResult awaitOperation(Session session){
-        return awaitOperation(session, futureOutcomesBySessionId.get(session.getSessionShellId()));
+    public static OperationResult awaitOperation(Operation operation){
+        return awaitOperation(operation, futureOutcomesByOperationId.get(operation.getUUID()));
     }
 
-    private static OperationResult awaitOperation(Session session, CompletableFuture<OperationResult> runningOperation){
-        /*We add the thenApply() block for two reasons:
-         * 1) ensure resolved outcomes are always removed from futureOutcomesBySessionId
-         * 2) finalizing sessions emits a SessionClosed event, which logs a warning when invoked outside of a non-monitored thread
-         *
-         * The comment on threadingManager.applyFutureCallback also applies here. Running order is:
-         * 1) operationResult future completes
-         * 2) matching session is finalized
-         * 3) postTeardownOperation future completes, returning the operation result we obtained*/
+    private static OperationResult awaitOperation(Operation operation, CompletableFuture<OperationResult> runningOperation){
+        /* We use the applyFutureCallback() because finalizing sessions emits a SessionClosed event,
+         * which logs a warning when invoked outside of a non-monitored thread*/
         CompletableFuture<OperationResult> postTeardownOperation = threadingManager.applyFutureCallback(runningOperation, resolvedOutcome -> {
-            futureOutcomesBySessionId.remove(session.getSessionShellId());
-
-            try {
-                sessionEngine.finalizeSession(session);
-            } catch (IOException e) {
-                throw new RuntimeException(e); //rethrow as a runtime exception
+            /*if the operation id is not contained in runningOperations, it was terminated by invoking terminateOperation()
+             * therefore, we don't need to finalize it*/
+            if(sessionEngine.getRunningOperations().containsKey(operation.getUUID())) {
+                try {
+                    String sessionId = sessionEngine.getOperationsToSessions().get(operation.getUUID());
+                    Session session = sessionEngine.getRunningSessions().get(sessionId);
+                    sessionEngine.finalizeSession(session, operation.getUUID());
+                } catch (IOException e) {
+                    throw new RuntimeException(e); //rethrow as a runtime exception
+                }
             }
 
             return resolvedOutcome;
@@ -97,6 +87,15 @@ public class OperationTestUtils extends SixSenseBaseUtils {
 
         try {
             return postTeardownOperation.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new AssertionError(e); //equivalent to Assert.error(e), but does not trigger a compile-time exception
+        }
+    }
+
+    public static OperationResult terminateOperation(Operation operation){
+        //terminateOperation() calls finalizeSession(), so not additional care is needed
+        try {
+            return threadingManager.submit(() ->  sessionEngine.terminateOperation(operation.getUUID())).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new AssertionError(e); //equivalent to Assert.error(e), but does not trigger a compile-time exception
         }

@@ -2,9 +2,11 @@ package com.sixsense.threading;
 
 import com.sixsense.api.http.overrides.HTTPThreadExecutor;
 import com.sixsense.config.ThreadingConfig;
+import com.sixsense.model.events.EngineEventType;
 import com.sixsense.model.threading.MonitoredThread;
 import com.sixsense.model.threading.MonitoredThreadState;
 import com.sixsense.model.threading.ThreadPool;
+import com.sixsense.utillity.ThreadingUtils;
 import org.apache.catalina.connector.Connector;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -109,13 +111,13 @@ public class ThreadingManager implements Closeable {
         }
     }
 
-    public Map<String, MonitoredThreadState> getEngineThreadStatus(){
+    public Map<Long, MonitoredThreadState> getEngineThreadStatus(){
         IThreadMonitoingFactory monitoringThreadFactory = getMonitoringThreadFactory(ThreadPool.Engine);
         Set<MonitoredThread> currentThreads = monitoringThreadFactory.getMonitoredThreads();
 
-        Map<String, MonitoredThreadState> threadStatus = new HashMap<>();
+        Map<Long, MonitoredThreadState> threadStatus = new HashMap<>();
         for(MonitoredThread thread : currentThreads){
-            threadStatus.put(thread.getName(), thread.getCurrentThreadState());
+            threadStatus.put(thread.getId(), thread.getCurrentThreadState()); //A thread's id is a positive long, that remains unchaned during the thread's lifetime
         }
 
         return threadStatus;

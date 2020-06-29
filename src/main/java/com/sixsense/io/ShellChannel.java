@@ -1,10 +1,13 @@
 package com.sixsense.io;
 
 import com.sixsense.model.logging.IDebuggable;
+import com.sixsense.model.logging.Loggers;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.transport.TransportException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -12,10 +15,14 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class ShellChannel implements Closeable, IDebuggable {
+    private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
+
     private final String name; //Identifying name for current channel
+    private final com.sixsense.io.Session engineSession; //parent session (engine session)
     private final net.schmizz.sshj.connection.channel.direct.Session shellSession; //SSH session that generates the shell process
     private final Session.Shell shell; //The operating system process to which we perform I/O
 
@@ -33,6 +40,7 @@ public class ShellChannel implements Closeable, IDebuggable {
      *Therefore, we only listen to the shell output stream, as the errors will be written there as well*/
     public ShellChannel(String name, SSHClient connectedSSHClient, com.sixsense.io.Session engineSession) throws ConnectionException, TransportException {
         this.name = name;
+        this.engineSession = engineSession;
         this.shellSession = connectedSSHClient.startSession();
         this.shellSession.allocateDefaultPTY();
         this.shell = this.shellSession.startShell();
@@ -104,9 +112,27 @@ public class ShellChannel implements Closeable, IDebuggable {
 
     @Override
     public void close() throws IOException {
-        this.shell.close();
-        this.shellSession.close();
-        this.channelInput.close();
+        boolean partialClosure = false;
+
+        Map<String, Closeable> resources = Map.of(
+            "channelInput", this.channelInput,
+            "channelOutputWrapper", this.channelOutputWrapper,
+            "shell", this.shell,
+            "shellSession", this.shellSession
+        );
+
+        for(Map.Entry<String, Closeable> resource : resources.entrySet()){
+            try {
+                resource.getValue().close();
+            }catch (IOException e){
+                partialClosure = true;
+                sessionLogger.error("Channel " + this.name + " of session " +  engineSession.getShortSessionId() + " failed to close " + resource.getKey() +". Caused by: " + e.getMessage());
+            }
+        }
+
         this.isClosed = true;
+        if(partialClosure){
+            throw new IOException("Channel " + this.name + " for session " +  engineSession.getShortSessionId() + " failed to close one or more of it's resources");
+        }
     }
 }

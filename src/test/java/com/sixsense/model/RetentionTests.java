@@ -55,7 +55,7 @@ public class RetentionTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
@@ -89,7 +89,7 @@ public class RetentionTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
@@ -125,7 +125,7 @@ public class RetentionTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
     }
@@ -145,7 +145,7 @@ public class RetentionTests extends SixSenseBaseTest {
             .addChannel(ChannelType.LOCAL);
 
         Session session = OperationTestUtils.submitOperation(operation);
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
 

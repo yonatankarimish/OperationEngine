@@ -7,11 +7,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.function.Supplier;
 
-public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
+public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebuggable {
     //Loggers
     private static final Logger logger = LogManager.getLogger(ProcessStreamWrapper.class);
     private static final Logger terminalLogger = LogManager.getLogger(Loggers.TerminalLogger.name());
@@ -25,6 +27,7 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
     private final List<String> rawChunks;
     private final Map<String, String> substitutionCriteria;
     private boolean isUnderDebug = false;
+    private boolean isClosed = false;
 
     /*ProcessStreamWrapper runs in a separate thread than the session that created it
     * If the process output/error stream fills it's own buffer, the process will get stuck and no new commands may be written to it
@@ -62,7 +65,8 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
 
             logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
         } catch (Exception e) {
-            if(!this.session.isClosed() && !this.session.isTerminated()) {
+            //verify the exception didn't happen due to manual termination or due to a natural session.close()
+            if(!this.isClosed() && !this.session.isTerminated()) {
                 logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: " + e.getMessage());
             }
         } finally {
@@ -121,7 +125,7 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
 
     /*Signal the parent session that new chunks has been parsed (i.e. there is new output)*/
     private void signalNewChunk(){
-        if(!this.session.isClosed()) {
+        if(!this.isClosed()) {
             this.session.getCommandLock().lock();
             logger.debug(this.session.getTerminalIdentifier() + " proccess stream acquired lock");
             try {
@@ -157,8 +161,23 @@ public class ProcessStreamWrapper implements Supplier<Boolean>, IDebuggable {
         return isUnderDebug;
     }
 
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     @Override
     public void activateDebugMode() {
         isUnderDebug = true;
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            processStream.close();
+            this.isClosed = false;
+        }catch (IOException e){
+            logger.error("Failed to close process stream for session " + this.session.getShortSessionId() + ". Caused by: " + e.getMessage());
+            throw e;
+        }
     }
 }

@@ -120,7 +120,6 @@ public class Session implements Closeable, IDebuggable {
         assignContextVariables(command);
         this.commandLock.lock();
         writeCommand(channel);
-        diagnosticManager.emit(new InputSentEvent(this, this.currentCommand, this.commandOrdinal, this.evaluatedCommand));
 
         sleepMinimalSecondsToResponse();
         while(!hasWaitElapsed && !terminatedExternally){
@@ -138,8 +137,7 @@ public class Session implements Closeable, IDebuggable {
             hasWaitElapsed = awaitIfNeeded(resolvedOutcome, commandEndReached);
         }
 
-        diagnosticManager.emit(new OutputReceivedEvent(this, this.currentCommand, this.commandOrdinal, parsedOutput));
-        diagnosticManager.emit(new OutcomeEvaluationEvent(this, parsedOutput, this.currentCommand.getExpectedOutcome()));
+        emitOutputEvents(parsedOutput);
         this.commandLock.unlock();
 
         retainResult(parsedOutput, resolvedOutcome);
@@ -166,12 +164,17 @@ public class Session implements Closeable, IDebuggable {
     * If writing an excessively long command (more than std_in buffer size) the buffer will fill before it flushes.
     * Keep your commands short*/
     private void writeCommand(ShellChannel channel) throws IOException{
-        try {
-            channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
-            channel.flush();
-        }catch (IOException e){
-            sessionLogger.error("Failed to write command " + this.evaluatedCommand + " to channel " + channel.getName() + ". Caused by: " + e.getMessage());
-            throw e;
+        //Safeguard against writing to channel after termination (can happen in some cases)
+        if(!terminatedExternally) {
+            try {
+                channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
+                channel.flush();
+
+                diagnosticManager.emit(new InputSentEvent(this, this.currentCommand, this.commandOrdinal, this.evaluatedCommand));
+            } catch (IOException e) {
+                sessionLogger.error("Failed to write command " + this.evaluatedCommand + " to channel " + channel.getName() + ". Caused by: " + e.getMessage());
+                throw e;
+            }
         }
     }
 
@@ -312,6 +315,13 @@ public class Session implements Closeable, IDebuggable {
             }
 
             return false;
+        }
+    }
+
+    private void emitOutputEvents(String parsedOutput){
+        if(!terminatedExternally) {
+            diagnosticManager.emit(new OutputReceivedEvent(this, this.currentCommand, this.commandOrdinal, parsedOutput));
+            diagnosticManager.emit(new OutcomeEvaluationEvent(this, parsedOutput, this.currentCommand.getExpectedOutcome()));
         }
     }
 
@@ -561,6 +571,9 @@ public class Session implements Closeable, IDebuggable {
     @Override
     public void close() throws IOException{
         boolean partialClosure = false;
+        this.commandLock.lock();
+        sessionLogger.debug(this.getTerminalIdentifier() + " close method acquired lock");
+
         for(Map.Entry<String, ShellChannel> channel : this.channels.entrySet()){
             //Try to close each channel in it's own try block, so failure in one channel will not affect other channels
             try {
@@ -571,23 +584,19 @@ public class Session implements Closeable, IDebuggable {
             }
         }
 
-        this.commandLock.lock();
-        sessionLogger.debug(this.getTerminalIdentifier() + " close method acquired lock");
         try {
             //Immediately interrupt the session if it is currently waiting for anything (minimal seconds / new data from process stream wrapper)
             this.minimalSleepTerminated.signalAll();
             this.newChunkReceived.signalAll();
         }catch(Exception e){
             sessionLogger.error("Session " +  this.getShortSessionId() + " failed to terminate current command. Caused by: " + e.getMessage());
-        }finally {
-            this.commandLock.unlock();
-            sessionLogger.debug(this.getTerminalIdentifier() + " close method released lock");
         }
 
+        this.commandLock.unlock();
+        sessionLogger.debug(this.getTerminalIdentifier() + " close method released lock");
         this.isClosed = true;
-
         if(partialClosure){
-            throw new IOException("Session " +  this.getShortSessionId() + " failed to close one or more of it's channels ");
+            throw new IOException("Session " +  this.getShortSessionId() + " failed to close one or more of it's channels");
         }
     }
 }

@@ -9,6 +9,7 @@ import com.sixsense.model.events.EngineEventType;
 import com.sixsense.model.logic.ChannelType;
 import com.sixsense.model.threading.MonitoredThreadState;
 import com.sixsense.services.SessionEngine;
+import com.sixsense.utillity.ThreadingUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
@@ -18,6 +19,7 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 //It might be worth to add test cases for the cartesian product of chaining any two ICommands
 @Test(groups = {"api"})
@@ -123,10 +125,13 @@ public class DiagnosticTests extends SixSenseBaseTest {
 
     public void testEngineStatusIsNotEmpty(){
         CompletableFuture<Void> waitForMeToFinish = new CompletableFuture<>();
+        AtomicReference<Long> threadIdRef = new AtomicReference<>(-1L);
         try {
             /*There is no guarantee that the engine will be running any thread at all
              *We pass in a supplier which waits for a Future to complete. Until then, at least one worker thread will be required to run it*/
             SixSenseBaseUtils.getThreadingManager().submit(() -> {
+                ThreadingUtils.updateLifecyclePhase(EngineEventType.NotInSession);
+                threadIdRef.set(Thread.currentThread().getId());
                 try {
                     waitForMeToFinish.get();
                 } catch (Exception e) {
@@ -136,11 +141,20 @@ public class DiagnosticTests extends SixSenseBaseTest {
             });
 
 
-            Map<String, MonitoredThreadState> engineStatus = diagnosticController.getEngineStatus();
+            Map<Long, MonitoredThreadState> engineStatus = diagnosticController.getEngineStatus();
             Assert.assertFalse(engineStatus.isEmpty());
 
-            MonitoredThreadState firstThreadState = engineStatus.values().iterator().next();
-            Assert.assertEquals(firstThreadState.getCurrentLifecyclePhase(), EngineEventType.NotInSession);
+            for(Map.Entry<Long, MonitoredThreadState> threadStatus : engineStatus.entrySet()){
+                long currentThreadId = threadStatus.getKey();
+                if(threadIdRef.get().equals(currentThreadId)){
+                    MonitoredThreadState threadState = threadStatus.getValue();
+                    Assert.assertEquals(threadState.getCurrentLifecyclePhase(), EngineEventType.NotInSession);
+                    return;
+                }
+            }
+
+            Assert.fail("Engine status does not show the submitted thread");
+
         }finally {
             waitForMeToFinish.complete(null);
         }

@@ -44,13 +44,13 @@ public class DiagnosticController extends ApiDebuggingAware {
     }
 
     @GetMapping("/status")
-    public Map<String, MonitoredThreadState> getEngineStatus() {
+    public Map<Long, MonitoredThreadState> getEngineStatus() {
         return threadingManager.getEngineThreadStatus();
     }
 
     @GetMapping("/operations")
     public Set<String> getRunningOperations() {
-        return sessionEngine.getOperationsToSessions().keySet();
+        return sessionEngine.getRunningOperations().keySet();
     }
 
     @GetMapping("/devices/running")

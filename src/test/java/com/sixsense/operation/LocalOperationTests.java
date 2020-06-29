@@ -22,6 +22,8 @@ import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Future;
 
 @Test(groups = {"operation"})
@@ -351,9 +353,50 @@ public class LocalOperationTests extends SixSenseBaseTest {
             Assert.fail("NullPointerException encountered. Caused by: ", e);
         }
 
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
         Assert.assertTrue(operationResult.getExpressionResult().isResolved());
+    }
+
+    public void verifyTerminationWhileWaitingForResponse() {
+        Command waitingCommand = ((Command)loopbackInterface())
+            .withMinimalSecondsToResponse(15); //if we wait for the full 15 seconds, then the operation definitely did not abort the sleep period
+
+        Operation operation = new Operation()
+            .withOperationName("Verify termination during minimal seconds to response")
+            .withExecutionBlock(waitingCommand)
+            .addChannel(ChannelType.LOCAL);
+
+        Instant start = Instant.now();
+        OperationTestUtils.submitOperation(operation);
+        OperationTestUtils.terminateOperation(operation);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
+        Instant end = Instant.now();
+
+        long elapsedSeconds = start.until(end, ChronoUnit.SECONDS);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.FAILURE);
+        Assert.assertTrue(elapsedSeconds < waitingCommand.getMinimalSecondsToResponse());
+    }
+
+    public void verifyTerminationWhileWaitingForTimeout() {
+        Command waitingCommand = ((Command)loopbackInterface())
+            .withMinimalSecondsToResponse(0)
+            .withSecondsToTimeout(15); //if we wait for the full 15 seconds, then the operation definitely did not abort the timeout period
+
+        Operation operation = new Operation()
+            .withOperationName("Verify termination during seconds to timeout")
+            .withExecutionBlock(waitingCommand)
+            .addChannel(ChannelType.LOCAL);
+
+        Instant start = Instant.now();
+        OperationTestUtils.submitOperation(operation);
+        OperationTestUtils.terminateOperation(operation);
+        OperationResult operationResult = OperationTestUtils.awaitOperation(operation);
+        Instant end = Instant.now();
+
+        long elapsedSeconds = start.until(end, ChronoUnit.SECONDS);
+        Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.FAILURE);
+        Assert.assertTrue(elapsedSeconds < waitingCommand.getSecondsToTimeout());
     }
 
     //TODO: find a way to generalize these tests for each qa machine

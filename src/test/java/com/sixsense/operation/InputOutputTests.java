@@ -36,7 +36,7 @@ public class InputOutputTests extends SixSenseBaseTest {
         Session session = OperationTestUtils.submitOperation(f5Backup);
         ProcessStreamWrapper outputWrapper = session.getShellChannels().get("REMOTE").getChannelOutputWrapper();
 
-        OperationResult operationResult = OperationTestUtils.awaitOperation(session);
+        OperationTestUtils.awaitOperation(f5Backup);
         Map<String, String> substitutionCriteria = outputWrapper.getSubstitutionCriteria();
         List<String> rawChunks = outputWrapper.getRawChunks();
         List<String> afterSubstitutions = new ArrayList<>();
