@@ -13,7 +13,7 @@ import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.io.Session;
 import com.sixsense.operation.OperationTestUtils;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
@@ -155,7 +155,7 @@ public class RetentionTests extends SixSenseBaseTest {
         DatabaseVariable filePointer = databaseVariables.iterator().next(); //the iterator is not empty, because the assertFalse would throw an exception if it was
         Assert.assertEquals(filePointer.getName(), "file_name_pointer.txt");
 
-        String fileLocation = MessageLiterals.SessionExecutionDir + "/" + session.getShortSessionId() + "/file_name_pointer.txt";
+        String fileLocation = Literals.SessionExecutionDir + "/" + session.getShortSessionId() + "/file_name_pointer.txt";
         Assert.assertEquals(filePointer.getValue(), fileLocation);
     }
 

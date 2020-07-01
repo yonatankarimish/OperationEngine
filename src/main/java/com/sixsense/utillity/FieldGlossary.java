@@ -3,8 +3,8 @@ package com.sixsense.utillity;
 /*Tracks all dynamic fields that are provided by the OperationEngine module
  * Dynamic field format is: public static final name_of_field = "name.of.field"
  * This helps us modify common dynamic fields in a central location*/
-public class DynamicFieldGlossary {
-    private DynamicFieldGlossary(){
+public class FieldGlossary {
+    private FieldGlossary(){
         /*Empty private constructor - no instances of this class should be created */
     }
 
@@ -28,6 +28,6 @@ public class DynamicFieldGlossary {
     public static final String var_stack_text = "var.stack.text";
 
     public static String $(String variable){
-        return MessageLiterals.VariableMark + variable;
+        return Literals.VariableMark + variable;
     }
 }

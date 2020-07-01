@@ -68,7 +68,7 @@ public class LocalShell {
                 //Keep your commands short
                 for(String command : scriptCommands){
                     logger.debug("LocalShell: Writing command "+command);
-                    writer.write(command + MessageLiterals.LineBreak);
+                    writer.write(command + Literals.LineBreak);
                     writer.flush();
                     Thread.sleep(3000);
                 }

@@ -20,7 +20,7 @@ import com.sixsense.services.DiagnosticManager;
 import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
 import com.sixsense.utillity.LogicalExpressionResolver;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import net.schmizz.sshj.SSHClient;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +79,7 @@ public class Session implements Closeable, IDebuggable {
 
         //Logging configurations
         this.operationId = operationId;
-        this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId()));
+        this.loadSessionVariables(Collections.singletonMap("sixsense.session.workingDir", Literals.SessionExecutionDir + "/" + this.getShortSessionId()));
     }
 
     /*Extract the data needed to execute the command with the correct channel and prompt
@@ -87,7 +87,7 @@ public class Session implements Closeable, IDebuggable {
     public ExpressionResult executeCommand(Command command) throws IOException{
         ShellChannel channel = this.channels.get(command.getChannelName());
         if(channel == null){
-            return ExpressionResult.executionError(MessageLiterals.InvalidCommandParameters);
+            return ExpressionResult.executionError(Literals.InvalidCommandParameters);
         }else{
             String promptReference = this.getPromptReference(channel.getName().toLowerCase());
             String nonFinalPrompt = this.getSessionVariableValue(promptReference);
@@ -167,7 +167,7 @@ public class Session implements Closeable, IDebuggable {
         //Safeguard against writing to channel after termination (can happen in some cases)
         if(!terminatedExternally) {
             try {
-                channel.write(this.evaluatedCommand + MessageLiterals.LineBreak);
+                channel.write(this.evaluatedCommand + Literals.LineBreak);
                 channel.flush();
 
                 diagnosticManager.emit(new InputSentEvent(this, this.currentCommand, this.commandOrdinal, this.evaluatedCommand));
@@ -184,7 +184,7 @@ public class Session implements Closeable, IDebuggable {
             this.minimalSleepTerminated.await(this.currentCommand.getMinimalSecondsToResponse(), TimeUnit.SECONDS);
         }catch (InterruptedException e){
             //Basically this shouldn't happen, as we use newChunkReceived.signalAll() to interrupt the await() clause
-            sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted during the minimal seconds to response for command " + this.commandOrdinal, e.getMessage());
+            sessionLogger.warn(Literals.Tab + "Session " + this.getShortSessionId() + " interrupted during the minimal seconds to response for command " + this.commandOrdinal, e.getMessage());
         }
     }
 
@@ -242,7 +242,7 @@ public class Session implements Closeable, IDebuggable {
     /*Parse the command output into a concatenated user-friendly string*/
     private String parsePipedOutput(List<String> pipedProcessOutput){
         if(this.currentCommand.isUseRawOutput()) {
-            return String.join(MessageLiterals.LineBreak, pipedProcessOutput);
+            return String.join(Literals.LineBreak, pipedProcessOutput);
         }else {
             return this.filterRawOutput(pipedProcessOutput);
         }
@@ -254,9 +254,9 @@ public class Session implements Closeable, IDebuggable {
         StringJoiner stringRepresentation = new StringJoiner(" ");
         for(String line : output){
             String filteredLine = line
-                    .replace(MessageLiterals.CarriageReturn+MessageLiterals.LineBreak, " ")
-                    .replace(MessageLiterals.LineBreak, " ")
-                    .replace(MessageLiterals.CarriageReturn, " ")
+                    .replace(Literals.CarriageReturn+ Literals.LineBreak, " ")
+                    .replace(Literals.LineBreak, " ")
+                    .replace(Literals.CarriageReturn, " ")
                     .replace(this.evaluatedCommand, "")
                     .replace(this.currentPrompt, "");
 
@@ -311,7 +311,7 @@ public class Session implements Closeable, IDebuggable {
                 this.newChunkReceived.await(this.currentCommand.getSecondsToTimeout() - this.elapsedSeconds, TimeUnit.SECONDS);
             }catch (InterruptedException e){
                 //Basically this shouldn't happen, as we use newChunkReceived.signalAll() to interrupt the await() clause
-                sessionLogger.warn(MessageLiterals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + " to return. Caused by:", e.getMessage());
+                sessionLogger.warn(Literals.Tab + "Session " + this.getShortSessionId() + " interrupted while waiting for command " + this.commandOrdinal + " to return. Caused by:", e.getMessage());
             }
 
             return false;
@@ -331,12 +331,12 @@ public class Session implements Closeable, IDebuggable {
             //If terminated externally, the session must stop and the method will return a failure
             resolvedOutcome.withResolved(false)
                 .withOutcome(ResultStatus.FAILURE)
-                .withMessage(MessageLiterals.OperationTerminated);
-        }else if(resolvedOutcome.getMessage().equals(MessageLiterals.CommandDidNotReachOutcome) && this.elapsedSeconds >= this.currentCommand.getSecondsToTimeout()){
+                .withMessage(Literals.OperationTerminated);
+        }else if(resolvedOutcome.getMessage().equals(Literals.CommandDidNotReachOutcome) && this.elapsedSeconds >= this.currentCommand.getSecondsToTimeout()){
             //If a timeout occurred, the command failed to execute and the method will return a failure
             resolvedOutcome.withResolved(false)
                 .withOutcome(ResultStatus.FAILURE)
-                .withMessage(MessageLiterals.TimeoutInCommand);
+                .withMessage(Literals.TimeoutInCommand);
         }else if(resolvedOutcome.getOutcome().equals(ResultStatus.SUCCESS)){
             //We clone the retention so that if the command is called again, any action we take within this code block will not affect subsequent executions
             ResultRetention clonedRetention = this.currentCommand.getSaveTo().deepClone();
@@ -389,7 +389,7 @@ public class Session implements Closeable, IDebuggable {
                 new DatabaseVariable()
                     .withDataType(DataType.Path)
                     .withName(clonedRetention.getName())
-                    .withValue(MessageLiterals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
+                    .withValue(Literals.SessionExecutionDir + "/" + this.getShortSessionId() + "/" + clonedRetention.getName())
                     .withCollectedAt(Instant.now())
             );
         } catch (Exception e) {

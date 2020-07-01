@@ -9,7 +9,7 @@ import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.io.Session;
 import com.sixsense.utillity.CommandUtils;
 import com.sixsense.utillity.ExpressionUtils;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,32 +56,32 @@ public class LoggingManager  {
 
     private void logSessionCreated(SessionCreatedEvent event){
         String indentation = getIndentation(event.getSession());
-        String creationDate = Instant.now().atZone(ZoneId.of("CET")).toLocalDateTime().format(MessageLiterals.DateFormatter);
+        String creationDate = Instant.now().atZone(ZoneId.of("CET")).toLocalDateTime().format(Literals.DateFormatter);
 
         jointLog(
             EnumSet.of(Loggers.SessionLogger, Loggers.CommandLogger),
             Level.INFO,
             "Session " +  event.getSession().getSessionShellId() + " has been created at " + creationDate
         );
-        logDynamicFields(indentation, SessionEngine.getSessionProperties(), MessageLiterals.PlusSign);
+        logDynamicFields(indentation, SessionEngine.getSessionProperties(), Literals.PlusSign);
     }
 
     private void logOperationStart(OperationStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation " + event.getOperation().getShortUUID() + " Start");
-        logDynamicFields(indentation, event.getOperation().getDynamicFields(), MessageLiterals.PlusSign);
+        logDynamicFields(indentation, event.getOperation().getDynamicFields(), Literals.PlusSign);
     }
 
     private void logBlockStart(BlockStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Block " + event.getBlock().getShortUUID() + " Start");
-        logDynamicFields(indentation, event.getBlock().getDynamicFields(), MessageLiterals.PlusSign);
+        logDynamicFields(indentation, event.getBlock().getDynamicFields(), Literals.PlusSign);
     }
 
     private void logCommandStart(CommandStartEvent event){
         String indentation = getIndentation(event.getSession());
         loggers.get(Loggers.SessionLogger).info(indentation + "Command " + event.getCommand().getShortUUID() + " Start");
-        logDynamicFields(indentation, event.getCommand().getDynamicFields(), MessageLiterals.PlusSign);
+        logDynamicFields(indentation, event.getCommand().getDynamicFields(), Literals.PlusSign);
     }
 
     private void logInputSent(InputSentEvent event){
@@ -101,28 +101,28 @@ public class LoggingManager  {
 
     private void logCommandEnd(CommandEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(indentation, event.getCommand().getDynamicFields(), MessageLiterals.MinusSign);
+        logDynamicFields(indentation, event.getCommand().getDynamicFields(), Literals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Command result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Command " + event.getCommand().getShortUUID() + " End");
     }
 
     private void logBlockEnd(BlockEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(indentation, event.getBlock().getDynamicFields(), MessageLiterals.MinusSign);
+        logDynamicFields(indentation, event.getBlock().getDynamicFields(), Literals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Block result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Block " + event.getBlock().getShortUUID() + " End");
     }
 
     private void logOperationEnd(OperationEndEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(indentation, event.getOperation().getDynamicFields(), MessageLiterals.MinusSign);
+        logDynamicFields(indentation, event.getOperation().getDynamicFields(), Literals.MinusSign);
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation result is " + event.getResult());
         loggers.get(Loggers.SessionLogger).info(indentation + "Operation " + event.getOperation().getShortUUID() + " End");
     }
 
     private void logSessionClosed(SessionClosedEvent event){
         String indentation = getIndentation(event.getSession());
-        logDynamicFields(indentation, SessionEngine.getSessionProperties(), MessageLiterals.MinusSign);
+        logDynamicFields(indentation, SessionEngine.getSessionProperties(), Literals.MinusSign);
         jointLog(
             EnumSet.of(Loggers.SessionLogger, Loggers.CommandLogger),
             Level.INFO,
@@ -157,10 +157,10 @@ public class LoggingManager  {
             case Variable:{
                 Map<String, String> oldSessionVarState = session.getCurrentSessionVariables();
                 if(oldSessionVarState.containsKey(retention.getName())) {
-                    logDynamicFields(indentation, retention.getName(), oldSessionVarState.get(retention.getName()), MessageLiterals.MinusSign);
+                    logDynamicFields(indentation, retention.getName(), oldSessionVarState.get(retention.getName()), Literals.MinusSign);
                 }
 
-                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), Literals.PlusSign);
             }break;
             case File:{
                 loggers.get(Loggers.SessionLogger).info(indentation + "Added results to file " + retention.getName());
@@ -169,15 +169,15 @@ public class LoggingManager  {
                 Set<DatabaseVariable> oldDatabaseVarState = session.getDatabaseVariables();
                 for(DatabaseVariable var : oldDatabaseVarState) {
                     if (var.getName().equals(retention.getName())) {
-                        logDynamicFields(indentation, retention.getName(), var.getValue(), MessageLiterals.MinusSign);
+                        logDynamicFields(indentation, retention.getName(), var.getValue(), Literals.MinusSign);
                         break;
                     }
                 }
 
-                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), Literals.PlusSign);
             }break;
             case DatabaseImmediate:{
-                logDynamicFields(indentation, retention.getName(), retention.getValue(), MessageLiterals.PlusSign);
+                logDynamicFields(indentation, retention.getName(), retention.getValue(), Literals.PlusSign);
             }break;
             default:{
                 loggers.get(Loggers.SessionLogger).info(indentation + "No result retention was performed");
@@ -191,7 +191,7 @@ public class LoggingManager  {
     }
 
     private String getIndentation(Session session){
-        return MessageLiterals.Tab.repeat(session.getDrilldownRank());
+        return Literals.Tab.repeat(session.getDrilldownRank());
     }
 
     //The dynamic fields should be from the ICommand in question, and not all fields in session context. because we log loading and removal of the relevant fields by the ICommand

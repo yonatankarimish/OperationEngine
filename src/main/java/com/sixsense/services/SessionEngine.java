@@ -14,7 +14,7 @@ import com.sixsense.io.Session;
 import com.sixsense.io.ShellChannel;
 import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.LogicalExpressionResolver;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import com.sixsense.utillity.ThreadingUtils;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
@@ -109,11 +109,11 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             );
         }else if(this.isClosed){
             operationResult.setExpressionResult(
-                handleExecutionAnomaly(session, MessageLiterals.EngineShutdown)
+                handleExecutionAnomaly(session, Literals.EngineShutdown)
             );
         }else if(session.isClosed()){
             operationResult.setExpressionResult(
-                handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed)
+                handleExecutionAnomaly(session, Literals.SessionAlreadyClosed)
             );
         }else if(operation.getExecutionBlock() == null){
             operationResult.setExpressionResult(
@@ -161,9 +161,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private ExpressionResult executeBlock(Session session, ICommand executionBlock) throws IOException{
         ExpressionResult blockResult = null;
         if(this.isClosed){
-            blockResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
+            blockResult = handleExecutionAnomaly(session, Literals.EngineShutdown);
         }else if(session.isClosed()){
-            blockResult = handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed);
+            blockResult = handleExecutionAnomaly(session, Literals.SessionAlreadyClosed);
         }else if (executionBlock instanceof Command) {
             blockResult = executeCommand(session, (Command)executionBlock);
         }else if(executionBlock instanceof Block){
@@ -202,7 +202,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             diagnosticManager.emit(new OutcomeEvaluationEvent(session, "", parentBlock.getExpectedOutcome()));
             diagnosticManager.emit(new BlockEndEvent(session, parentBlock, blockResult));
         }else{
-            blockResult = handleExecutionAnomaly(session, MessageLiterals.InvalidExecutionBlock);
+            blockResult = handleExecutionAnomaly(session, Literals.InvalidExecutionBlock);
         }
         return blockResult;
     }
@@ -211,9 +211,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         ExpressionResult commandResult;
 
         if(this.isClosed){
-            commandResult = handleExecutionAnomaly(session, MessageLiterals.EngineShutdown);
+            commandResult = handleExecutionAnomaly(session, Literals.EngineShutdown);
         }else if(session.isClosed()){
-            commandResult = handleExecutionAnomaly(session, MessageLiterals.SessionAlreadyClosed);
+            commandResult = handleExecutionAnomaly(session, Literals.SessionAlreadyClosed);
         }else{
             diagnosticManager.emit(new CommandStartEvent(session, currentCommand));
             preExecute(session, currentCommand);
@@ -343,10 +343,10 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
                 try {
                     terminatingSession.terminate();
                     finalizeSession(terminatingSession, operationID);
-                    terminationResult = ExpressionResult.executionError(MessageLiterals.OperationTerminated);
+                    terminationResult = ExpressionResult.executionError(Literals.OperationTerminated);
                 } catch (IOException e) {
                     logger.error("Failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: " + e.getMessage());
-                    terminationResult = handleExecutionAnomaly(terminatingSession, MessageLiterals.ExceptionEncountered);
+                    terminationResult = handleExecutionAnomaly(terminatingSession, Literals.ExceptionEncountered);
                 }
             }
         }

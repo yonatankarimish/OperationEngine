@@ -11,7 +11,7 @@ import com.sixsense.services.SessionEngine;
 import com.sixsense.services.WorkflowManager;
 import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
-import com.sixsense.utillity.DynamicFieldGlossary;
+import com.sixsense.utillity.FieldGlossary;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rabbitmq.client.Channel;
@@ -92,7 +92,7 @@ public class OperationConsumer extends ApiDebuggingAware {
             workflowManager.executeWorkflow(workflow).thenApply(map -> {
                 for (Operation operation : workflow.getParallelOperations()) {
                     OperationResult result = map.get(operation.getUUID());
-                    asFinalCopy.addResult(operation.getDynamicFields().get(DynamicFieldGlossary.device_internal_id), result);
+                    asFinalCopy.addResult(operation.getDynamicFields().get(FieldGlossary.device_internal_id), result);
                 }
 
                 /* As of writing this comment, the only checked exception thrown by the operation producer is JsonProcessingException,

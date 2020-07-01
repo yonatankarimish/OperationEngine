@@ -2,7 +2,7 @@ package com.sixsense.io;
 
 import com.sixsense.model.logging.IDebuggable;
 import com.sixsense.model.logging.Loggers;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
@@ -41,8 +41,8 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
         this.substitutionCriteria = new LinkedHashMap<>();
 
         //Initialize the default substitution criteria
-        this.substitutionCriteria.put(" *" + MessageLiterals.CarriageReturn + " *", ""); //trim all space characters around carriage returns
-        this.substitutionCriteria.put(" *" + MessageLiterals.LineBreak + " *", MessageLiterals.LineBreak); //while retaining the line breaks
+        this.substitutionCriteria.put(" *" + Literals.CarriageReturn + " *", ""); //trim all space characters around carriage returns
+        this.substitutionCriteria.put(" *" + Literals.LineBreak + " *", Literals.LineBreak); //while retaining the line breaks
     }
 
     @Override
@@ -57,7 +57,7 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
                 if(bytesRead != -1) {
                     String currentChunk = parseRawChunk(rawData, bytesRead);
                     String chunkAfterSubstitution = executeSubstitutionCriteria(currentChunk);
-                    String[] splitChunk = chunkAfterSubstitution.split(MessageLiterals.LineBreak, -1);  //splitChunk will always have at least one entry (if no line break was read); passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
+                    String[] splitChunk = chunkAfterSubstitution.split(Literals.LineBreak, -1);  //splitChunk will always have at least one entry (if no line break was read); passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
                     addChunksToOutput(splitChunk);
                     signalNewChunk();
                 }

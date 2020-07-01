@@ -30,7 +30,7 @@ public class InternalCommands {
                     .addResolvable(
                         new ExpectedOutcome()
                             .withBinaryRelation(BinaryRelation.CONTAINS)
-                            .withExpectedValue(MessageLiterals.LineBreak)
+                            .withExpectedValue(Literals.LineBreak)
                     )
                     .addResolvable(
                         new ExpectedOutcome()
@@ -146,8 +146,8 @@ public class InternalCommands {
 
         String[] splitSourceFileName = sourceFile.split("/");
         return scpInit.chainCommands(typePassword)
-            .addDynamicField(DynamicFieldGlossary.var_scp_source, sourceFile)
-            .addDynamicField(DynamicFieldGlossary.var_scp_source_file_name, splitSourceFileName[splitSourceFileName.length - 1])
-            .addDynamicField(DynamicFieldGlossary.var_scp_destination, destFile);
+            .addDynamicField(FieldGlossary.var_scp_source, sourceFile)
+            .addDynamicField(FieldGlossary.var_scp_source_file_name, splitSourceFileName[splitSourceFileName.length - 1])
+            .addDynamicField(FieldGlossary.var_scp_destination, destFile);
     }
 }

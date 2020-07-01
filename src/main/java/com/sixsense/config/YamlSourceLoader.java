@@ -1,6 +1,6 @@
 package com.sixsense.config;
 
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
@@ -30,7 +30,7 @@ public class YamlSourceLoader {
 
         //Iterate the project configuration directory, and add any yaml file found to the list of path resources
         List<FileSystemResource> yamlFiles = new ArrayList<>();
-        try (DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(MessageLiterals.ConfigFilesPath))){
+        try (DirectoryStream<Path> configRoot = Files.newDirectoryStream(Paths.get(Literals.ConfigFilesPath))){
             for (Path child : configRoot) {
                 if (Files.isRegularFile(child) && child.toString().endsWith(".yaml")) {
                     yamlFiles.add(new FileSystemResource(child));
@@ -42,7 +42,7 @@ public class YamlSourceLoader {
 
         /*setResources() can use any of the spring io resource types
         * the method signature accepts any number of resources, but subsequent calls will override any existing resources, so call this method once*/
-        yamlFactory.setResources(new FileSystemResource(MessageLiterals.projectDirectory + "default.yaml"));
+        yamlFactory.setResources(new FileSystemResource(Literals.projectDirectory + "default.yaml"));
         yamlFactory.setResources(yamlFiles.toArray(new FileSystemResource[yamlFiles.size()]));
 
         /*calling yamlFactory.getObject() checks internally if there are any properties (yamlFactory.properties != null)

@@ -63,7 +63,7 @@ public class ExpressionUtils {
         String vertical = "| ";
         String arrow = "o ";
 
-        builder.append(indenter).append(arrow).append(expression.toPrettyString()).append(MessageLiterals.LineBreak);
+        builder.append(indenter).append(arrow).append(expression.toPrettyString()).append(Literals.LineBreak);
         if(expression instanceof LogicalExpression){
             LogicalExpression asLogical = ((LogicalExpression) expression);
             Set<IResolvable> childExpressions = asLogical.getResolvableExpressions();

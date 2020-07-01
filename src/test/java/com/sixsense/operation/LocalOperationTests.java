@@ -15,7 +15,7 @@ import com.sixsense.model.retention.OperationResult;
 import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.io.Session;
-import com.sixsense.utillity.DynamicFieldGlossary;
+import com.sixsense.utillity.FieldGlossary;
 import com.sixsense.utillity.InternalCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -95,7 +95,7 @@ public class LocalOperationTests extends SixSenseBaseTest {
         for (int i = 1; i <= 3; i++) {
             String blockID = "block-" + i;
             Block commandBlock = (Block) new Block()
-                .addDynamicField(DynamicFieldGlossary.var_block_id, blockID + "-should-get-overridden")
+                .addDynamicField(FieldGlossary.var_block_id, blockID + "-should-get-overridden")
                 .withExpectedOutcome(
                     new LogicalExpression<ExpectedOutcome>()
                         .withExpressionResult(new ExpressionResult().withMessage("block-" + i + " completed successfully"))
@@ -113,10 +113,10 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withOperationName("Block testing - three nested blocks, three commands each")
             .withExecutionBlock(parentBlock)
             .addChannel(ChannelType.LOCAL)
-            .addDynamicField(DynamicFieldGlossary.var_operation_name, "Three nested blocks")
-            .addDynamicField(DynamicFieldGlossary.var_operation_vendor, "Linux")
-            .addDynamicField(DynamicFieldGlossary.var_operation_product, "CentOS")
-            .addDynamicField(DynamicFieldGlossary.var_operation_version, "6");
+            .addDynamicField(FieldGlossary.var_operation_name, "Three nested blocks")
+            .addDynamicField(FieldGlossary.var_operation_vendor, "Linux")
+            .addDynamicField(FieldGlossary.var_operation_product, "CentOS")
+            .addDynamicField(FieldGlossary.var_operation_version, "6");
 
         OperationResult operationResult = OperationTestUtils.executeOperation(blockOperation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
@@ -152,8 +152,8 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withOperationName("Block testing - repeating block")
             .withExecutionBlock(repeatingBlock)
             .addChannel(ChannelType.LOCAL)
-            .addDynamicField(DynamicFieldGlossary.var_block_repeatCount, "5")
-            .addDynamicField(DynamicFieldGlossary.var_block_counter, "1");
+            .addDynamicField(FieldGlossary.var_block_repeatCount, "5")
+            .addDynamicField(FieldGlossary.var_block_counter, "1");
 
         OperationResult operationResult = OperationTestUtils.executeOperation(repeatingOperation);
         Assert.assertEquals(operationResult.getExpressionResult().getOutcome(), ResultStatus.SUCCESS);
@@ -317,9 +317,9 @@ public class LocalOperationTests extends SixSenseBaseTest {
     public void dynamicFieldLoading(){
         Command command = (Command)new Command()
             .withChannel(ChannelType.LOCAL)
-            .withCommandText("echo " + DynamicFieldGlossary.$(DynamicFieldGlossary.var_cmd_text) + " " + DynamicFieldGlossary.$(DynamicFieldGlossary.var_stack_text))
-            .addDynamicField(DynamicFieldGlossary.var_cmd_text, "command")
-            .addDynamicField(DynamicFieldGlossary.var_stack_text, "command")
+            .withCommandText("echo " + FieldGlossary.$(FieldGlossary.var_cmd_text) + " " + FieldGlossary.$(FieldGlossary.var_stack_text))
+            .addDynamicField(FieldGlossary.var_cmd_text, "command")
+            .addDynamicField(FieldGlossary.var_stack_text, "command")
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
                 .addResolvable(new ExpectedOutcome()
@@ -330,13 +330,13 @@ public class LocalOperationTests extends SixSenseBaseTest {
 
         Block block = (Block)new Block()
             .addChildBlock(command)
-            .addDynamicField(DynamicFieldGlossary.var_stack_text, "block");
+            .addDynamicField(FieldGlossary.var_stack_text, "block");
 
         Operation operation = (Operation)new Operation()
             .withOperationName("Dynamic field loading")
             .withExecutionBlock(block)
             .addChannel(ChannelType.LOCAL)
-            .addDynamicField(DynamicFieldGlossary.var_stack_text, "operation");
+            .addDynamicField(FieldGlossary.var_stack_text, "operation");
 
         Session session = OperationTestUtils.submitOperation(operation);
         try{
@@ -525,8 +525,8 @@ public class LocalOperationTests extends SixSenseBaseTest {
             .withCommandText("echo $var.block.id $var.command.id")
             .withMinimalSecondsToResponse(1)
             .withSecondsToTimeout(10)
-            .addDynamicField(DynamicFieldGlossary.var_block_id, blockID)
-            .addDynamicField(DynamicFieldGlossary.var_command_id, commandID)
+            .addDynamicField(FieldGlossary.var_block_id, blockID)
+            .addDynamicField(FieldGlossary.var_command_id, commandID)
             .withExpectedOutcome(
                 new LogicalExpression<ExpectedOutcome>()
                     .withLogicalCondition(LogicalCondition.AND)

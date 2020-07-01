@@ -3,13 +3,9 @@ package com.sixsense.api.amqp;
 import com.sixsense.api.ApiDebuggingAware;
 import com.sixsense.api.amqp.config.AMQPConfig;
 import com.sixsense.api.amqp.config.EngineCorrelationData;
-import com.sixsense.model.commands.Operation;
-import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.retention.DatabaseVariable;
 import com.sixsense.model.wrappers.RawExecutionConfig;
-import com.sixsense.model.retention.OperationResult;
 import com.sixsense.model.wrappers.RawTerminationConfig;
-import com.sixsense.utillity.DynamicFieldGlossary;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.Map;
 
 @Component
 public class OperationProducer extends ApiDebuggingAware {

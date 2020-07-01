@@ -17,7 +17,7 @@ public class ThreadingUtils {
             MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
             asMonitoredThread.getCurrentThreadState().setCurrentLifecyclePhase(currentLifecyclePhase);
         }else{
-            logger.warn(MessageLiterals.ThreadNotMonitored);
+            logger.warn(Literals.ThreadNotMonitored);
         }
     }
 
@@ -26,7 +26,7 @@ public class ThreadingUtils {
             MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
             asMonitoredThread.getCurrentThreadState().setSessionId(sessionId);
         }else{
-            logger.warn(MessageLiterals.ThreadNotMonitored);
+            logger.warn(Literals.ThreadNotMonitored);
         }
     }
 
@@ -35,7 +35,7 @@ public class ThreadingUtils {
             MonitoredThread asMonitoredThread = (MonitoredThread)Thread.currentThread();
             asMonitoredThread.getCurrentThreadState().setOperationId(operationId);
         }else{
-            logger.warn(MessageLiterals.ThreadNotMonitored);
+            logger.warn(Literals.ThreadNotMonitored);
         }
     }
 
@@ -45,7 +45,7 @@ public class ThreadingUtils {
             asMonitoredThread.getCurrentThreadState().setSessionId(sessionId);
             asMonitoredThread.getCurrentThreadState().setOperationId(operationId);
         }else{
-            logger.warn(MessageLiterals.ThreadNotMonitored);
+            logger.warn(Literals.ThreadNotMonitored);
         }
     }
 }

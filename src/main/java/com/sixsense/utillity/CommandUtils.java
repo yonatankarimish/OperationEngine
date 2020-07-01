@@ -68,11 +68,11 @@ public class CommandUtils {
             parallelNode.addParallelOperation(
                 (Operation)rawConfig.getOperation().deepClone()
                     .addDynamicFields(device.getDynamicFields())
-                    .addDynamicField(DynamicFieldGlossary.device_internal_id, device.getShortUUID())
-                    .addDynamicField(DynamicFieldGlossary.device_host, device.getCredentials().getHost())
-                    .addDynamicField(DynamicFieldGlossary.device_username, device.getCredentials().getUsername())
-                    .addDynamicField(DynamicFieldGlossary.device_password, device.getCredentials().getPassword())
-                    .addDynamicField(DynamicFieldGlossary.device_port, String.valueOf(device.getCredentials().getPort()))
+                    .addDynamicField(FieldGlossary.device_internal_id, device.getShortUUID())
+                    .addDynamicField(FieldGlossary.device_host, device.getCredentials().getHost())
+                    .addDynamicField(FieldGlossary.device_username, device.getCredentials().getUsername())
+                    .addDynamicField(FieldGlossary.device_password, device.getCredentials().getPassword())
+                    .addDynamicField(FieldGlossary.device_port, String.valueOf(device.getCredentials().getPort()))
             );
         }
 
@@ -115,7 +115,7 @@ public class CommandUtils {
             * Therefore we order the dynamic fields by inverse lexicographical order to avoid this scenario*/
             List<String> orderedKeys = dynamicFields.keySet().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
             for (String dynamicField : orderedKeys) {
-                commandText = commandText.replace(MessageLiterals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
+                commandText = commandText.replace(Literals.VariableMark + dynamicField, dynamicFields.get(dynamicField));
             }
         }
 

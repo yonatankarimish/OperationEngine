@@ -12,7 +12,7 @@ import com.sixsense.services.WorkflowManager;
 import com.sixsense.mocks.OperationMocks;
 import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
-import com.sixsense.utillity.DynamicFieldGlossary;
+import com.sixsense.utillity.FieldGlossary;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +79,7 @@ public class OperationController extends ApiDebuggingAware {
         Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
         for(Operation operation : workflow.getParallelOperations()) {
             OperationResult result = workflowResult.get(operation.getUUID());
-            rawExecutionConfig.addResult(operation.getDynamicFields().get(DynamicFieldGlossary.device_internal_id), result);
+            rawExecutionConfig.addResult(operation.getDynamicFields().get(FieldGlossary.device_internal_id), result);
         }
 
         rawExecutionConfig.setEndTime(Instant.now());

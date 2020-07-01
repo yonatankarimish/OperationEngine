@@ -8,18 +8,18 @@ import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
 import java.time.format.DateTimeFormatter;
 
-public class MessageLiterals {
-    private static final Logger logger = LogManager.getLogger(MessageLiterals.class);
+public class Literals {
+    private static final Logger logger = LogManager.getLogger(Literals.class);
     public static final String projectDirectory;
 
-    private MessageLiterals(){
+    private Literals(){
         /*Empty private constructor - no instances of this class should be created */
     }
 
     static{
         String tmpDirectory = "/";
         try {
-            tmpDirectory =  new File(MessageLiterals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
+            tmpDirectory =  new File(Literals.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
         } catch (URISyntaxException e) {
             logger.warn("Failed to resolve current project directory. Resolving as root directory. Caused by: " + e.getMessage());
         }finally {

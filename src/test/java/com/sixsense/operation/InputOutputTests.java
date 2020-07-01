@@ -4,12 +4,11 @@ import com.sixsense.RemoteConfig;
 import com.sixsense.SixSenseBaseTest;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.devices.Credentials;
-import com.sixsense.model.retention.OperationResult;
 import com.sixsense.io.ProcessStreamWrapper;
 import com.sixsense.io.Session;
 import com.sixsense.mocks.OperationMocks;
 import com.sixsense.utillity.CommandUtils;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.annotations.Test;
@@ -52,7 +51,7 @@ public class InputOutputTests extends SixSenseBaseTest {
         }
 
         for(String chunk : afterSubstitutions){
-            String[] splitChunk = (" " + chunk + " ").split(MessageLiterals.LineBreak);
+            String[] splitChunk = (" " + chunk + " ").split(Literals.LineBreak);
             if(splitChunk.length > 0) {
                 String firstChunk = splitChunk[0].trim();
                 if (afterParse.isEmpty()) {

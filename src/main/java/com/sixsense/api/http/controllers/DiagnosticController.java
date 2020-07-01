@@ -1,14 +1,11 @@
 package com.sixsense.api.http.controllers;
 
 import com.sixsense.api.ApiDebuggingAware;
-import com.sixsense.model.commands.Block;
 import com.sixsense.model.commands.Operation;
-import com.sixsense.model.devices.Credentials;
 import com.sixsense.model.threading.MonitoredThreadState;
 import com.sixsense.services.SessionEngine;
-import com.sixsense.mocks.OperationMocks;
 import com.sixsense.threading.ThreadingManager;
-import com.sixsense.utillity.DynamicFieldGlossary;
+import com.sixsense.utillity.FieldGlossary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -59,7 +56,7 @@ public class DiagnosticController extends ApiDebuggingAware {
         Map<String, String> runningDevices = new HashMap<>();
 
         for(String operationId : runningOperations.keySet()){
-            String deviceHost = runningOperations.get(operationId).getDynamicFields().get(DynamicFieldGlossary.device_host);
+            String deviceHost = runningOperations.get(operationId).getDynamicFields().get(FieldGlossary.device_host);
             runningDevices.put(operationId, deviceHost);
         }
 

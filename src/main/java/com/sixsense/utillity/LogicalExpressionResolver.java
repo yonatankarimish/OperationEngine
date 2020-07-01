@@ -31,13 +31,13 @@ public class LogicalExpressionResolver {
                         return expressionResult;
                     }
                 }
-                return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
+                return ExpressionResult.executionError(Literals.CommandDidNotReachOutcome);
             }
             case NOR: {
                 for (IResolvable resolvable : logicalExpression.getResolvableExpressions()) {
                     expressionResult = resolve(commandOutput, sessionFields, resolvable);
                     if (expressionResult.isResolved()) {
-                        return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
+                        return ExpressionResult.executionError(Literals.CommandDidNotReachOutcome);
                     }
                 }
                 return ExpressionResult.defaultOutcome();
@@ -46,7 +46,7 @@ public class LogicalExpressionResolver {
                 for (IResolvable resolvable : logicalExpression.getResolvableExpressions()) {
                     expressionResult = resolve(commandOutput, sessionFields, resolvable);
                     if (!expressionResult.isResolved()) {
-                        return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
+                        return ExpressionResult.executionError(Literals.CommandDidNotReachOutcome);
                     }
                 }
                 return ExpressionResult.defaultOutcome();
@@ -58,10 +58,10 @@ public class LogicalExpressionResolver {
                         return expressionResult;
                     }
                 }
-                return ExpressionResult.executionError(MessageLiterals.CommandDidNotReachOutcome);
+                return ExpressionResult.executionError(Literals.CommandDidNotReachOutcome);
             }
             default: {
-                return ExpressionResult.executionError(MessageLiterals.UnsuportedBinaryRelation);
+                return ExpressionResult.executionError(Literals.UnsuportedBinaryRelation);
             }
         }
     }
@@ -109,12 +109,12 @@ public class LogicalExpressionResolver {
                 case GREATER_THAN: evaluation = expectGreaterThan(output, expectedOutcome); break;
                 case GREATER_OR_EQUAL_TO: evaluation = expectGreaterThanOrEqual(output, expectedOutcome); break;
                 case MATCHES_REGEX: evaluation = expectMatchesRegex(output, expectedOutcome); break;
-                default: return ExpressionResult.executionError(MessageLiterals.UnsuportedBinaryRelation);
+                default: return ExpressionResult.executionError(Literals.UnsuportedBinaryRelation);
             }
 
             return expectedOutcome.getExpressionResult().withResolved(evaluation);
         }catch (NumberFormatException e){
-            return ExpressionResult.executionError(MessageLiterals.ExpectedOutcomeNotNumeric);
+            return ExpressionResult.executionError(Literals.ExpectedOutcomeNotNumeric);
         }
     }
 

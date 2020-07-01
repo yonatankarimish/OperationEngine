@@ -1,7 +1,7 @@
 package com.sixsense.model.pipes;
 
 import com.sixsense.io.Session;
-import com.sixsense.utillity.MessageLiterals;
+import com.sixsense.utillity.Literals;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class FirstLinePipe extends AbstractOutputPipe {
             return output;
         }
 
-        int lineBreakIndex = output.stripLeading().indexOf(MessageLiterals.LineBreak);
+        int lineBreakIndex = output.stripLeading().indexOf(Literals.LineBreak);
         if(lineBreakIndex < 0){
             return output;
         }
