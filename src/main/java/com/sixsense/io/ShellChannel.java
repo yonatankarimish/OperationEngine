@@ -38,14 +38,38 @@ public class ShellChannel implements Closeable, IDebuggable {
     *
     * Pseudo-terminals (PTY) do not allocate separate channels for output and errors.
      *Therefore, we only listen to the shell output stream, as the errors will be written there as well*/
-    public ShellChannel(String name, SSHClient connectedSSHClient, com.sixsense.io.Session engineSession) throws ConnectionException, TransportException {
+    public ShellChannel(String name, SSHClient connectedSSHClient, com.sixsense.io.Session engineSession) throws IOException {
         this.name = name;
         this.engineSession = engineSession;
-        this.shellSession = connectedSSHClient.startSession();
-        this.shellSession.allocateDefaultPTY();
-        this.shell = this.shellSession.startShell();
-        this.channelOutput = new ArrayList<>();
 
+        try {
+            //1)Open a session using the ssh client
+            try {
+                this.shellSession = connectedSSHClient.startSession();
+            } catch (IOException e) {
+                throw new IOException("Failed to start SSH client session", e);
+            }
+
+            //2)Allocate a pseudo-terminal to the shell session (https://linux.die.net/man/7/pty)
+            try {
+                this.shellSession.allocateDefaultPTY();
+            } catch (IOException e) {
+                throw new IOException("Failed to allocate pseudo-terminal to SSH client", e);
+            }
+
+            //3)Start the shell by connecting to the allocated pty
+            try {
+                this.shell = this.shellSession.startShell();
+            } catch (IOException e) {
+                throw new IOException("Failed to start SSH client shell", e);
+            }
+        }catch (IOException e){
+            //Ensure any partially opened resources are closed
+            this.close();
+            throw e;
+        }
+
+        this.channelOutput = new ArrayList<>();
         this.channelInput = new BufferedWriter(new OutputStreamWriter(this.shell.getOutputStream()));
         this.channelOutputWrapper = new ProcessStreamWrapper(this.shell.getInputStream(), engineSession, channelOutput);
     }

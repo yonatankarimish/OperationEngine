@@ -68,13 +68,23 @@ public class Session implements Closeable, IDebuggable {
     private final Map<String, Deque<ResultRetention>> sessionVariables;
     private final Set<DatabaseVariable> databaseVariables;
 
-    public Session(SSHClient connectedSSHClient, Set<String> channelNames, String operationId) throws IOException{
+    public Session(SSHClient connectedSSHClient, Set<String> channelNames, String operationId) throws InstantiationException{
         this.sessionVariables = new HashMap<>();
         this.databaseVariables = new HashSet<>();
         this.channels = new HashMap<>();
         for(String channelName : channelNames){
-            ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
-            this.channels.put(channelName, newChannel);
+            try {
+                ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
+                this.channels.put(channelName, newChannel);
+            }catch (IOException channelException){
+                String channelFailure = "Session " +  this.getShortSessionId() + " failed to instantiate - channel " + channelName + " " + channelException.getMessage();
+                try {
+                    this.close();
+                } catch (IOException closureException) {
+                    channelFailure += " | Failed to close session after error in instantiation. caused by: " + closureException.getMessage();
+                }
+                throw new InstantiationException(channelFailure);
+            }
         }
 
         //Logging configurations

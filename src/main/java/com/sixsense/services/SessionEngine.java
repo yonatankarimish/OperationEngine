@@ -277,7 +277,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     //Create a prototype session bean, generate the required I/O channels and load session variables. If fails, will finalize the session to prevent it from executing commands
     @Bean(value="sixSenseSession")
     @Scope("prototype")
-    private Session createSession(Operation operation) throws IOException, NullPointerException{
+    private Session createSession(Operation operation) throws InstantiationException, IOException, NullPointerException{
         if(operation == null){
             throw new NullPointerException("Cannot create a session using a null operation!");
         }
