@@ -6,11 +6,13 @@ import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.devices.Credentials;
 import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.retention.OperationResult;
+import com.sixsense.model.wrappers.RawTerminationConfig;
 import com.sixsense.services.SessionEngine;
 import com.sixsense.services.WorkflowManager;
 import com.sixsense.mocks.OperationMocks;
 import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
+import com.sixsense.utillity.DynamicFieldGlossary;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
@@ -71,43 +73,44 @@ public class OperationController extends ApiDebuggingAware {
 
     @PostMapping("/execute")
     public RawExecutionConfig execute(@RequestBody RawExecutionConfig rawExecutionConfig){
-        rawExecutionConfig.getAdministrativeConfig().setStartTime(Instant.now());
+        rawExecutionConfig.setStartTime(Instant.now());
         ParallelWorkflow workflow = CommandUtils.composeWorkflow(rawExecutionConfig);
 
         Map<String, OperationResult> workflowResult = workflowManager.executeWorkflow(workflow).join();  //key: operation id, value: operation result
         for(Operation operation : workflow.getParallelOperations()) {
             OperationResult result = workflowResult.get(operation.getUUID());
-            rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
-            logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
-            logger.info("Result Message: " + result.getExpressionResult().getMessage());
+            rawExecutionConfig.addResult(operation.getDynamicFields().get(DynamicFieldGlossary.device_internal_id), result);
         }
 
-        rawExecutionConfig.getAdministrativeConfig().setEndTime(Instant.now());
+        rawExecutionConfig.setEndTime(Instant.now());
         return rawExecutionConfig;
     }
 
     @PostMapping("/terminate")
-    public Map<String, OperationResult> terminate(@RequestBody Set<String> operationIdSet) {
-        Map<String, CompletableFuture<OperationResult>> terminationResults = new HashMap<>();
-        for(String operationId : operationIdSet) {
-            CompletableFuture<OperationResult> terminationResult = threadingManager.submit(() -> sessionEngine.terminateOperation(operationId));
-            terminationResults.put(operationId, terminationResult);
+    public RawTerminationConfig terminate(@RequestBody Set<String> operationIdSet) {
+        RawTerminationConfig rawTerminationConfig = new RawTerminationConfig(operationIdSet);
+        rawTerminationConfig.setStartTime(Instant.now());
+
+        Map<String, CompletableFuture<OperationResult>> futureTerminations = new HashMap<>();
+        for(String operationId : rawTerminationConfig.getOperationIds()) {
+            CompletableFuture<OperationResult> futureTermination = threadingManager.submit(() -> sessionEngine.terminateOperation(operationId));
+            futureTerminations.put(operationId, futureTermination);
         }
 
-        CompletableFuture<Map<String, OperationResult>> aggregatedTerminations = CompletableFuture.allOf(
+        CompletableFuture.allOf(
             //Wait for all terminations to finish asynchronously
-            terminationResults.values().toArray(CompletableFuture[]::new)
-        ).thenApply(voidStub -> {
-            //and map each operation id to the termination result
-            Map<String, OperationResult> resultMap = new HashMap<>();
-            for(String operationId : terminationResults.keySet()){
-                resultMap.put(operationId, terminationResults.get(operationId).join());
+            futureTerminations.values().toArray(CompletableFuture[]::new)
+        ).thenAccept(voidStub -> {
+            //map each operation id to the termination result
+            for(Map.Entry<String, CompletableFuture<OperationResult>> termination : futureTerminations.entrySet()){
+                String operationId = termination.getKey();
+                rawTerminationConfig.addResult(operationId, termination.getValue().join()); //add to the raw config
             }
-            return resultMap;
-        });
+        }).join(); //and join the aggregated future with the invoking thread (this one)
 
-        //finally, join the aggregated future with the invoking thread (this one) and return the termination results
-        return aggregatedTerminations.join();
+
+        rawTerminationConfig.setEndTime(Instant.now());
+        return rawTerminationConfig;
     }
 
     private static String wrapForHtml(String text){

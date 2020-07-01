@@ -327,20 +327,23 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     }
 
     public OperationResult terminateOperation(String operationID){
-        ExpressionResult terminationResult = ExpressionResult.executionError(MessageLiterals.OperationTerminated);
+        ExpressionResult terminationResult;
         String sessionID = this.operationsToSessions.get(operationID);
 
         if(sessionID == null) {
-            logger.warn("Operation " + operationID + " has no running session, and therefore cannot be terminated");
+            terminationResult = ExpressionResult.executionError("Operation " + operationID + " is not currently running, and therefore cannot be terminated");
+            logger.warn(terminationResult.getMessage());
         }else{
             this.runningOperations.remove(operationID);
             Session terminatingSession = this.runningSessions.remove(sessionID);
             if (terminatingSession == null) {
-                logger.warn("Session " + sessionID + " is not currently running, and therefore cannot be terminated");
+                terminationResult = ExpressionResult.executionError("Operation " + operationID + " was paired with session " + sessionID + ", but the session is not currently running");
+                logger.warn(terminationResult.getMessage());
             } else {
                 try {
                     terminatingSession.terminate();
                     finalizeSession(terminatingSession, operationID);
+                    terminationResult = ExpressionResult.executionError(MessageLiterals.OperationTerminated);
                 } catch (IOException e) {
                     logger.error("Failed to terminate session " + terminatingSession.getSessionShellId() + ". Caused by: " + e.getMessage());
                     terminationResult = handleExecutionAnomaly(terminatingSession, MessageLiterals.ExceptionEncountered);

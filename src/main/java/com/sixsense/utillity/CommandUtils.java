@@ -64,7 +64,7 @@ public class CommandUtils {
 
     public static ParallelWorkflow composeWorkflow(RawExecutionConfig rawConfig){
         ParallelWorkflow parallelNode = new ParallelWorkflow();
-        for(Device device : rawConfig.getAdministrativeConfig().getDevices()){
+        for(Device device : rawConfig.getDevices()){
             parallelNode.addParallelOperation(
                 (Operation)rawConfig.getOperation().deepClone()
                     .addDynamicFields(device.getDynamicFields())

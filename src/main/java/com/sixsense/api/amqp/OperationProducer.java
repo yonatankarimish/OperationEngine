@@ -8,6 +8,8 @@ import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.retention.DatabaseVariable;
 import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.retention.OperationResult;
+import com.sixsense.model.wrappers.RawTerminationConfig;
+import com.sixsense.utillity.DynamicFieldGlossary;
 import com.sixsense.utillity.PolymorphicJsonMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
@@ -35,16 +37,9 @@ public class OperationProducer extends ApiDebuggingAware {
         this.resultExchange = resultExchange;
     }
 
-    public void produceOperationResults(RawExecutionConfig rawExecutionConfig, ParallelWorkflow composedWorkflow, Map<String, OperationResult> workflowResult, String queue, long deliveryTag) {
-        for (Operation operation : composedWorkflow.getParallelOperations()) {
-            OperationResult result = workflowResult.get(operation.getUUID());
-            rawExecutionConfig.addResult(operation.getDynamicFields().get("device.internal.id"), result);
-            logger.info("Operation(s) " + operation.getOperationName() + " Completed with result " + result.getExpressionResult().getOutcome());
-            logger.info("Result Message: " + result.getExpressionResult().getMessage());
-        }
-
+    public void produceOperationResults(RawExecutionConfig rawExecutionConfig, String queue, long deliveryTag) {
         try {
-            rawExecutionConfig.getAdministrativeConfig().setEndTime(Instant.now());
+            rawExecutionConfig.setEndTime(Instant.now());
             String asJSON = PolymorphicJsonMapper.serialize(rawExecutionConfig);
 
             Message response = MessageBuilder.withBody(asJSON.getBytes())
@@ -83,28 +78,32 @@ public class OperationProducer extends ApiDebuggingAware {
             );
 
             rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.RetentionResultBindingKey, response, correlationData);
-    } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize database retention foroperation with id " + operationId + ". Caused by: " + e.getMessage());
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize database retention for operation with id " + operationId + ". Caused by: " + e.getMessage());
             logger.error("Check the engine logs for details about the failed database retention");
         }
     }
 
-    public void produceTerminationResults() {
-        //Not yet supported, but it should be...
+    public void produceTerminationResults(RawTerminationConfig rawTerminationConfig, String queue, long deliveryTag) {
+        try {
+            String asJSON = PolymorphicJsonMapper.serialize(rawTerminationConfig);
 
-        String asJSON = "";
-        Message response = MessageBuilder.withBody(asJSON.getBytes())
-                .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
-                .build();
+            Message response = MessageBuilder.withBody(asJSON.getBytes())
+                    .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
+                    .build();
 
-        EngineCorrelationData correlationData = new EngineCorrelationData(
-            "foo" + "-termination",
-            resultExchange.getName(),
-            "Operation " + "foo" + ", producing termination result",
-            AMQPConfig.TerminationResultBindingKey,
-            response
-        );
+            EngineCorrelationData correlationData = new EngineCorrelationData(
+                "termination-by-tag-" + deliveryTag,
+                resultExchange.getName(),
+                AMQPConfig.TerminationResultBindingKey,
+                "Termination with delivery tag " + deliveryTag + ", terminating running operations",
+                response
+            );
 
-        rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.TerminationResultBindingKey, response);
+            rabbitTemplate.convertAndSend(resultExchange.getName(), AMQPConfig.TerminationResultBindingKey, response, correlationData);
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize termination results for message with delivery tag " + deliveryTag + " from queue " + queue + ". Caused by: " + e.getMessage());
+            logger.error("Check the engine logs for details about the failed database retention");
+        }
     }
 }

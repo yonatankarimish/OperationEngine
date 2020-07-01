@@ -6,7 +6,6 @@ import com.sixsense.model.commands.ICommand;
 import com.sixsense.model.commands.Operation;
 import com.sixsense.model.devices.Credentials;
 import com.sixsense.model.devices.Device;
-import com.sixsense.model.wrappers.AdministrativeConfig;
 import com.sixsense.model.wrappers.RawExecutionConfig;
 import com.sixsense.model.devices.VendorProductVersion;
 import com.sixsense.model.logic.*;
@@ -35,17 +34,14 @@ public class OperationMocks {
             .withVersion("11 and above");
 
         return new RawExecutionConfig()
-            .withAdministrativeConfig(
-                new AdministrativeConfig()
-                    .addDevices(
-                        credentialList.stream()
-                            .map(
-                                credentials -> new Device()
-                                    .withCredentials(credentials)
-                                    .withVpv(f5BigIp.deepClone())
-                            )
-                            .collect(Collectors.toList())
+            .addDevices(
+                credentialList.stream()
+                    .map(
+                        credentials -> new Device()
+                            .withCredentials(credentials)
+                            .withVpv(f5BigIp.deepClone())
                     )
+                    .collect(Collectors.toList())
             )
             .withOperation(
                 new Operation()
@@ -71,17 +67,14 @@ public class OperationMocks {
             .withVersion("11 and above");
 
         return new RawExecutionConfig()
-            .withAdministrativeConfig(
-                new AdministrativeConfig()
-                    .addDevices(
-                        credentialList.stream()
-                            .map(
-                                credentials -> new Device()
-                                    .withCredentials(credentials)
-                                    .withVpv(f5BigIp.deepClone())
-                            )
-                            .collect(Collectors.toList())
+            .addDevices(
+                credentialList.stream()
+                    .map(
+                        credentials -> new Device()
+                            .withCredentials(credentials)
+                            .withVpv(f5BigIp.deepClone())
                     )
+                    .collect(Collectors.toList())
             )
             .withOperation(
                 new Operation()

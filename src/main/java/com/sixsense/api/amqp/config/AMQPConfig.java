@@ -1,6 +1,7 @@
 package com.sixsense.api.amqp.config;
 
 
+import com.rabbitmq.client.Channel;
 import com.sixsense.config.HostConfig;
 import com.sixsense.config.ThreadingConfig;
 import com.sixsense.threading.ThreadingManager;
@@ -16,6 +17,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -109,7 +111,7 @@ public class AMQPConfig {
                 if(correlationData != null) {
                     EngineCorrelationData asEngineCorrelationData = (EngineCorrelationData)correlationData;
                     String correlationId = asEngineCorrelationData.getId();
-                    logger.error(asEngineCorrelationData.getLogText() + ", Failed to publish to AMQP broker. Caused by: " + cause);
+                    logger.error(asEngineCorrelationData.getLogText() + ", Failed to publish to exchange " + asEngineCorrelationData.getExchangeName() + ". Caused by: " + cause);
 
                     publishingRetryCounter.putIfAbsent(correlationId, 1); //remember the first produce(); (the one to start the producing cycle) also counts towards the max-retries
                     if(publishingRetryCounter.get(correlationId) < amqpThreadingProperties.getMaximumProduceRetries()){
@@ -185,5 +187,19 @@ public class AMQPConfig {
     @Bean
     public Binding bindTerminationResults(DirectExchange resultsExchange, Queue terminationResultsQueue){
         return BindingBuilder.bind(terminationResultsQueue).to(resultsExchange).with(TerminationResultBindingKey);
+    }
+
+    public static void acknowledgeMessage(Channel channel, String queueName, boolean successful, long deliveryTag){
+        try {
+            if (successful) {
+                //basicAck(long deliveryTag, boolean multiple)
+                channel.basicAck(deliveryTag, false);
+            } else {
+                //basicNack(long deliveryTag, boolean multiple, boolean requeue)
+                channel.basicNack(deliveryTag, false, false);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to acknowledge message with delivery tag " + deliveryTag + " from queue " + queueName + ". Caused by: " + e.getMessage());
+        }
     }
 }
