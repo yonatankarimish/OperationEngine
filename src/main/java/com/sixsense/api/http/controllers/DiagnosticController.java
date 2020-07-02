@@ -143,6 +143,10 @@ public class DiagnosticController extends ApiDebuggingAware {
         double toSecondCoefficient = Math.pow(10, -9);
         CountDownLatch counter = new CountDownLatch(operationCount);
         Instant batchStart = Instant.now();
+
+        logger.info(" "); //new line without breaking log format
+        logger.info("Starting benchmark tests for " + operationCount + " operations");
+        logger.info("Operation name: " + operation.getOperationName());
         for(int i = 1; i<=operationCount; i++) {
             AtomicInteger ordinal = new AtomicInteger(i);
             Operation clonedOperation = operation.deepClone();
@@ -150,13 +154,13 @@ public class DiagnosticController extends ApiDebuggingAware {
             threadingManager.submit(() -> {
                 OperationResult operationResult = null;
                 Instant sessionStart = Instant.now();
-                logger.info("Before starting session #" + ordinal.get());
+                logger.debug("Before starting session #" + ordinal.get());
                 try {
                     operationResult = sessionEngine.executeOperation(clonedOperation);
                 } catch (Exception e) {
                     logger.info("Failed to execute session #" + ordinal.get() + ". Caused by: ", e);
                 }
-                logger.info("After closing session #" + ordinal.get());
+                logger.debug("After closing session #" + ordinal.get());
 
                 Instant sessionEnd = Instant.now();
                 Duration sessionDuration = Duration.between(sessionStart, sessionEnd);
@@ -170,9 +174,10 @@ public class DiagnosticController extends ApiDebuggingAware {
         try {
             counter.await();
         } catch (InterruptedException e) {
-            logger.info("Interrupted while waiting for countdown latch. Caused by: ", e);
+            logger.warn("Interrupted while waiting for countdown latch. Caused by: ", e);
         }
 
+        logger.info("Finished benchmark tests for current batch");
         Instant batchEnd = Instant.now();
         Duration batchDuration = Duration.between(batchStart, batchEnd);
 
@@ -181,6 +186,7 @@ public class DiagnosticController extends ApiDebuggingAware {
         double averageTime = sessionDurations.stream().reduce((a1, a2) -> a1 + a2).get() / operationCount;
         double batchTime =  batchDuration.getSeconds() + toSecondCoefficient * batchDuration.getNano();
 
+        logger.info(" "); //new line without breaking log format
         logger.info("Running " + operationCount + " operations took " + batchTime + " seconds");
         logger.info("The median running time for all operations was " + medianTime + " seconds");
         logger.info("The average running time of an operations was " + averageTime + " seconds");
