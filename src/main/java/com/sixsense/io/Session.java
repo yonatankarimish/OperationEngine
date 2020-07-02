@@ -2,6 +2,7 @@ package com.sixsense.io;
 
 
 import com.sixsense.api.amqp.OperationProducer;
+import com.sixsense.config.HostConfig;
 import com.sixsense.model.commands.ICommand;
 import com.sixsense.model.commands.Command;
 import com.sixsense.model.events.InputSentEvent;
@@ -68,13 +69,13 @@ public class Session implements Closeable, IDebuggable {
     private final Map<String, Deque<ResultRetention>> sessionVariables;
     private final Set<DatabaseVariable> databaseVariables;
 
-    public Session(SSHClient connectedSSHClient, Set<String> channelNames, String operationId) throws InstantiationException{
+    public Session(HostConfig.Host localhostConfig, Set<String> channelNames, String operationId) throws InstantiationException{
         this.sessionVariables = new HashMap<>();
         this.databaseVariables = new HashSet<>();
         this.channels = new HashMap<>();
         for(String channelName : channelNames){
             try {
-                ShellChannel newChannel = new ShellChannel(channelName, connectedSSHClient, this);
+                ShellChannel newChannel = new ShellChannel(channelName, localhostConfig, this);
                 this.channels.put(channelName, newChannel);
             }catch (IOException channelException){
                 String channelFailure = "Session " +  this.getShortSessionId() + " failed to instantiate - channel " + channelName + " " + channelException.getMessage();

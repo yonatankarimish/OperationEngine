@@ -174,7 +174,7 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
     public void close() throws IOException {
         try {
             processStream.close();
-            this.isClosed = false;
+            this.isClosed = true;
         }catch (IOException e){
             logger.error("Failed to close process stream for session " + this.session.getShortSessionId() + ". Caused by: " + e.getMessage());
             throw e;

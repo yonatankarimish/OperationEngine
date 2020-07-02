@@ -16,8 +16,6 @@ import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.LogicalExpressionResolver;
 import com.sixsense.utillity.Literals;
 import com.sixsense.utillity.ThreadingUtils;
-import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
@@ -38,17 +36,15 @@ import java.util.stream.Collectors;
 /*Creates sessions and executes operations*/
 @Service
 @EnableConfigurationProperties({SessionConfig.class, HostConfig.class})
-public class SessionEngine implements Closeable, ApplicationContextAware {
+public class SessionEngine implements ApplicationContextAware {
     private static final Logger logger = LogManager.getLogger(SessionEngine.class);
     private ApplicationContext appContext;
     private final ThreadingManager threadingManager;
     private final DiagnosticManager diagnosticManager;
 
     private final SessionConfig sessionConfig;
-    private final HostConfig.Host localhostConfig;
+    public final HostConfig.Host localhostConfig;
 
-    private final SSHClient sshClient = new SSHClient();
-    private boolean isClosed = false;
 
     private static final Map<String, String> sessionProperties = new ConcurrentHashMap<>();
     private final Map<String, Operation> runningOperations = new ConcurrentHashMap<>(); //key: operation id, value: operation
@@ -67,15 +63,6 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             String promptName = prompt.getKey();
             String promptText = prompt.getValue();
             sessionProperties.put("sixsense.session.prompt." + promptName, promptText);
-        }
-
-        try {
-            this.sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-            this.sshClient.connect(this.localhostConfig.getHost(), this.localhostConfig.getPort());
-            this.sshClient.authPassword(this.localhostConfig.getUsername(), this.localhostConfig.getPassword());
-        } catch (IOException e) {
-            logger.fatal("Session engine failed to initialize - failed to initialize ssh client. Caused by: " + e.getMessage());
-            throw e;
         }
 
         logger.info("Session engine initialized");
@@ -106,10 +93,6 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         if(operation == null){
             operationResult.setExpressionResult(
                 handleExecutionAnomaly(session, "Session engine cannot execute a null operation!")
-            );
-        }else if(this.isClosed){
-            operationResult.setExpressionResult(
-                handleExecutionAnomaly(session, Literals.EngineShutdown)
             );
         }else if(session.isClosed()){
             operationResult.setExpressionResult(
@@ -160,9 +143,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
     private ExpressionResult executeBlock(Session session, ICommand executionBlock) throws IOException{
         ExpressionResult blockResult = null;
-        if(this.isClosed){
-            blockResult = handleExecutionAnomaly(session, Literals.EngineShutdown);
-        }else if(session.isClosed()){
+        if(session.isClosed()){
             blockResult = handleExecutionAnomaly(session, Literals.SessionAlreadyClosed);
         }else if (executionBlock instanceof Command) {
             blockResult = executeCommand(session, (Command)executionBlock);
@@ -210,9 +191,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
     private ExpressionResult executeCommand(Session session, Command currentCommand) throws IOException{
         ExpressionResult commandResult;
 
-        if(this.isClosed){
-            commandResult = handleExecutionAnomaly(session, Literals.EngineShutdown);
-        }else if(session.isClosed()){
+        if(session.isClosed()){
             commandResult = handleExecutionAnomaly(session, Literals.SessionAlreadyClosed);
         }else{
             diagnosticManager.emit(new CommandStartEvent(session, currentCommand));
@@ -282,7 +261,7 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
             throw new NullPointerException("Cannot create a session using a null operation!");
         }
 
-        Session session = new Session(this.sshClient, operation.getChannelNames(), operation.getUUID());
+        Session session = new Session(this.localhostConfig, operation.getChannelNames(), operation.getUUID());
         session.loadSessionVariables(sessionProperties);
         ThreadContext.put("sessionID", session.getShortSessionId());
         ThreadingUtils.updateSessionAndOperationIds(session.getShortSessionId(), operation.getShortUUID());
@@ -366,14 +345,9 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
         currentCommand.setAlreadyExecuted(true);
     }
 
-
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.appContext = applicationContext;
-    }
-
-    public boolean isClosed() {
-        return isClosed;
     }
 
     public static Map<String, String> getSessionProperties(){
@@ -396,17 +370,5 @@ public class SessionEngine implements Closeable, ApplicationContextAware {
 
     public Map<String, String> getOperationsToSessions(){
         return Collections.unmodifiableMap(operationsToSessions);
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.sshClient.close();
-        } catch (IOException e) {
-            logger.error("Session engine failed to close - failed to close ssh client. Caused by: " + e.getMessage());
-        }
-
-        this.isClosed = true;
-        logger.info("Session engine closed");
     }
 }

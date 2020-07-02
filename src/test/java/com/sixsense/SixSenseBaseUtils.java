@@ -31,7 +31,7 @@ public class SixSenseBaseUtils {
 
     @AfterSuite(alwaysRun = true)
     public void finalizeSpring() {
-        finalizeCloseableResource(sessionEngine, threadingManager);
+        finalizeCloseableResource(threadingManager);
         if(appContext != null){
             SpringApplication.exit(appContext);
         }

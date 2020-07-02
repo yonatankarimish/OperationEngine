@@ -1,11 +1,14 @@
 package com.sixsense.io;
 
+import com.sixsense.config.HostConfig;
 import com.sixsense.model.logging.IDebuggable;
 import com.sixsense.model.logging.Loggers;
+import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.transport.TransportException;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.schmizz.sshj.userauth.UserAuthException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,14 +24,23 @@ import java.util.Objects;
 public class ShellChannel implements Closeable, IDebuggable {
     private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
 
+    //Engine session related parameters
     private final String name; //Identifying name for current channel
     private final com.sixsense.io.Session engineSession; //parent session (engine session)
+    private static final Object clientLock = new Object();
+
+    //SSH connection related classes
+    private static final DefaultConfig sshConfig = new DefaultConfig(); //Default configuration for ssh client
+    private final SSHClient sshClient; //Wrapper around SSH client process, forked from the engine process
     private final net.schmizz.sshj.connection.channel.direct.Session shellSession; //SSH session that generates the shell process
     private final Session.Shell shell; //The operating system process to which we perform I/O
 
+    //I/O classes
     private final BufferedWriter channelInput; //Buffered writer through which to write commands to shell input stream
     private final ProcessStreamWrapper channelOutputWrapper; //Runs in a separate thread with one purpose: clear the output stream all the time and keep the responses coming in
     private final List<String> channelOutput; //Line separated response (which we read) from both the shell output and error streams.
+
+    //State indicators
     private boolean isUnderDebug = false;
     private boolean isClosed = false;
 
@@ -38,26 +50,42 @@ public class ShellChannel implements Closeable, IDebuggable {
     *
     * Pseudo-terminals (PTY) do not allocate separate channels for output and errors.
      *Therefore, we only listen to the shell output stream, as the errors will be written there as well*/
-    public ShellChannel(String name, SSHClient connectedSSHClient, com.sixsense.io.Session engineSession) throws IOException {
+    public ShellChannel(String name, HostConfig.Host localhostConfig, com.sixsense.io.Session engineSession) throws IOException {
         this.name = name;
         this.engineSession = engineSession;
 
         try {
-            //1)Open a session using the ssh client
+            //1)Create an ssh client with a connection to the local operating system (self-connection)
             try {
-                this.shellSession = connectedSSHClient.startSession();
+                this.sshClient = new SSHClient(sshConfig);
+                sshClient.addHostKeyVerifier(new PromiscuousVerifier());
+                synchronized (clientLock) {
+                    sshClient.connect(localhostConfig.getHost(), localhostConfig.getPort());
+                    sshClient.authPassword(localhostConfig.getUsername(), localhostConfig.getPassword());
+                }
+            } catch (UserAuthException e) {
+                throw new IOException("Failed to authenticate local SSH connection while creating a new SSH client. Cauesed by: ", e);
+            } catch (TransportException e) {
+                throw new IOException("Transport error experienced on SSH connection while creating a new SSH client. Cauesed by: ", e);
+            } catch (IOException e) {
+                throw new IOException("Failed to open local SSH connection while creating a new SSH client. Cauesed by: ", e);
+            }
+
+            //2)Open a session using the ssh client
+            try {
+                this.shellSession = this.sshClient.startSession();
             } catch (IOException e) {
                 throw new IOException("Failed to start SSH client session", e);
             }
 
-            //2)Allocate a pseudo-terminal to the shell session (https://linux.die.net/man/7/pty)
+            //3)Allocate a pseudo-terminal to the shell session (https://linux.die.net/man/7/pty)
             try {
                 this.shellSession.allocateDefaultPTY();
             } catch (IOException e) {
                 throw new IOException("Failed to allocate pseudo-terminal to SSH client", e);
             }
 
-            //3)Start the shell by connecting to the allocated pty
+            //4)Start the shell by connecting to the allocated pty
             try {
                 this.shell = this.shellSession.startShell();
             } catch (IOException e) {
@@ -142,7 +170,8 @@ public class ShellChannel implements Closeable, IDebuggable {
             "channelInput", this.channelInput,
             "channelOutputWrapper", this.channelOutputWrapper,
             "shell", this.shell,
-            "shellSession", this.shellSession
+            "shellSession", this.shellSession,
+            "sshClient", this.sshClient
         );
 
         for(Map.Entry<String, Closeable> resource : resources.entrySet()){
