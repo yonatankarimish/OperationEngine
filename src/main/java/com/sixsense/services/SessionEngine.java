@@ -43,7 +43,7 @@ public class SessionEngine implements ApplicationContextAware {
     private final DiagnosticManager diagnosticManager;
 
     private final SessionConfig sessionConfig;
-    public final HostConfig.Host localhostConfig;
+    private final HostConfig.Host localhostConfig;
 
 
     private static final Map<String, String> sessionProperties = new ConcurrentHashMap<>();

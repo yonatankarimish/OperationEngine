@@ -61,7 +61,7 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
                     addChunksToOutput(splitChunk);
                     signalNewChunk();
                 }
-            } while (bytesRead != -1);
+            } while (bytesRead != -1 && !this.isClosed()); //as long as eof wasn't reached and the process stream wasn't closed (these conditions are independent)
 
             logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
         } catch (Exception e) {
