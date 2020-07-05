@@ -60,14 +60,6 @@
       regexp: 'PATH="(\$JAVA_HOME\/bin:)?'
       replace: 'PATH="$JAVA_HOME/bin:'
 
-  - name: Add cassandra repository
-    tags:
-    - add-repos
-    lineinfile:
-      path: /etc/apt/sources.list.d/cassandra.sources.list
-      line: deb http://www.apache.org/dist/cassandra/debian 311x main
-      create: yes
-
   - name: Install packages
     tags:
     - install-packages
@@ -78,11 +70,9 @@
       update_cache: yes
     vars:
       packages:
-      - git
       - vsftpd
       - openssh-server
       - openjdk-11-jdk
-      - cassandra
 
   - name: Copy Engine service file to remote host
     tags:
