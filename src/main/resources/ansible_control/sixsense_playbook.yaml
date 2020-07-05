@@ -34,6 +34,9 @@
     notify: Restart sysctl
   - meta: flush_handlers
 
+  - name: Increase max file limit
+    shell: ulimit -n 32768
+
   - name: Add openjdk repository
     tags:
     - add-repos
