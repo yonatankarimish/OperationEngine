@@ -22,7 +22,6 @@ import com.sixsense.threading.ThreadingManager;
 import com.sixsense.utillity.CommandUtils;
 import com.sixsense.utillity.LogicalExpressionResolver;
 import com.sixsense.utillity.Literals;
-import net.schmizz.sshj.SSHClient;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -605,7 +604,7 @@ public class Session implements Closeable, IDebuggable {
 
         this.commandLock.unlock();
         sessionLogger.debug(this.getTerminalIdentifier() + " close method released lock");
-        this.isClosed = true;
+        this.isClosed = true; //Even if resources are left open, we do not want to invoke close() again on already-closed resources
         if(partialClosure){
             throw new IOException("Session " +  this.getShortSessionId() + " failed to close one or more of it's channels");
         }

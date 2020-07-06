@@ -47,32 +47,42 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
 
     @Override
     public Boolean get(){
-        try {
-            ThreadContext.put("sessionID", this.session.getShortSessionId());
-            logger.debug("started reading from stream for session " + this.session.getSessionShellId());
-            byte[] rawData = new byte[1024];
-            int bytesRead;
-            do {
-                bytesRead = this.processStream.read(rawData);
-                if(bytesRead != -1) {
-                    String currentChunk = parseRawChunk(rawData, bytesRead);
-                    String chunkAfterSubstitution = executeSubstitutionCriteria(currentChunk);
-                    String[] splitChunk = chunkAfterSubstitution.split(Literals.LineBreak, -1);  //splitChunk will always have at least one entry (if no line break was read); passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
-                    addChunksToOutput(splitChunk);
-                    signalNewChunk();
-                }
-            } while (bytesRead != -1 && !this.isClosed()); //as long as eof wasn't reached and the process stream wasn't closed (these conditions are independent)
+        ThreadContext.put("sessionID", this.session.getShortSessionId());
+        logger.debug("started reading from stream for session " + this.session.getSessionShellId());
+        byte[] rawDataBuffer = new byte[1024];
+        int bytesRead;
 
-            logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
-        } catch (Exception e) {
-            //verify the exception didn't happen due to manual termination or due to a natural session.close()
-            if(!this.isClosed() && !this.session.isTerminated()) {
-                logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: " + e.getMessage());
+        do {
+            bytesRead = readIntoBuffer(rawDataBuffer);
+
+            if(bytesRead != -1) {
+                String currentChunk = parseRawChunk(rawDataBuffer, bytesRead);
+                String chunkAfterSubstitution = executeSubstitutionCriteria(currentChunk);
+                String[] splitChunk = chunkAfterSubstitution.split(Literals.LineBreak, -1);  //splitChunk will always have at least one entry (if no line break was read); passing -1 as the second argument will perform the maximum amount of possible splits, without omitting leading or trailing empty strings
+                addChunksToOutput(splitChunk);
+                signalNewChunk();
             }
-        } finally {
-            ThreadContext.remove("sessionID");
-        }
+        } while (bytesRead != -1 && !this.isClosed()); //as long as eof wasn't reached and the process stream wasn't closed (these conditions are independent)
+
+        logger.debug("finished reading from stream for session " + this.session.getSessionShellId());
+        ThreadContext.remove("sessionID");
         return true;
+    }
+
+    private int readIntoBuffer(byte[] rawDataBuffer){
+        try {
+            return this.processStream.read(rawDataBuffer);
+        } catch (IOException e) {
+            /*processStream.read() will throw an IO exception if closed while waiting for bytes.
+            * if the synchronization is held by another thread (invoking close()) we wait for it to finish before checking for closure reason */
+            synchronized (this) {
+                //verify the exception didn't happen due to manual termination or due to a natural session.close()
+                if (!this.isClosed() && !this.session.isTerminated()) {
+                    logger.error("Failed to process command " + this.session.getTerminalIdentifier() + ". Caused by: " + e.getMessage());
+                }
+            }
+            return -1; //will skip the condition and exit the loop in the get() method
+        }
     }
 
     /*If any bytes have been read into the byte buffer, construct a string using the bytes in the buffer
@@ -171,7 +181,7 @@ public class ProcessStreamWrapper implements Closeable, Supplier<Boolean>, IDebu
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         try {
             processStream.close();
             this.isClosed = true;

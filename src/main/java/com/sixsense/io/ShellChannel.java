@@ -16,10 +16,7 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class ShellChannel implements Closeable, IDebuggable {
     private static final Logger sessionLogger = LogManager.getLogger(Loggers.SessionLogger.name());
@@ -164,28 +161,33 @@ public class ShellChannel implements Closeable, IDebuggable {
 
     @Override
     public void close() throws IOException {
-        boolean partialClosure = false;
+        boolean inputClosed = closeChannelResource("channelInput", this.channelInput);
+        boolean outputClosed = closeChannelResource("channelOutputWrapper", this.channelOutputWrapper);
+        boolean shellClosed = closeChannelResource("shell", this.shell);
+        boolean shellSessionClosed = closeChannelResource("shellSession", this.shellSession);
+        boolean sshClientClosed = closeChannelResource("sshClient", this.sshClient);
 
-        Map<String, Closeable> resources = Map.of(
-            "channelInput", this.channelInput,
-            "channelOutputWrapper", this.channelOutputWrapper,
-            "shell", this.shell,
-            "shellSession", this.shellSession,
-            "sshClient", this.sshClient
-        );
-
-        for(Map.Entry<String, Closeable> resource : resources.entrySet()){
-            try {
-                resource.getValue().close();
-            }catch (IOException e){
-                partialClosure = true;
-                sessionLogger.error("Channel " + this.name + " of session " +  engineSession.getShortSessionId() + " failed to close " + resource.getKey() +". Caused by: " + e.getMessage());
-            }
-        }
-
-        this.isClosed = true;
+        /*Inlining the close statements (partialClosure = close(A) && close(B)...)
+         *will not close resources after the first "false" value (i.e. if close(A) returns false, close(B) won't be invoked)
+         *so we close them all before checking for a partial closure*/
+        boolean partialClosure = !(inputClosed && outputClosed && shellClosed && shellSessionClosed && sshClientClosed);
+        this.isClosed = true; //Even if resources are left open, we do not want to invoke close() again on already-closed resources
         if(partialClosure){
             throw new IOException("Channel " + this.name + " for session " +  engineSession.getShortSessionId() + " failed to close one or more of it's resources");
         }
+    }
+
+    private boolean closeChannelResource(String resourceName, Closeable resource){
+        boolean resourceClosed = true;
+        if (resource != null) {
+            try {
+                resource.close();
+            } catch (IOException e) {
+                sessionLogger.error("Channel " + this.name + " of session " + engineSession.getShortSessionId() + " failed to close " + resourceName + ". Caused by: " + e.getMessage());
+                resourceClosed = false;
+            }
+        }
+
+        return resourceClosed;
     }
 }

@@ -3,6 +3,8 @@ package com.sixsense.utillity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Closeable;
+
 public class OperatingSystemUtils {
     private static final Logger logger = LogManager.getLogger(OperatingSystemUtils.class);
     static String localPartition;
@@ -31,6 +33,21 @@ public class OperatingSystemUtils {
             }
         } catch (Exception e) {
             logger.warn("Failed to obtain block size for local partition name. Caused by: " + e.getMessage());
+        }
+    }
+
+    public static void finalizeCloseableResource(Closeable... closeables){
+        for(Closeable resource : closeables) {
+            if(resource == null){
+                logger.warn("Attempted to finalize a null resource");
+            }else{
+                try {
+                    resource.close();
+                } catch (Exception e) {
+                    String resourceClassName = closeables.getClass().toString();
+                    logger.error("Failed to close instance of " + resourceClassName + ". Caused by: " + e.getMessage());
+                }
+            }
         }
     }
 }
