@@ -41,6 +41,7 @@ public class SessionEngine implements ApplicationContextAware {
     private ApplicationContext appContext;
     private final ThreadingManager threadingManager;
     private final DiagnosticManager diagnosticManager;
+    private final LoggingManager loggingManager;
 
     private final SessionConfig sessionConfig;
     private final HostConfig.Host localhostConfig;
@@ -52,9 +53,10 @@ public class SessionEngine implements ApplicationContextAware {
     private final Map<String, String> operationsToSessions = new ConcurrentHashMap<>(); //key: operation id, value: session id
 
     @Autowired
-    private SessionEngine(ThreadingManager threadingManager, DiagnosticManager diagnosticManager, SessionConfig sessionConfig, HostConfig hostConfig) throws IOException{
+    private SessionEngine(ThreadingManager threadingManager, DiagnosticManager diagnosticManager, LoggingManager loggingManager, SessionConfig sessionConfig, HostConfig hostConfig) {
         this.threadingManager = threadingManager;
         this.diagnosticManager = diagnosticManager;
+        this.loggingManager = loggingManager;
         this.sessionConfig = sessionConfig;
         this.localhostConfig = hostConfig.getLocal();
 
@@ -292,7 +294,7 @@ public class SessionEngine implements ApplicationContextAware {
         finalizeSession(session);
     }
 
-    public void finalizeSession(Session session) throws IOException{
+    private void finalizeSession(Session session) throws IOException{
         try {
             session.close();
             diagnosticManager.emit(new SessionClosedEvent(session));
@@ -302,6 +304,7 @@ public class SessionEngine implements ApplicationContextAware {
         } finally {
             ThreadContext.remove("sessionID");
             ThreadingUtils.updateLifecyclePhase(EngineEventType.NotInSession);
+            loggingManager.closeLoggers(session.getShortSessionId());
         }
     }
 

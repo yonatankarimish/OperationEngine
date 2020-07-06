@@ -13,6 +13,11 @@ import com.sixsense.utillity.Literals;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.appender.FileManager;
+import org.apache.logging.log4j.core.appender.routing.RoutingAppender;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,12 +27,18 @@ import java.util.*;
 @Service
 /*Manages all logging operations that are done from a session's context*/
 public class LoggingManager  {
-    private static final EnumMap<Loggers, Logger> loggers = new EnumMap<>(Loggers.class);
+    private static final EnumMap<Loggers, Logger> loggers = new EnumMap<>(Loggers.class); //Maps logger names to the actual loggers
+    private static final Map<String, RoutingAppender> routingAppenders = new HashMap<>(); //Routing appenders (holding references to files belonging to sessions)
 
     private LoggingManager(){
         for(Loggers logger : EnumSet.allOf(Loggers.class)){
             loggers.put(logger, LogManager.getLogger(logger.name()));
         }
+
+        Map<String, Appender> appenderMap = ((LoggerContext) LogManager.getContext(false)).getConfiguration().getAppenders();
+        routingAppenders.put("session_log", (RoutingAppender)appenderMap.get("session_log"));
+        routingAppenders.put("command_log", (RoutingAppender)appenderMap.get("command_log"));
+        routingAppenders.put("terminal_log", (RoutingAppender)appenderMap.get("terminal_log"));
     }
 
     public void logEngineEvent(AbstractEngineEvent event) {
@@ -52,6 +63,14 @@ public class LoggingManager  {
         }catch(ClassCastException e){
             throw new IllegalArgumentException("Cannot log event of type " + event.getEventType() + ": Event object has illegal configuration");
         }
+    }
+
+    void closeLoggers(String sessionId){
+        routingAppenders.values().forEach(appender -> {
+            FileAppender fileAppender = (FileAppender) appender.getAppenders().get(sessionId).getAppender();
+            FileManager fileManager = fileAppender.getManager();
+            fileManager.close();
+        });
     }
 
     private void logSessionCreated(SessionCreatedEvent event){
