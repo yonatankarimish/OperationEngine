@@ -5,6 +5,7 @@ import com.sixsense.mocks.OperationMocks;
 import com.sixsense.model.commands.Command;
 import com.sixsense.model.commands.ICommand;
 import com.sixsense.model.commands.Operation;
+import com.sixsense.model.commands.ParallelWorkflow;
 import com.sixsense.model.devices.Credentials;
 import com.sixsense.model.logic.*;
 import com.sixsense.model.retention.OperationResult;
@@ -35,6 +36,8 @@ public class DiagnosticController extends ApiDebuggingAware {
     private final SessionEngine sessionEngine;
     private final ThreadingManager threadingManager;
     private final CachingConnectionFactory amqpConnectionFactory;
+
+    private static final double toSecondCoefficient = Math.pow(10, -9);
 
     @Autowired
     public DiagnosticController(SessionEngine sessionEngine, ThreadingManager threadingManager, CachingConnectionFactory amqpConnectionFactory) {
@@ -93,18 +96,76 @@ public class DiagnosticController extends ApiDebuggingAware {
         logger.info("Starting debug method now");
     }
 
-    @GetMapping("/stressTest/remote/{operationCount}")
-    public void stressTestRemote(@PathVariable int operationCount){
-        Operation f5Operation = CommandUtils.composeWorkflow(OperationMocks.f5BigIpBackup(
-            Collections.singletonList(
-                new Credentials()
-                    .withHost("172.31.252.179")
-                    .withUsername("root")
-                    .withPassword("qwe123")
-            )
-        )).getParallelOperations().get(0); //We can get the first operation, since only one credential set was passed
+    @GetMapping("/stressTest/remote/{operationsPerDevice}")
+    public void stressTestRemote(@PathVariable int operationsPerDevice){
+        int octet3limit = 5;
+        int octet4limit = 254;
 
-        stressTest(f5Operation, operationCount);
+        List<Credentials> credentials = new ArrayList<>();
+        for(int octet3=1; octet3<=octet3limit; octet3++){
+            for(int octet4=1; octet4<=octet4limit; octet4++){
+                String host = "172.3." + octet3 + "." + octet4;
+                credentials.add(
+                    new Credentials()
+                    .withHost(host)
+                    .withUsername("root")
+                    .withPassword("VMware1!")
+                );
+            }
+        }
+
+        ParallelWorkflow workflow = CommandUtils.composeWorkflow(OperationMocks.tinycoreLabEcho(credentials));
+        String operationName = workflow.getParallelOperations().get(0).getOperationName(); //We can get the first operation, since only one credential set was passed
+        int devicesCount = workflow.getParallelOperations().size();
+        int totalOperations = operationsPerDevice * devicesCount;
+
+        List<Double> sessionDurations = Collections.synchronizedList(new ArrayList<>());
+        List<OperationResult> operationResults = Collections.synchronizedList(new ArrayList<>());
+
+        CountDownLatch counter = new CountDownLatch(totalOperations);
+        Instant batchStart = Instant.now();
+
+        logger.info(" "); //new line without breaking log format
+        logger.info("Starting benchmark tests for " + devicesCount + " devices, running " + operationsPerDevice + " operations each (total: " + totalOperations + " operations)");
+        logger.info("Operation name: " + operationName);
+
+        int ordinal = 1;
+        for(int i = 1; i<=operationsPerDevice; i++) {
+            for(Operation operation : workflow.getParallelOperations()) {
+                AtomicInteger ordinalRef = new AtomicInteger(ordinal++);
+
+                threadingManager.submit(() -> {
+                    OperationResult operationResult = null;
+                    Instant sessionStart = Instant.now();
+                    logger.debug("Before starting session #" + ordinalRef.get());
+                    try {
+                        operationResult = sessionEngine.executeOperation(operation.deepClone());
+                    } catch (Exception e) {
+                        logger.info("Failed to execute session #" + ordinalRef.get() + ". Caused by: ", e);
+                    }
+                    logger.debug("After closing session #" + ordinalRef.get());
+
+                    Instant sessionEnd = Instant.now();
+                    Duration sessionDuration = Duration.between(sessionStart, sessionEnd);
+                    sessionDurations.add(sessionDuration.getSeconds() + toSecondCoefficient * sessionDuration.getNano());
+
+                    counter.countDown();
+                    operationResults.add(operationResult);
+                });
+            }
+        }
+
+        try {
+            counter.await();
+        } catch (InterruptedException e) {
+            logger.warn("Interrupted while waiting for countdown latch. Caused by: ", e);
+        }
+
+        logger.info("Finished benchmark tests for current batch");
+        Instant batchEnd = Instant.now();
+        Duration batchDuration = Duration.between(batchStart, batchEnd);
+
+        printStats(sessionDurations, operationResults, batchDuration, totalOperations);
     }
 
     @GetMapping("/stressTest/local/{operationCount}")
@@ -140,7 +201,6 @@ public class DiagnosticController extends ApiDebuggingAware {
         List<Double> sessionDurations = Collections.synchronizedList(new ArrayList<>());
         List<OperationResult> operationResults = Collections.synchronizedList(new ArrayList<>());
 
-        double toSecondCoefficient = Math.pow(10, -9);
         CountDownLatch counter = new CountDownLatch(operationCount);
         Instant batchStart = Instant.now();
 
@@ -181,6 +241,11 @@ public class DiagnosticController extends ApiDebuggingAware {
         Instant batchEnd = Instant.now();
         Duration batchDuration = Duration.between(batchStart, batchEnd);
 
+        printStats(sessionDurations, operationResults, batchDuration, operationCount);
+    }
+
+
+    private void printStats(List<Double> sessionDurations, List<OperationResult> operationResults, Duration batchDuration, int operationCount){
         Collections.sort(sessionDurations);
         double medianTime = sessionDurations.get(operationCount / 2);
         double averageTime = sessionDurations.stream().reduce((a1, a2) -> a1 + a2).get() / operationCount;

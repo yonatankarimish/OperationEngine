@@ -16,8 +16,6 @@ import com.sixsense.model.pipes.WhitespacePipe;
 import com.sixsense.model.retention.RetentionMode;
 import com.sixsense.model.retention.ResultRetention;
 import com.sixsense.utillity.InternalCommands;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,18 +26,18 @@ public class OperationMocks {
     }
 
     public static RawExecutionConfig f5BigIpBackup(List<Credentials> credentialList){
-        VendorProductVersion f5BigIp = new VendorProductVersion()
-            .withVendor("F5")
-            .withProduct("BigIP")
-            .withVersion("11 and above");
-
         return new RawExecutionConfig()
             .addDevices(
                 credentialList.stream()
                     .map(
                         credentials -> new Device()
                             .withCredentials(credentials)
-                            .withVpv(f5BigIp.deepClone())
+                            .withVpv(
+                                new VendorProductVersion()
+                                    .withVendor("F5")
+                                    .withProduct("BigIP")
+                                    .withVersion("11 and above")
+                            )
                     )
                     .collect(Collectors.toList())
             )
@@ -49,6 +47,7 @@ public class OperationMocks {
                     .withExecutionBlock(
                         new Block()
                             .addChildBlock(sshConnect())
+                            .addChildBlock(tmshPager())
                             .addChildBlock(rebuildSixSenseDirectory())
                             .addChildBlock(etcHosts())
                             .addChildBlock(inventory())
@@ -61,18 +60,18 @@ public class OperationMocks {
     }
 
     public static RawExecutionConfig f5BigIpInventory(List<Credentials> credentialList){
-        VendorProductVersion f5BigIp = new VendorProductVersion()
-            .withVendor("F5")
-            .withProduct("BigIP")
-            .withVersion("11 and above");
-
         return new RawExecutionConfig()
             .addDevices(
                 credentialList.stream()
                     .map(
                         credentials -> new Device()
                             .withCredentials(credentials)
-                            .withVpv(f5BigIp.deepClone())
+                            .withVpv(
+                                new VendorProductVersion()
+                                    .withVendor("F5")
+                                    .withProduct("BigIP")
+                                    .withVersion("11 and above")
+                            )
                     )
                     .collect(Collectors.toList())
             )
@@ -82,10 +81,40 @@ public class OperationMocks {
                     .withExecutionBlock(
                         new Block()
                             .addChildBlock(sshConnect())
+                            .addChildBlock(tmshPager())
                             .addChildBlock(inventory())
                             .addChildBlock(exitCommand())
                     )
                     .addChannel(ChannelType.LOCAL)
+                    .addChannel(ChannelType.REMOTE)
+            );
+    }
+
+    public static RawExecutionConfig tinycoreLabEcho(List<Credentials> credentialList){
+        return new RawExecutionConfig()
+            .addDevices(
+                credentialList.stream()
+                    .map(
+                        credentials -> new Device()
+                            .withCredentials(credentials)
+                            .withVpv(
+                                new VendorProductVersion()
+                                    .withVendor("Linux")
+                                    .withProduct("Generic")
+                                    .withVersion("TinyCore kernel")
+                            )
+                    )
+                    .collect(Collectors.toList())
+            )
+            .withOperation(
+                new Operation()
+                    .withOperationName("Remote echo")
+                    .withExecutionBlock(
+                        new Block()
+                            .addChildBlock(sshConnect())
+                            .addChildBlock(remoteEcho())
+                            .addChildBlock(exitCommand())
+                    )
                     .addChannel(ChannelType.REMOTE)
             );
     }
@@ -241,6 +270,11 @@ public class OperationMocks {
                             .withBinaryRelation(BinaryRelation.CONTAINS)
                             .withExpectedValue("#")
                     )
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("$")
+                    )
                     .addResolvable(new ExpectedOutcome()
                         .withBinaryRelation(BinaryRelation.CONTAINS)
                         .withExpectedValue("onnection")
@@ -261,7 +295,13 @@ public class OperationMocks {
                     )
             );
 
-        ICommand tmsh = new Command()
+        return ssh.chainCommands(rsaFirstTime)
+            .chainCommands(typePassword)
+            .chainCommands(InternalCommands.invalidateCurrentPrompt(ChannelType.REMOTE.name()));
+    }
+
+    private static ICommand tmshPager(){
+        return new Command()
             .withChannel(ChannelType.REMOTE)
             .withCommandText("tmsh modify cli preference pager disabled")
             //.withMinimalSecondsToResponse(5)
@@ -281,11 +321,20 @@ public class OperationMocks {
                             .withExpectedValue("$sixsense.session.prompt.remote")
                     )
             );
+    }
 
-        return ssh.chainCommands(rsaFirstTime)
-            .chainCommands(typePassword)
-            .chainCommands(InternalCommands.invalidateCurrentPrompt(ChannelType.REMOTE.name()))
-            .chainCommands(tmsh);
+    private static ICommand remoteEcho(){
+        return new Command()
+            .withChannel(ChannelType.REMOTE)
+            .withCommandText("echo lorem ipsum")
+            .withExpectedOutcome(
+                new LogicalExpression<ExpectedOutcome>()
+                    .addResolvable(
+                        new ExpectedOutcome()
+                            .withBinaryRelation(BinaryRelation.CONTAINS)
+                            .withExpectedValue("lorem ipsum")
+                    )
+            );
     }
 
     private static ICommand rebuildSixSenseDirectory(){

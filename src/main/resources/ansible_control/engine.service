@@ -9,6 +9,7 @@ User=root
 Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
 WorkingDirectory=/sixsense
 LimitNOFILE=32768
+LimitNPROC=163840
 ExecStart=/usr/lib/jvm/java-11-openjdk-amd64/bin/java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 -Xms256M  -Xmx6G  -Xmn1G -jar /sixsense/OperationEngine.jar
 
 [Install]

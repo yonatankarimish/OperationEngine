@@ -34,9 +34,6 @@
     notify: Restart sysctl
   - meta: flush_handlers
 
-  - name: Increase max file limit
-    shell: ulimit -n 32768
-
   - name: Add openjdk repository
     tags:
     - add-repos
@@ -106,6 +103,16 @@
         PS2=" "
         PS3=" "
         PS4=" "
+
+  - name: Increase engine process limits
+    tags:
+    - process-limits
+    blockinfile:
+      path: /etc/security/limits.conf
+      marker: "# {mark} SixSense default process limits"
+      block: |
+        root        -       nofile       32768
+        root        -       nproc        163840
 
   handlers:
   - name: Restart sysctl
