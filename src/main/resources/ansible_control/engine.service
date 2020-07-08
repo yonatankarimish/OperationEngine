@@ -9,7 +9,7 @@ User=root
 Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
 WorkingDirectory=/sixsense
 LimitNOFILE=32768
-LimitNPROC=infinity
+LimitNPROC=163840
 ExecStart=/usr/lib/jvm/java-11-openjdk-amd64/bin/java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005 \
           	-Dcom.sun.management.jmxremote \
           	-Djava.rmi.server.hostname=172.31.253.65 \
@@ -23,5 +23,6 @@ ExecStart=/usr/lib/jvm/java-11-openjdk-amd64/bin/java -agentlib:jdwp=transport=d
           	-Xmn1G \
           	-Xss4M \
           	-jar /sixsense/OperationEngine.jar
+
 [Install]
 WantedBy=multi-user.target
